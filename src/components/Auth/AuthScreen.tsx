@@ -11,7 +11,7 @@ export function AuthScreen() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img 
-            src="/kolayfit-logo.png" 
+            src="/lovable-uploads/0ded84b0-5b4f-411e-bb63-649e8fb48126.png" 
             alt="KolayfitAi" 
             className="h-20 mx-auto mb-4"
           />

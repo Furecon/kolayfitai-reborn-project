@@ -10,7 +10,7 @@ export function OnboardingWelcome() {
       <div className="max-w-md w-full text-center space-y-8">
         <div className="space-y-4">
           <img 
-            src="/kolayfit-logo.png" 
+            src="/lovable-uploads/0ded84b0-5b4f-411e-bb63-649e8fb48126.png" 
             alt="KolayfitAi" 
             className="h-20 mx-auto"
           />

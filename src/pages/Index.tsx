@@ -33,7 +33,7 @@ function AppContent() {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center space-y-4">
           <img 
-            src="/kolayfit-logo.png" 
+            src="/lovable-uploads/0ded84b0-5b4f-411e-bb63-649e8fb48126.png" 
             alt="KolayfitAi" 
             className="h-16 mx-auto"
           />

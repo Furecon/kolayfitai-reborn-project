@@ -16,7 +16,7 @@ export function DashboardHeader({ onCameraClick, onProfileClick }: DashboardHead
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <img 
-            src="/kolayfit-logo.png" 
+            src="/lovable-uploads/0ded84b0-5b4f-411e-bb63-649e8fb48126.png" 
             alt="KolayfitAi" 
             className="h-10"
           />
