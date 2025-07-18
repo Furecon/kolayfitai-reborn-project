@@ -119,10 +119,34 @@ export default function Dashboard() {
       </div>
 
       <div className="container mx-auto p-6 space-y-6">
-        {/* Welcome Section */}
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Hoş Geldin!</h2>
-          <p className="text-gray-600">Bugün nasıl hissediyorsun? Hedeflerine ulaşman için buradayız.</p>
+        {/* User Profile Info */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900">Hoş geldin, Furkan Aydemir!</h2>
+            <Button className="btn-gradient">
+              <Camera className="h-4 w-4 mr-2" />
+              Fotoğraf Çek
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 text-center">
+              <div className="text-sm text-gray-600">Yaş</div>
+              <div className="text-lg font-semibold text-gray-900">32</div>
+            </div>
+            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 text-center">
+              <div className="text-sm text-gray-600">Boy</div>
+              <div className="text-lg font-semibold text-gray-900">183 cm</div>
+            </div>
+            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 text-center">
+              <div className="text-sm text-gray-600">Kilo</div>
+              <div className="text-lg font-semibold text-gray-900">86 kg</div>
+            </div>
+            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 text-center">
+              <div className="text-sm text-gray-600">Hedef</div>
+              <div className="text-lg font-semibold text-gray-900">Kilo vermek</div>
+            </div>
+          </div>
         </div>
 
         {/* Main Stats Grid */}
@@ -222,42 +246,63 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="card-glass">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-gradient-primary rounded-full">
-                  <Camera className="h-6 w-6 text-white" />
+        {/* Daily Meals */}
+        <Card className="card-glass">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-gray-900">Bugünkü Öğünler</CardTitle>
+              <Button size="sm" className="btn-gradient">
+                + Ekle
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-white/40 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Camera className="h-4 w-4 text-green-600" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">Yemek Fotoğrafı Çek</h3>
-                  <p className="text-sm text-gray-600">AI ile anlık kalori analizi</p>
+                <div>
+                  <h4 className="font-medium text-gray-900">Kahvaltı</h4>
+                  <p className="text-sm text-gray-600">08:30</p>
                 </div>
-                <Button className="btn-gradient">
-                  Başla
-                </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="card-glass">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-gradient-secondary rounded-full">
-                  <TrendingUp className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">İlerleme Raporu</h3>
-                  <p className="text-sm text-gray-600">Haftalık başarı analizi</p>
-                </div>
-                <Button variant="outline" className="border-accent text-accent hover:bg-accent hover:text-white">
-                  Görüntüle
-                </Button>
+              <div className="text-right">
+                <div className="font-semibold text-gray-900">350 kcal</div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 bg-white/40 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Camera className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900">Öğle Yemeği</h4>
+                  <p className="text-sm text-gray-600">13:15</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="font-semibold text-gray-900">650 kcal</div>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 bg-white/40 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Camera className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900">Atıştırmalık</h4>
+                  <p className="text-sm text-gray-600">16:45</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="font-semibold text-gray-900">250 kcal</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
