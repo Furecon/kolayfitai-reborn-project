@@ -1,10 +1,10 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Zap, Search } from 'lucide-react'
+import { ArrowLeft, Zap, Search, Edit3 } from 'lucide-react'
 
 interface AnalysisTypeSelectionProps {
-  onSelectType: (type: 'quick' | 'detailed') => void
+  onSelectType: (type: 'quick' | 'detailed' | 'manual') => void
   onBack: () => void
   capturedImage: string
 }
@@ -81,6 +81,31 @@ export default function AnalysisTypeSelection({ onSelectType, onBack, capturedIm
               </ul>
               <Button className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white">
                 Detaylı Analiz Yap
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onSelectType('manual')}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-black">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Edit3 className="h-6 w-6 text-purple-600" />
+                </div>
+                Manuel Giriş
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">
+                Yemekleri kendiniz seçin ve porsiyon miktarlarını belirleyin. Tam kontrol sizde.
+              </p>
+              <ul className="text-sm text-gray-500 space-y-1">
+                <li>• Yemek arama ve seçimi</li>
+                <li>• Porsiyon kontrolü</li>
+                <li>• Hassas besin değerleri</li>
+                <li>• AI hatalarından bağımsız</li>
+              </ul>
+              <Button className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white">
+                Manuel Giriş Yap
               </Button>
             </CardContent>
           </Card>

@@ -12,6 +12,8 @@ import { useAuth } from './Auth/AuthProvider'
 import AnalysisTypeSelection from './FoodAnalysis/AnalysisTypeSelection'
 import DetailedAnalysisForm from './FoodAnalysis/DetailedAnalysisForm'
 import MealTypeSelection from './FoodAnalysis/MealTypeSelection'
+import ManualFoodEntry from './FoodAnalysis/ManualFoodEntry'
+import AIVerification from './FoodAnalysis/AIVerification'
 
 interface FoodItem {
   name: string
@@ -26,7 +28,7 @@ interface FoodItem {
 
 interface AnalysisResult {
   detectedFoods: any[]
-  analysisType: 'quick' | 'detailed'
+  analysisType: 'quick' | 'detailed' | 'manual'
   detailedData: any
   confidenceScores: {
     overall: number
@@ -49,7 +51,7 @@ interface FoodAnalysisProps {
   onBack?: () => void
 }
 
-type Screen = 'capture' | 'analysisType' | 'detailedForm' | 'analyzing' | 'results' | 'editResults' | 'mealType' | 'saving'
+type Screen = 'capture' | 'analysisType' | 'detailedForm' | 'manualEntry' | 'analyzing' | 'aiVerification' | 'results' | 'editResults' | 'mealType' | 'saving'
 
 export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps) {
   const { user } = useAuth()
@@ -57,9 +59,10 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [editingFoods, setEditingFoods] = useState<FoodItem[]>([])
-  const [selectedAnalysisType, setSelectedAnalysisType] = useState<'quick' | 'detailed'>('quick')
+  const [selectedAnalysisType, setSelectedAnalysisType] = useState<'quick' | 'detailed' | 'manual'>('quick')
   const [detailedFormData, setDetailedFormData] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [manualFoods, setManualFoods] = useState<FoodItem[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
@@ -79,6 +82,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
 
   const analyzeFood = async (imageBase64: string, analysisType: 'quick' | 'detailed', detailedData?: any) => {
     setCurrentScreen('analyzing')
+    setIsLoading(true)
     try {
       const { data, error } = await supabase.functions.invoke('analyze-food', {
         body: {
@@ -90,31 +94,33 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
 
       if (error) throw error
 
-      setAnalysisResult(data)
-      
-      if (data.requiresManualReview) {
-        setEditingFoods(data.nutritionalAnalysis.foodItems)
-        setCurrentScreen('editResults')
+      // Check if AI analysis failed and fallback to manual is suggested
+      if (data.fallbackToManual) {
         toast({
-          title: "Manuel İnceleme Gerekli",
-          description: "AI'nın güven skoru düşük. Lütfen sonuçları kontrol edin.",
+          title: "AI Analiz Hatası",
+          description: data.message || "AI analizi başarısız oldu. Manuel giriş yapabilirsiniz.",
           variant: "destructive"
         })
-      } else {
-        setCurrentScreen('results')
-        toast({
-          title: "Analiz Tamamlandı!",
-          description: `${data.nutritionalAnalysis.foodItems.length} yemek tespit edildi.`
-        })
+        setCurrentScreen('manualEntry')
+        setIsLoading(false)
+        return
       }
+
+      setAnalysisResult(data)
+      
+      // Always show verification screen first
+      setCurrentScreen('aiVerification')
+      setIsLoading(false)
+      
     } catch (error) {
       console.error('Analysis error:', error)
-      setCurrentScreen('results')
       toast({
         title: "Analiz Hatası",
-        description: "Yemek analizi sırasında hata oluştu. Lütfen tekrar deneyin.",
+        description: "Yemek analizi sırasında hata oluştu. Manuel giriş yapmayı deneyin.",
         variant: "destructive"
       })
+      setCurrentScreen('manualEntry')
+      setIsLoading(false)
     }
   }
 
@@ -147,10 +153,12 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
     fileInputRef.current?.click()
   }
 
-  const handleAnalysisTypeSelection = async (type: 'quick' | 'detailed') => {
+  const handleAnalysisTypeSelection = async (type: 'quick' | 'detailed' | 'manual') => {
     setSelectedAnalysisType(type)
     
-    if (type === 'quick') {
+    if (type === 'manual') {
+      setCurrentScreen('manualEntry')
+    } else if (type === 'quick') {
       const imageBase64 = capturedImage?.split(',')[1]
       if (imageBase64) {
         await analyzeFood(imageBase64, 'quick')
@@ -166,6 +174,54 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
     if (imageBase64) {
       await analyzeFood(imageBase64, 'detailed', formData)
     }
+  }
+
+  const handleManualFoodEntry = (foods: FoodItem[]) => {
+    setManualFoods(foods)
+    
+    // Create mock analysis result from manual foods
+    const totalCalories = foods.reduce((sum, food) => sum + food.calories, 0)
+    const totalProtein = foods.reduce((sum, food) => sum + food.protein, 0)
+    const totalCarbs = foods.reduce((sum, food) => sum + food.carbs, 0)
+    const totalFat = foods.reduce((sum, food) => sum + food.fat, 0)
+
+    const mockAnalysisResult: AnalysisResult = {
+      detectedFoods: [],
+      analysisType: 'manual' as any,
+      detailedData: null,
+      confidenceScores: {
+        overall: 1.0,
+        individual: foods.map(food => ({ name: food.name, confidence: 1.0 }))
+      },
+      nutritionalAnalysis: {
+        totalCalories: Math.round(totalCalories),
+        totalProtein: Math.round(totalProtein * 10) / 10,
+        totalCarbs: Math.round(totalCarbs * 10) / 10,
+        totalFat: Math.round(totalFat * 10) / 10,
+        foodItems: foods
+      },
+      aiSuggestions: 'Manuel giriş yapıldı.',
+      requiresManualReview: false,
+      processingTimeMs: 0
+    }
+
+    setAnalysisResult(mockAnalysisResult)
+    setCurrentScreen('results')
+  }
+
+  const handleAIVerificationConfirm = () => {
+    setCurrentScreen('results')
+  }
+
+  const handleAIVerificationEdit = () => {
+    if (analysisResult) {
+      setEditingFoods(analysisResult.nutritionalAnalysis.foodItems)
+      setCurrentScreen('editResults')
+    }
+  }
+
+  const handleAIVerificationManualEntry = () => {
+    setCurrentScreen('manualEntry')
   }
 
   const updateFoodItem = (index: number, field: keyof FoodItem, value: string | number) => {
@@ -341,7 +397,30 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       <DetailedAnalysisForm
         onSubmit={handleDetailedFormSubmit}
         onBack={() => setCurrentScreen('analysisType')}
-        loading={false}
+        loading={isLoading}
+      />
+    )
+  }
+
+  if (currentScreen === 'manualEntry') {
+    return (
+      <ManualFoodEntry
+        onSubmit={handleManualFoodEntry}
+        onBack={() => setCurrentScreen('analysisType')}
+        capturedImage={capturedImage}
+      />
+    )
+  }
+
+  if (currentScreen === 'aiVerification' && analysisResult) {
+    return (
+      <AIVerification
+        analysisResult={analysisResult}
+        capturedImage={capturedImage}
+        onConfirm={handleAIVerificationConfirm}
+        onEdit={handleAIVerificationEdit}
+        onManualEntry={handleAIVerificationManualEntry}
+        onBack={() => setCurrentScreen('analysisType')}
       />
     )
   }
