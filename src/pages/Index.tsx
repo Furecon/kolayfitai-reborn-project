@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import Dashboard from '@/components/Dashboard'
 import FoodAnalysis from '@/components/FoodAnalysis'
@@ -8,24 +9,24 @@ const Index = () => {
   const [activeView, setActiveView] = useState<'dashboard' | 'analysis'>('dashboard')
 
   return (
-    <div className="min-h-screen bg-gradient-bg">
+    <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-6 py-4">
-        <div className="container mx-auto flex items-center justify-between">
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="container mx-auto flex items-center justify-between max-w-6xl">
           <div className="flex items-center space-x-4">
             <img 
               src="/lovable-uploads/317535ce-569b-46f4-9335-cbf575700142.png" 
-              alt="KolayfitAI" 
+              alt="KolayfitAi" 
               className="h-10 w-10"
             />
-            <h1 className="text-2xl font-bold gradient-text">KolayfitAI</h1>
+            <h1 className="text-2xl font-bold text-gray-900">KolayfitAi</h1>
           </div>
           
           <div className="flex items-center space-x-2">
             <Button
               variant={activeView === 'dashboard' ? 'default' : 'ghost'}
               onClick={() => setActiveView('dashboard')}
-              className={activeView === 'dashboard' ? 'btn-gradient' : ''}
+              className={activeView === 'dashboard' ? 'bg-[#28C76F] hover:bg-[#239a5b] text-white' : ''}
             >
               <BarChart3 className="h-4 w-4 mr-2" />
               Dashboard
@@ -33,7 +34,7 @@ const Index = () => {
             <Button
               variant={activeView === 'analysis' ? 'default' : 'ghost'}
               onClick={() => setActiveView('analysis')}
-              className={activeView === 'analysis' ? 'btn-gradient' : ''}
+              className={activeView === 'analysis' ? 'bg-[#28C76F] hover:bg-[#239a5b] text-white' : ''}
             >
               <Camera className="h-4 w-4 mr-2" />
               AI Analiz
