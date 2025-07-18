@@ -5,11 +5,11 @@
 
 @layer base {
   :root {
-    /* KolayfitAI Color Palette */
-    --primary: 142 69 173; /* Purple-pink from logo */
+    /* KolayfitAI Color Palette - White/Gray/Green Theme */
+    --primary: 34 197 94; /* Green primary theme */
     --primary-foreground: 255 255 255;
-    --primary-dark: 128 55 159;
-    --primary-light: 156 83 187;
+    --primary-dark: 22 163 74;
+    --primary-light: 74 222 128;
     
     --secondary: 76 175 80; /* Green from logo */
     --secondary-foreground: 255 255 255;
@@ -22,7 +22,7 @@
     --accent-light: 77 208 225;
     
     --success: 76 175 80;
-    --warning: 255 193 7;
+    --warning: 245 158 11;
     --error: 244 67 54;
     
     /* Neutral Colors */
@@ -36,7 +36,7 @@
     --muted-foreground: 100 116 139;
     --border: 226 232 240;
     --input: 226 232 240;
-    --ring: 142 69 173;
+    --ring: 34 197 94;
     
     --destructive: 244 67 54;
     --destructive-foreground: 255 255 255;
@@ -46,12 +46,12 @@
     /* Sidebar */
     --sidebar-background: 255 255 255;
     --sidebar-foreground: 30 41 59;
-    --sidebar-primary: 142 69 173;
+    --sidebar-primary: 34 197 94;
     --sidebar-primary-foreground: 255 255 255;
     --sidebar-accent: 241 245 249;
     --sidebar-accent-foreground: 30 41 59;
     --sidebar-border: 226 232 240;
-    --sidebar-ring: 142 69 173;
+    --sidebar-ring: 34 197 94;
   }
 
   .dark {
@@ -65,16 +65,16 @@
     --muted-foreground: 148 163 184;
     --border: 51 65 85;
     --input: 51 65 85;
-    --ring: 156 83 187;
+    --ring: 74 222 128;
     
     --sidebar-background: 30 41 59;
     --sidebar-foreground: 248 250 252;
-    --sidebar-primary: 156 83 187;
+    --sidebar-primary: 74 222 128;
     --sidebar-primary-foreground: 255 255 255;
     --sidebar-accent: 51 65 85;
     --sidebar-accent-foreground: 248 250 252;
     --sidebar-border: 51 65 85;
-    --sidebar-ring: 156 83 187;
+    --sidebar-ring: 74 222 128;
   }
 }
 
