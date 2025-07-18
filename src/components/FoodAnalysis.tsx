@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, Camera, Upload, Edit3, Check, X } from 'lucide-react'
+import { Loader2, Camera, Upload, Edit3, Check, X, Sparkles } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
 
@@ -172,12 +172,18 @@ export default function FoodAnalysis() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <Card>
+    <div className="min-h-screen bg-gradient-bg">
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold gradient-text mb-2">AI Yemek Analizi</h2>
+          <p className="text-gray-600">Fotoğrafını çek, besin değerlerini öğren</p>
+        </div>
+
+        <Card className="card-glass max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Camera className="h-5 w-5" />
-            AI Yemek Analizi
+          <CardTitle className="flex items-center gap-2 text-gray-900">
+            <Sparkles className="h-5 w-5 text-accent" />
+            AI Destekli Analiz
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -200,7 +206,7 @@ export default function FoodAnalysis() {
             <Button
               onClick={handleCameraCapture}
               disabled={isAnalyzing}
-              className="flex-1"
+              className="flex-1 btn-gradient"
             >
               <Camera className="mr-2 h-4 w-4" />
               Fotoğraf Çek / Yükle
@@ -235,10 +241,10 @@ export default function FoodAnalysis() {
         </CardContent>
       </Card>
 
-      {analysisResult && (
-        <Card>
+            {analysisResult && (
+        <Card className="card-glass max-w-4xl mx-auto">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className="flex items-center justify-between text-gray-900">
               <span>Analiz Sonuçları</span>
               {analysisResult.requiresManualReview && (
                 <Badge variant="destructive">Manuel İnceleme Gerekli</Badge>
@@ -370,51 +376,53 @@ export default function FoodAnalysis() {
             </div>
 
             {/* Total Nutrition */}
-            <div className="mt-6 p-4 bg-primary/10 rounded-lg">
-              <h3 className="font-semibold mb-3">Toplam Besin Değerleri</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="mt-6 p-6 bg-gradient-primary rounded-2xl text-white">
+              <h3 className="font-semibold mb-4 text-center text-lg">Toplam Besin Değerleri</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-primary">
+                  <p className="text-3xl font-bold mb-1">
                     {analysisResult.nutritionalAnalysis.totalCalories}
                   </p>
-                  <p className="text-sm text-muted-foreground">Kalori</p>
+                  <p className="text-white/80 text-sm">Kalori</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-3xl font-bold mb-1">
                     {analysisResult.nutritionalAnalysis.totalProtein}g
                   </p>
-                  <p className="text-sm text-muted-foreground">Protein</p>
+                  <p className="text-white/80 text-sm">Protein</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-3xl font-bold mb-1">
                     {analysisResult.nutritionalAnalysis.totalCarbs}g
                   </p>
-                  <p className="text-sm text-muted-foreground">Karbonhidrat</p>
+                  <p className="text-white/80 text-sm">Karbonhidrat</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-orange-600">
+                  <p className="text-3xl font-bold mb-1">
                     {analysisResult.nutritionalAnalysis.totalFat}g
                   </p>
-                  <p className="text-sm text-muted-foreground">Yağ</p>
+                  <p className="text-white/80 text-sm">Yağ</p>
                 </div>
               </div>
             </div>
 
             {/* AI Suggestions */}
             {analysisResult.aiSuggestions && (
-              <Alert>
-                <AlertDescription>
+              <Alert className="bg-accent/10 border-accent/20">
+                <Sparkles className="h-4 w-4 text-accent" />
+                <AlertDescription className="text-gray-700">
                   <strong>AI Önerileri:</strong> {analysisResult.aiSuggestions}
                 </AlertDescription>
               </Alert>
             )}
 
-            <p className="text-xs text-muted-foreground text-center">
+            <p className="text-xs text-gray-500 text-center">
               Analiz süresi: {analysisResult.processingTimeMs}ms
             </p>
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   )
 }
