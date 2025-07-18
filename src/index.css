@@ -6,40 +6,40 @@
 
 @layer base {
   :root {
-    /* KolayfitAI Color Palette - White/Gray/Green Theme */
-    --primary: 34 197 94; /* Green primary theme */
+    /* KolayfitAI Color Palette - White/Gray/Black Theme */
+    --primary: 71 85 105; /* Gray primary theme */
     --primary-foreground: 255 255 255;
-    --primary-dark: 22 163 74;
-    --primary-light: 74 222 128;
+    --primary-dark: 51 65 85;
+    --primary-light: 100 116 139;
     
-    --secondary: 76 175 80; /* Green from logo */
+    --secondary: 71 85 105; /* Gray from logo */
     --secondary-foreground: 255 255 255;
-    --secondary-dark: 67 160 71;
-    --secondary-light: 129 199 132;
+    --secondary-dark: 51 65 85;
+    --secondary-light: 100 116 139;
     
-    --accent: 148 163 184; /* Gray accent instead of teal */
-    --accent-foreground: 255 255 255;
+    --accent: 148 163 184; /* Gray accent */
+    --accent-foreground: 30 41 59;
     --accent-dark: 100 116 139;
     --accent-light: 203 213 225;
     
-    --success: 76 175 80;
-    --warning: 245 158 11;
-    --error: 244 67 54;
+    --success: 71 85 105;
+    --warning: 71 85 105;
+    --error: 71 85 105;
     
     /* Neutral Colors */
-    --background: 248 250 252;
+    --background: 255 255 255;
     --foreground: 30 41 59;
     --card: 255 255 255;
     --card-foreground: 30 41 59;
-    --popover: 0 0% 100%; /* White background */
-    --popover-foreground: 0 0% 9%; /* Dark text */
-    --muted: 241 245 249;
+    --popover: 255 255 255; /* White background */
+    --popover-foreground: 30 41 59; /* Dark text */
+    --muted: 248 250 252;
     --muted-foreground: 100 116 139;
     --border: 226 232 240;
     --input: 226 232 240;
-    --ring: 34 197 94;
+    --ring: 71 85 105;
     
-    --destructive: 244 67 54;
+    --destructive: 71 85 105;
     --destructive-foreground: 255 255 255;
     
     --radius: 0.75rem;
@@ -47,40 +47,40 @@
     /* Sidebar */
     --sidebar-background: 255 255 255;
     --sidebar-foreground: 30 41 59;
-    --sidebar-primary: 34 197 94;
+    --sidebar-primary: 71 85 105;
     --sidebar-primary-foreground: 255 255 255;
-    --sidebar-accent: 241 245 249;
+    --sidebar-accent: 248 250 252;
     --sidebar-accent-foreground: 30 41 59;
     --sidebar-border: 226 232 240;
-    --sidebar-ring: 34 197 94;
+    --sidebar-ring: 71 85 105;
   }
 
   .dark {
-    --background: 15 23 42;
+    --background: 30 41 59;
     --foreground: 248 250 252;
-    --card: 30 41 59;
+    --card: 51 65 85;
     --card-foreground: 248 250 252;
-    --popover: 0 0% 100%; /* White background even in dark mode */
-    --popover-foreground: 0 0% 9%; /* Dark text */
-    --muted: 51 65 85;
+    --popover: 255 255 255; /* White background even in dark mode */
+    --popover-foreground: 30 41 59; /* Dark text */
+    --muted: 71 85 105;
     --muted-foreground: 148 163 184;
-    --border: 51 65 85;
-    --input: 51 65 85;
-    --ring: 74 222 128;
+    --border: 100 116 139;
+    --input: 100 116 139;
+    --ring: 148 163 184;
     
-    --accent: 71 85 105; /* Dark gray accent */
+    --accent: 100 116 139; /* Dark gray accent */
     --accent-foreground: 248 250 252;
-    --accent-dark: 51 65 85;
-    --accent-light: 100 116 139;
+    --accent-dark: 71 85 105;
+    --accent-light: 148 163 184;
     
-    --sidebar-background: 30 41 59;
+    --sidebar-background: 51 65 85;
     --sidebar-foreground: 248 250 252;
-    --sidebar-primary: 74 222 128;
-    --sidebar-primary-foreground: 255 255 255;
-    --sidebar-accent: 51 65 85;
+    --sidebar-primary: 148 163 184;
+    --sidebar-primary-foreground: 30 41 59;
+    --sidebar-accent: 71 85 105;
     --sidebar-accent-foreground: 248 250 252;
-    --sidebar-border: 51 65 85;
-    --sidebar-ring: 74 222 128;
+    --sidebar-border: 100 116 139;
+    --sidebar-ring: 148 163 184;
   }
 }
 
@@ -90,7 +90,7 @@
   }
   body {
     @apply bg-background text-foreground font-inter;
-    background: linear-gradient(180deg, hsl(248 250 252) 0%, hsl(241 245 249) 100%);
+    background: linear-gradient(180deg, hsl(255 255 255) 0%, hsl(248 250 252) 100%);
     min-height: 100vh;
   }
 }
@@ -101,11 +101,11 @@
   }
   
   .gradient-text {
-    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-gray-600 to-gray-800 bg-clip-text text-transparent;
   }
   
   .btn-gradient {
-    @apply bg-gradient-to-r from-primary to-secondary text-white shadow-lg hover:shadow-xl transition-all duration-300;
+    @apply bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-lg hover:shadow-xl transition-all duration-300;
   }
   
   .progress-circle {
