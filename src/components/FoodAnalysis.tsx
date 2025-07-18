@@ -59,6 +59,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   const [editingFoods, setEditingFoods] = useState<FoodItem[]>([])
   const [selectedAnalysisType, setSelectedAnalysisType] = useState<'quick' | 'detailed'>('quick')
   const [detailedFormData, setDetailedFormData] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
@@ -204,6 +205,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
     if (!analysisResult || !user) return
 
     setCurrentScreen('saving')
+    setIsLoading(true)
     try {
       // Upload image to storage if exists
       let photoUrl = null
@@ -279,6 +281,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       setCurrentScreen('capture')
       setEditingFoods([])
       setDetailedFormData(null)
+      setIsLoading(false)
 
       if (onMealAdded) {
         onMealAdded()
@@ -287,6 +290,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
     } catch (error) {
       console.error('Save meal error:', error)
       setCurrentScreen('results')
+      setIsLoading(false)
       toast({
         title: "Kayıt Hatası",
         description: "Öğün kaydedilirken hata oluştu.",
@@ -318,6 +322,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
     setCapturedImage(null)
     setEditingFoods([])
     setDetailedFormData(null)
+    setIsLoading(false)
   }
 
   // Screen routing
@@ -346,7 +351,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       <MealTypeSelection
         onSubmit={handleMealTypeSave}
         onBack={() => setCurrentScreen('results')}
-        loading={currentScreen === 'saving'}
+        loading={isLoading}
       />
     )
   }
