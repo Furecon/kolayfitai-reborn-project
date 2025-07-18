@@ -14,7 +14,242 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_analysis: {
+        Row: {
+          ai_suggestions: string | null
+          confidence_scores: Json
+          confidence_threshold: number | null
+          created_at: string
+          detected_foods: Json
+          final_analysis: Json | null
+          id: string
+          manual_corrections: Json | null
+          meal_log_id: string
+          nutritional_analysis: Json
+          processing_time_ms: number | null
+          requires_manual_review: boolean | null
+        }
+        Insert: {
+          ai_suggestions?: string | null
+          confidence_scores?: Json
+          confidence_threshold?: number | null
+          created_at?: string
+          detected_foods?: Json
+          final_analysis?: Json | null
+          id?: string
+          manual_corrections?: Json | null
+          meal_log_id: string
+          nutritional_analysis?: Json
+          processing_time_ms?: number | null
+          requires_manual_review?: boolean | null
+        }
+        Update: {
+          ai_suggestions?: string | null
+          confidence_scores?: Json
+          confidence_threshold?: number | null
+          created_at?: string
+          detected_foods?: Json
+          final_analysis?: Json | null
+          id?: string
+          manual_corrections?: Json | null
+          meal_log_id?: string
+          nutritional_analysis?: Json
+          processing_time_ms?: number | null
+          requires_manual_review?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_analysis_meal_log_id_fkey"
+            columns: ["meal_log_id"]
+            isOneToOne: false
+            referencedRelation: "meal_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      foods: {
+        Row: {
+          calories_per_100g: number
+          carbs_per_100g: number
+          category: string | null
+          created_at: string
+          fat_per_100g: number
+          fiber_per_100g: number
+          id: string
+          is_turkish_cuisine: boolean | null
+          name: string
+          name_en: string | null
+          protein_per_100g: number
+        }
+        Insert: {
+          calories_per_100g: number
+          carbs_per_100g?: number
+          category?: string | null
+          created_at?: string
+          fat_per_100g?: number
+          fiber_per_100g?: number
+          id?: string
+          is_turkish_cuisine?: boolean | null
+          name: string
+          name_en?: string | null
+          protein_per_100g?: number
+        }
+        Update: {
+          calories_per_100g?: number
+          carbs_per_100g?: number
+          category?: string | null
+          created_at?: string
+          fat_per_100g?: number
+          fiber_per_100g?: number
+          id?: string
+          is_turkish_cuisine?: boolean | null
+          name?: string
+          name_en?: string | null
+          protein_per_100g?: number
+        }
+        Relationships: []
+      }
+      meal_logs: {
+        Row: {
+          created_at: string
+          date: string
+          food_items: Json
+          id: string
+          meal_type: string
+          notes: string | null
+          photo_url: string | null
+          total_calories: number
+          total_carbs: number
+          total_fat: number
+          total_protein: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          food_items?: Json
+          id?: string
+          meal_type: string
+          notes?: string | null
+          photo_url?: string | null
+          total_calories?: number
+          total_carbs?: number
+          total_fat?: number
+          total_protein?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          food_items?: Json
+          id?: string
+          meal_type?: string
+          notes?: string | null
+          photo_url?: string | null
+          total_calories?: number
+          total_carbs?: number
+          total_fat?: number
+          total_protein?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          activity_level: string | null
+          age: number | null
+          created_at: string
+          daily_calorie_goal: number | null
+          gender: string | null
+          height: number | null
+          id: string
+          name: string | null
+          subscription_status: string | null
+          trial_end_date: string | null
+          updated_at: string
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          activity_level?: string | null
+          age?: number | null
+          created_at?: string
+          daily_calorie_goal?: number | null
+          gender?: string | null
+          height?: number | null
+          id?: string
+          name?: string | null
+          subscription_status?: string | null
+          trial_end_date?: string | null
+          updated_at?: string
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          activity_level?: string | null
+          age?: number | null
+          created_at?: string
+          daily_calorie_goal?: number | null
+          gender?: string | null
+          height?: number | null
+          id?: string
+          name?: string | null
+          subscription_status?: string | null
+          trial_end_date?: string | null
+          updated_at?: string
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          auto_renew: boolean | null
+          created_at: string
+          currency: string | null
+          end_date: string | null
+          id: string
+          order_id: string | null
+          plan_type: string
+          price_amount: number | null
+          purchase_token: string | null
+          start_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_renew?: boolean | null
+          created_at?: string
+          currency?: string | null
+          end_date?: string | null
+          id?: string
+          order_id?: string | null
+          plan_type: string
+          price_amount?: number | null
+          purchase_token?: string | null
+          start_date?: string
+          status: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_renew?: boolean | null
+          created_at?: string
+          currency?: string | null
+          end_date?: string | null
+          id?: string
+          order_id?: string | null
+          plan_type?: string
+          price_amount?: number | null
+          purchase_token?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
