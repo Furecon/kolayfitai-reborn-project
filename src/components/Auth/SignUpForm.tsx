@@ -5,27 +5,26 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from './AuthProvider'
-import { OnboardingFlow, OnboardingData } from '../Onboarding/OnboardingFlow'
+import { Eye, EyeOff } from 'lucide-react'
 
 interface SignUpFormProps {
   onToggleMode: () => void
 }
 
 export function SignUpForm({ onToggleMode }: SignUpFormProps) {
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [showOnboarding, setShowOnboarding] = useState(false)
   const { signUp } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-
+    
     try {
       await signUp(email, password, fullName)
-      setShowOnboarding(true)
     } catch (error) {
       console.error('Signup error:', error)
     } finally {
@@ -33,21 +32,11 @@ export function SignUpForm({ onToggleMode }: SignUpFormProps) {
     }
   }
 
-  const handleOnboardingComplete = () => {
-    // The completion screen already handles saving to Supabase
-    // Just close the onboarding flow - user will be redirected to dashboard automatically
-    setShowOnboarding(false)
-  }
-
-  if (showOnboarding) {
-    return <OnboardingFlow onComplete={handleOnboardingComplete} />
-  }
-
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center text-black">Hesap Oluştur</CardTitle>
-        <p className="text-center text-gray-600">KolayfitAI'ye hoş geldin!</p>
+    <Card className="w-full max-w-md">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl font-bold text-black">KolayfitAI</CardTitle>
+        <p className="text-gray-600">Yeni hesap oluşturun</p>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -56,7 +45,6 @@ export function SignUpForm({ onToggleMode }: SignUpFormProps) {
             <Input
               id="fullName"
               type="text"
-              placeholder="Ad Soyad"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
@@ -69,48 +57,60 @@ export function SignUpForm({ onToggleMode }: SignUpFormProps) {
             <Input
               id="email"
               type="email"
-              placeholder="ornek@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               className="border-gray-300"
             />
           </div>
-
+          
           <div className="space-y-2">
             <Label htmlFor="password">Şifre</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Şifre (en az 6 karakter)"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="border-gray-300"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="border-gray-300 pr-10"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-gray-400" />
+                ) : (
+                  <Eye className="h-4 w-4 text-gray-400" />
+                )}
+              </Button>
+            </div>
           </div>
 
-          <Button
-            type="submit"
+          <Button 
+            type="submit" 
             className="w-full bg-green-500 hover:bg-green-600 text-white"
             disabled={loading}
           >
-            {loading ? 'Hesap Oluşturuluyor...' : 'Hesap Oluştur'}
+            {loading ? 'Kayıt olunuyor...' : 'Kayıt Ol'}
           </Button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-gray-600">
-            Zaten hesabın var mı?{' '}
-            <button
+          
+          <div className="text-center">
+            <Button
+              type="button"
+              variant="link"
               onClick={onToggleMode}
-              className="text-green-500 hover:text-green-600 font-medium"
+              className="text-gray-600"
             >
-              Giriş Yap
-            </button>
-          </p>
-        </div>
+              Zaten hesabınız var mı? Giriş yapın
+            </Button>
+          </div>
+        </form>
       </CardContent>
     </Card>
   )

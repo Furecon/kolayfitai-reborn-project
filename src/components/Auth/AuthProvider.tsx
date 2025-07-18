@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/components/ui/use-toast'
 
 interface AuthContextType {
   user: User | null
@@ -20,19 +20,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast()
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setUser(session?.user ?? null)
         setLoading(false)
       }
     )
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
 
     return () => subscription.unsubscribe()
   }, [])
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -78,22 +78,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error
     }
 
-    // Since email confirmation is disabled, user should be automatically logged in
-    if (data.user) {
-      // Update the user's profile with the full name
-      await supabase
-        .from('profiles')
-        .upsert({
-          user_id: data.user.id,
-          name: fullName,
-          updated_at: new Date().toISOString()
-        })
-
-      toast({
-        title: "Başarılı!",
-        description: "Hesabınız oluşturuldu. Onboarding'e yönlendiriliyorsunuz."
-      })
-    }
+    toast({
+      title: "Başarılı!",
+      description: "Hesabınız oluşturuldu. Lütfen e-postanızı kontrol edin."
+    })
   }
 
   const signOut = async () => {
