@@ -1,8 +1,8 @@
-
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Target, Camera, User, Settings } from 'lucide-react'
+import { Target, Camera, Settings } from 'lucide-react'
 import CalorieCalculator from './CalorieCalculator'
+import ProfileDropdown from './ProfileDropdown'
 
 interface DashboardStats {
   dailyCalories: number
@@ -85,9 +85,10 @@ export default function Dashboard() {
 
               {/* Profile and Settings Icons */}
               <div className="flex items-center space-x-3">
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <User className="h-4 w-4" />
-                </Button>
+                <ProfileDropdown 
+                  userName="Furkan Aydemir" 
+                  userEmail="furkan@example.com" 
+                />
                 <Button variant="ghost" size="icon" className="h-8 w-8">
                   <Settings className="h-4 w-4" />
                 </Button>
