@@ -1,7 +1,8 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Flame, Target, Camera, User, Settings } from 'lucide-react'
+import { Target, Camera, User, Settings } from 'lucide-react'
+import CalorieCalculator from './CalorieCalculator'
 
 interface DashboardStats {
   dailyCalories: number
@@ -29,6 +30,15 @@ export default function Dashboard() {
     streak: 7,
     weight: 68.5
   })
+
+  // User profile for calorie calculation
+  const userProfile = {
+    age: 32,
+    weight: 86, // kg
+    height: 183, // cm
+    gender: 'male' as const,
+    activityLevel: 'moderate' as const // Orta aktif
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -100,22 +110,12 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column - Macro Stats */}
             <div className="space-y-4">
-              {/* Kalori Card - Green */}
-              <div className="bg-white rounded-xl p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#28C76F] rounded-lg flex items-center justify-center">
-                      <Flame className="h-5 w-5 text-white" />
-                    </div>
-                    <span className="text-gray-600">Bugünkü Kalori</span>
-                  </div>
-                  <div className="text-sm text-gray-500">Günlük alım</div>
-                </div>
-                <div className="text-3xl font-bold text-gray-900 mb-1">
-                  {stats.dailyCalories}
-                </div>
-                <div className="text-sm text-gray-500">/ {stats.calorieGoal} hedef</div>
-              </div>
+              {/* Calorie Calculator with Mifflin-St Jeor formula */}
+              <CalorieCalculator 
+                profile={userProfile}
+                currentIntake={stats.dailyCalories}
+                goalCalories={stats.calorieGoal}
+              />
 
               {/* Macro Cards Grid */}
               <div className="grid grid-cols-3 gap-4">
