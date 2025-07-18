@@ -95,214 +95,157 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-bg">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto p-4 max-w-md space-y-6">
+        {/* Header */}
+        <div className="text-center pt-6">
+          <div className="flex items-center justify-center mb-4">
             <img 
               src="/lovable-uploads/317535ce-569b-46f4-9335-cbf575700142.png" 
               alt="KolayfitAI" 
-              className="h-8 w-8"
+              className="h-8 w-8 mr-2"
             />
-            <h1 className="text-2xl font-bold gradient-text">KolayfitAI</h1>
+            <h1 className="text-2xl font-bold text-gray-900">KolayfitAI</h1>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="icon">
-              <Settings className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
-            </Button>
+          <h2 className="text-lg text-gray-700">Hoş geldin, Furkan Aydemir!</h2>
+        </div>
+
+        {/* Main Photo Button */}
+        <Button 
+          className="w-full h-14 bg-[#28C76F] hover:bg-[#239a5b] text-white font-medium rounded-xl flex items-center justify-center gap-3"
+        >
+          <Camera className="h-5 w-5" />
+          Fotoğraf Çek
+        </Button>
+
+        {/* Profile Info */}
+        <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className="grid grid-cols-4 gap-3">
+            <div className="text-center">
+              <div className="text-xs text-gray-500 mb-1">Yaş</div>
+              <div className="text-lg font-semibold text-gray-900">32</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-500 mb-1">Boy</div>
+              <div className="text-lg font-semibold text-gray-900">183 cm</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-500 mb-1">Kilo</div>
+              <div className="text-lg font-semibold text-gray-900">86 kg</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-500 mb-1">Hedef</div>
+              <div className="text-xs font-semibold text-gray-900">Kilo vermek</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto p-6 space-y-6">
-        {/* User Profile Info */}
-        <div className="mb-6">
+        {/* Stats Cards */}
+        <div className="space-y-4">
+          {/* Kalori Card - Green */}
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-[#28C76F] rounded-lg flex items-center justify-center">
+                  <Flame className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-sm text-gray-600">Bugünkü Kalori</span>
+              </div>
+              <div className="text-sm text-gray-500">Günlük alım</div>
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">
+              {stats.dailyCalories}
+            </div>
+            <div className="text-xs text-gray-500">/ {stats.calorieGoal} hedef</div>
+          </div>
+
+          {/* Macro Cards Grid */}
+          <div className="grid grid-cols-3 gap-3">
+            {/* Protein - Blue */}
+            <div className="bg-white rounded-xl p-3 shadow-sm text-center">
+              <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <Target className="h-4 w-4 text-white" />
+              </div>
+              <div className="text-sm text-gray-600 mb-1">Protein</div>
+              <div className="text-lg font-bold text-gray-900">{stats.protein}g</div>
+              <div className="text-xs text-gray-500">Günlük alım</div>
+              <div className="text-xs text-gray-400">Hedef: {stats.proteinGoal}g</div>
+            </div>
+
+            {/* Karbonhidrat - Orange */}
+            <div className="bg-white rounded-xl p-3 shadow-sm text-center">
+              <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <Target className="h-4 w-4 text-white" />
+              </div>
+              <div className="text-sm text-gray-600 mb-1">Karbonhidrat</div>
+              <div className="text-lg font-bold text-gray-900">{stats.carbs}g</div>
+              <div className="text-xs text-gray-500">Günlük alım</div>
+              <div className="text-xs text-gray-400">Hedef: {stats.carbsGoal}g</div>
+            </div>
+
+            {/* Yağ - Purple */}
+            <div className="bg-white rounded-xl p-3 shadow-sm text-center">
+              <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <Target className="h-4 w-4 text-white" />
+              </div>
+              <div className="text-sm text-gray-600 mb-1">Yağ</div>
+              <div className="text-lg font-bold text-gray-900">{stats.fat}g</div>
+              <div className="text-xs text-gray-500">Günlük alım</div>
+              <div className="text-xs text-gray-400">Hedef: {stats.fatGoal}g</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Daily Meals */}
+        <div className="bg-white rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Hoş geldin, Furkan Aydemir!</h2>
-            <Button className="btn-gradient">
-              <Camera className="h-4 w-4 mr-2" />
-              Fotoğraf Çek
+            <h3 className="text-lg font-semibold text-gray-900">Bugünkü Öğünler</h3>
+            <Button size="sm" className="w-8 h-8 bg-[#28C76F] hover:bg-[#239a5b] text-white rounded-lg p-0">
+              +
             </Button>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 text-center">
-              <div className="text-sm text-gray-600">Yaş</div>
-              <div className="text-lg font-semibold text-gray-900">32</div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-[#28C76F] rounded-lg flex items-center justify-center">
+                  <Camera className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-900">Kahvaltı</div>
+                  <div className="text-sm text-gray-500">08:30</div>
+                </div>
+              </div>
+              <div className="font-semibold text-gray-900">350 kcal</div>
             </div>
-            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 text-center">
-              <div className="text-sm text-gray-600">Boy</div>
-              <div className="text-lg font-semibold text-gray-900">183 cm</div>
+
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-[#28C76F] rounded-lg flex items-center justify-center">
+                  <Camera className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-900">Öğle Yemeği</div>
+                  <div className="text-sm text-gray-500">13:15</div>
+                </div>
+              </div>
+              <div className="font-semibold text-gray-900">650 kcal</div>
             </div>
-            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 text-center">
-              <div className="text-sm text-gray-600">Kilo</div>
-              <div className="text-lg font-semibold text-gray-900">86 kg</div>
-            </div>
-            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 text-center">
-              <div className="text-sm text-gray-600">Hedef</div>
-              <div className="text-lg font-semibold text-gray-900">Kilo vermek</div>
+
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-[#28C76F] rounded-lg flex items-center justify-center">
+                  <Camera className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-900">Atıştırmalık</div>
+                  <div className="text-sm text-gray-500">16:45</div>
+                </div>
+              </div>
+              <div className="font-semibold text-gray-900">250 kcal</div>
             </div>
           </div>
         </div>
-
-        {/* Main Stats Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Daily Calories Card */}
-          <Card className="card-glass col-span-1 lg:col-span-2">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-gray-900">
-                <Flame className="h-5 w-5 text-orange-500" />
-                Günlük Kalori Hedefi
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-center">
-                  <div className="text-4xl font-bold gradient-text mb-2">
-                    {stats.dailyCalories}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {stats.calorieGoal - stats.dailyCalories} kalori kaldı
-                  </div>
-                </div>
-                <Progress 
-                  value={caloriePercentage} 
-                  className="h-3"
-                />
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>0</span>
-                  <span>{stats.calorieGoal} kcal</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Profile Card */}
-          <Card className="card-glass">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-gray-900">
-                <User className="h-5 w-5 text-secondary" />
-                Profil Bilgilerin
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Mevcut Kilo</span>
-                <span className="font-semibold">{stats.weight} kg</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Süreklilik</span>
-                <Badge className="bg-gradient-primary text-white">
-                  <Award className="h-3 w-3 mr-1" />
-                  {stats.streak} gün
-                </Badge>
-              </div>
-              <Button className="w-full btn-gradient">
-                Kişiselleştirilmiş Öneriler
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Macro Nutrients */}
-        <Card className="card-glass">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-gray-900">
-              <Target className="h-5 w-5 text-accent" />
-              Makro Besin Takibi
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center">
-              <ProgressCircle
-                percentage={proteinPercentage}
-                label="Protein"
-                current={stats.protein}
-                goal={stats.proteinGoal}
-                unit="g"
-                color="#10B981"
-              />
-              <ProgressCircle
-                percentage={carbsPercentage}
-                label="Karbonhidrat"
-                current={stats.carbs}
-                goal={stats.carbsGoal}
-                unit="g"
-                color="#3B82F6"
-              />
-              <ProgressCircle
-                percentage={fatPercentage}
-                label="Yağ"
-                current={stats.fat}
-                goal={stats.fatGoal}
-                unit="g"
-                color="#F59E0B"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Daily Meals */}
-        <Card className="card-glass">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-gray-900">Bugünkü Öğünler</CardTitle>
-              <Button size="sm" className="btn-gradient">
-                + Ekle
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-white/40 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Camera className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">Kahvaltı</h4>
-                  <p className="text-sm text-gray-600">08:30</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="font-semibold text-gray-900">350 kcal</div>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-white/40 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Camera className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">Öğle Yemeği</h4>
-                  <p className="text-sm text-gray-600">13:15</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="font-semibold text-gray-900">650 kcal</div>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-white/40 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Camera className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">Atıştırmalık</h4>
-                  <p className="text-sm text-gray-600">16:45</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="font-semibold text-gray-900">250 kcal</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )
