@@ -1,86 +1,96 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
 @layer base {
   :root {
-    /* KolayfitAI Color Palette - White/Gray/Black Theme with Green Accent */
-    --primary: 40 199 111; /* Green primary theme #28C76F */
-    --primary-foreground: 255 255 255;
-    --primary-dark: 34 197 94;
-    --primary-light: 74 222 128;
-    
-    --secondary: 71 85 105; /* Gray from logo */
-    --secondary-foreground: 255 255 255;
-    --secondary-dark: 51 65 85;
-    --secondary-light: 100 116 139;
-    
-    --accent: 40 199 111; /* Green accent */
-    --accent-foreground: 255 255 255;
-    --accent-dark: 34 197 94;
-    --accent-light: 74 222 128;
-    
-    --success: 40 199 111; /* Green */
-    --warning: 156 163 175; /* Gray instead of amber */
-    --error: 239 68 68; /* Red for errors */
-    
-    /* Neutral Colors */
-    --background: 255 255 255; /* White background */
-    --foreground: 0 0 0; /* Black text */
-    --card: 255 255 255; /* White cards */
-    --card-foreground: 0 0 0; /* Black text on cards */
-    --popover: 255 255 255; /* White dropdown background */
-    --popover-foreground: 0 0 0; /* Black text in dropdowns */
-    --muted: 245 245 245; /* Light gray for hover states #F5F5F5 */
-    --muted-foreground: 51 51 51; /* Dark gray text #333333 */
-    --border: 224 224 224; /* Gray borders #E0E0E0 */
-    --input: 224 224 224; /* Gray input borders */
-    --ring: 40 199 111; /* Green focus rings */
-    
-    --destructive: 239 68 68; /* Red for destructive actions */
-    --destructive-foreground: 255 255 255;
-    
-    --radius: 0.75rem;
-    
-    /* Sidebar */
-    --sidebar-background: 255 255 255;
-    --sidebar-foreground: 0 0 0;
-    --sidebar-primary: 40 199 111;
-    --sidebar-primary-foreground: 255 255 255;
-    --sidebar-accent: 245 245 245;
-    --sidebar-accent-foreground: 0 0 0;
-    --sidebar-border: 224 224 224;
-    --sidebar-ring: 40 199 111;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 30 41 59;
-    --foreground: 248 250 252;
-    --card: 51 65 85;
-    --card-foreground: 248 250 252;
-    --popover: 255 255 255; /* Keep white background even in dark mode */
-    --popover-foreground: 0 0 0; /* Keep black text in dropdowns */
-    --muted: 245 245 245; /* Keep light gray hover */
-    --muted-foreground: 51 51 51; /* Keep dark gray text */
-    --border: 224 224 224; /* Keep gray borders */
-    --input: 100 116 139;
-    --ring: 40 199 111; /* Green focus rings */
-    
-    --accent: 40 199 111; /* Green accent */
-    --accent-foreground: 255 255 255;
-    --accent-dark: 34 197 94;
-    --accent-light: 74 222 128;
-    
-    --sidebar-background: 51 65 85;
-    --sidebar-foreground: 248 250 252;
-    --sidebar-primary: 40 199 111;
-    --sidebar-primary-foreground: 255 255 255;
-    --sidebar-accent: 71 85 105;
-    --sidebar-accent-foreground: 248 250 252;
-    --sidebar-border: 100 116 139;
-    --sidebar-ring: 40 199 111;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -88,31 +98,8 @@
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground font-inter;
-    background: linear-gradient(180deg, hsl(255 255 255) 0%, hsl(248 250 252) 100%);
-    min-height: 100vh;
-  }
-}
 
-@layer components {
-  .card-glass {
-    @apply bg-white/80 backdrop-blur-lg border border-white/20 shadow-lg;
-  }
-  
-  .gradient-text {
-    @apply bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent;
-  }
-  
-  .btn-gradient {
-    @apply bg-gradient-to-r from-green-600 to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-300;
-  }
-  
-  .progress-circle {
-    @apply relative inline-flex h-24 w-24 items-center justify-center rounded-full;
-  }
-  
-  .font-inter {
-    font-family: 'Inter', sans-serif;
+  body {
+    @apply bg-background text-foreground;
   }
 }
