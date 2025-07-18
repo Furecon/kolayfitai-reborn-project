@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
@@ -16,10 +17,10 @@
     --secondary-dark: 67 160 71;
     --secondary-light: 129 199 132;
     
-    --accent: 20 180 162; /* Teal from logo */
+    --accent: 148 163 184; /* Gray accent instead of teal */
     --accent-foreground: 255 255 255;
-    --accent-dark: 0 150 136;
-    --accent-light: 77 208 225;
+    --accent-dark: 100 116 139;
+    --accent-light: 203 213 225;
     
     --success: 76 175 80;
     --warning: 245 158 11;
@@ -67,6 +68,11 @@
     --input: 51 65 85;
     --ring: 74 222 128;
     
+    --accent: 71 85 105; /* Dark gray accent */
+    --accent-foreground: 248 250 252;
+    --accent-dark: 51 65 85;
+    --accent-light: 100 116 139;
+    
     --sidebar-background: 30 41 59;
     --sidebar-foreground: 248 250 252;
     --sidebar-primary: 74 222 128;
@@ -95,11 +101,11 @@
   }
   
   .gradient-text {
-    @apply bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
   }
   
   .btn-gradient {
-    @apply bg-gradient-to-r from-secondary to-accent text-white shadow-lg hover:shadow-xl transition-all duration-300;
+    @apply bg-gradient-to-r from-primary to-secondary text-white shadow-lg hover:shadow-xl transition-all duration-300;
   }
   
   .progress-circle {
