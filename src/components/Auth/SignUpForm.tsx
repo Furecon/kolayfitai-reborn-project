@@ -6,8 +6,6 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from './AuthProvider'
 import { OnboardingFlow, OnboardingData } from '../Onboarding/OnboardingFlow'
-import { supabase } from '@/integrations/supabase/client'
-import { useToast } from '@/hooks/use-toast'
 
 interface SignUpFormProps {
   onToggleMode: () => void
@@ -19,9 +17,7 @@ export function SignUpForm({ onToggleMode }: SignUpFormProps) {
   const [fullName, setFullName] = useState('')
   const [loading, setLoading] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)
   const { signUp } = useAuth()
-  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,83 +33,10 @@ export function SignUpForm({ onToggleMode }: SignUpFormProps) {
     }
   }
 
-  const handleOnboardingComplete = async (data: OnboardingData) => {
-    setOnboardingData(data)
-    
-    try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (user) {
-        // Calculate BMR and daily calorie goal
-        const calculateBMR = (gender: string, weight: number, height: number, age: number) => {
-          if (gender === 'male') {
-            return 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age)
-          } else {
-            return 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age)
-          }
-        }
-
-        const getActivityMultiplier = (activityLevel: string) => {
-          const multipliers: { [key: string]: number } = {
-            'sedentary': 1.2,
-            'moderately_active': 1.55,
-            'very_active': 1.725
-          }
-          return multipliers[activityLevel] || 1.2
-        }
-
-        const getDietAdjustment = (goal: string) => {
-          const adjustments: { [key: string]: number } = {
-            'lose': -500,
-            'gain': 500,
-            'maintain': 0
-          }
-          return adjustments[goal] || 0
-        }
-
-        const bmr = calculateBMR(data.gender!, data.weight!, data.height!, data.age!)
-        const activityMultiplier = getActivityMultiplier(data.activityLevel!)
-        const dietAdjustment = getDietAdjustment(data.goal!)
-        const dailyCalorieGoal = Math.round((bmr * activityMultiplier) + dietAdjustment)
-
-        // Save profile data
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({
-            user_id: user.id,
-            name: fullName,
-            age: data.age,
-            gender: data.gender,
-            height: data.height,
-            weight: data.weight,
-            activity_level: data.activityLevel,
-            daily_calorie_goal: dailyCalorieGoal,
-            updated_at: new Date().toISOString()
-          })
-
-        if (error) {
-          console.error('Profile save error:', error)
-          toast({
-            title: "Hata",
-            description: "Profil bilgileri kaydedilirken hata oluştu.",
-            variant: "destructive"
-          })
-        } else {
-          toast({
-            title: "Hoş Geldin!",
-            description: "Hesabın başarıyla oluşturuldu ve profil bilgilerin kaydedildi."
-          })
-        }
-      }
-    } catch (error) {
-      console.error('Profile setup error:', error)
-      toast({
-        title: "Hata",
-        description: "Profil kurulumu sırasında hata oluştu.",
-        variant: "destructive"
-      })
-    }
+  const handleOnboardingComplete = () => {
+    // The completion screen already handles saving to Supabase
+    // Just close the onboarding flow - user will be redirected to dashboard automatically
+    setShowOnboarding(false)
   }
 
   if (showOnboarding) {

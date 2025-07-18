@@ -81,6 +81,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error
     }
 
+    // Update the user's profile with the full name
+    const { data: { user: newUser } } = await supabase.auth.getUser()
+    if (newUser) {
+      await supabase
+        .from('profiles')
+        .upsert({
+          user_id: newUser.id,
+          name: fullName,
+          updated_at: new Date().toISOString()
+        })
+    }
+
     toast({
       title: "Başarılı!",
       description: "Hesabınız oluşturuldu. Onboarding'e yönlendiriliyorsunuz."

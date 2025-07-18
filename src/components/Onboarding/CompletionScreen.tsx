@@ -2,6 +2,9 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { OnboardingData } from './OnboardingFlow'
+import { supabase } from '@/integrations/supabase/client'
+import { useToast } from '@/hooks/use-toast'
+import { useState } from 'react'
 
 interface CompletionScreenProps {
   data: OnboardingData
@@ -9,6 +12,9 @@ interface CompletionScreenProps {
 }
 
 export function CompletionScreen({ data, onComplete }: CompletionScreenProps) {
+  const [loading, setLoading] = useState(false)
+  const { toast } = useToast()
+
   // Calculate BMR and daily calorie goal
   const calculateBMR = () => {
     if (!data.age || !data.weight || !data.height || !data.gender) return 2000
@@ -42,6 +48,66 @@ export function CompletionScreen({ data, onComplete }: CompletionScreenProps) {
   const activityMultiplier = getActivityMultiplier()
   const dietAdjustment = getDietAdjustment()
   const dailyCalorieGoal = Math.round((bmr * activityMultiplier) + dietAdjustment)
+
+  const handleComplete = async () => {
+    setLoading(true)
+    
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        toast({
+          title: "Hata",
+          description: "Kullanıcı oturumu bulunamadı.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      // Save profile data to Supabase
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: user.id,
+          age: data.age,
+          gender: data.gender,
+          height: data.height,
+          weight: data.weight,
+          activity_level: data.activityLevel,
+          daily_calorie_goal: dailyCalorieGoal,
+          updated_at: new Date().toISOString()
+        })
+
+      if (error) {
+        console.error('Profile save error:', error)
+        toast({
+          title: "Hata",
+          description: "Bilgilerin kaydedilemedi. Lütfen tekrar dene.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      toast({
+        title: "Başarılı!",
+        description: "Profil bilgilerin kaydedildi. Ana sayfaya yönlendiriliyorsun."
+      })
+
+      // Call the completion handler to navigate to dashboard
+      onComplete()
+
+    } catch (error) {
+      console.error('Completion error:', error)
+      toast({
+        title: "Hata",
+        description: "Bilgilerin kaydedilemedi. Lütfen tekrar dene.",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">
@@ -91,10 +157,11 @@ export function CompletionScreen({ data, onComplete }: CompletionScreenProps) {
         </Card>
 
         <Button 
-          onClick={onComplete}
+          onClick={handleComplete}
+          disabled={loading}
           className="bg-green-500 hover:bg-green-600 text-white w-full py-4 text-lg rounded-lg mb-4"
         >
-          Uygulamaya Başla
+          {loading ? 'Kaydediliyor...' : 'Uygulamaya Başla'}
         </Button>
 
         {/* Email Note */}

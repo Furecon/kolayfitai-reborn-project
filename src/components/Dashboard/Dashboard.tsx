@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { DashboardHeader } from './DashboardHeader'
 import { CalorieCards } from './CalorieCards'
 import { MealsList } from './MealsList'
+import { MainDashboard } from './MainDashboard'
 import FoodAnalysis from '../FoodAnalysis'
 import { ProfileSetup } from '../Profile/ProfileSetup'
 import { AIAssistant } from '../AI/AIAssistant'
@@ -25,12 +26,39 @@ export function Dashboard() {
   })
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [showAssistant, setShowAssistant] = useState(false)
+  const [hasProfile, setHasProfile] = useState(false)
 
   useEffect(() => {
     if (user) {
+      checkUserProfile()
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (user && hasProfile) {
       fetchDailyStats()
     }
-  }, [user, refreshTrigger])
+  }, [user, refreshTrigger, hasProfile])
+
+  const checkUserProfile = async () => {
+    if (!user) return
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('daily_calorie_goal, age, gender, height, weight')
+      .eq('user_id', user.id)
+      .single()
+
+    // Check if user has completed onboarding (has all required data)
+    const isComplete = profile && 
+      profile.daily_calorie_goal && 
+      profile.age && 
+      profile.gender && 
+      profile.height && 
+      profile.weight
+
+    setHasProfile(!!isComplete)
+  }
 
   const fetchDailyStats = async () => {
     if (!user) return
@@ -76,6 +104,11 @@ export function Dashboard() {
   const handleMealAdded = () => {
     setRefreshTrigger(prev => prev + 1)
     setCurrentView('dashboard')
+  }
+
+  // If user hasn't completed profile setup, show the main dashboard with basic functionality
+  if (!hasProfile) {
+    return <MainDashboard />
   }
 
   if (currentView === 'camera') {
