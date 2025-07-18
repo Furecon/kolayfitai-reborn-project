@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -6,11 +5,13 @@ import { useOnboarding } from './OnboardingProvider'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
+import { useQueryClient } from '@tanstack/react-query'
 
 export function OnboardingComplete() {
   const { onboardingData, calculateDailyCalories } = useOnboarding()
   const { user } = useAuth()
   const { toast } = useToast()
+  const queryClient = useQueryClient()
   const [loading, setLoading] = useState(false)
 
   const dailyCalories = calculateDailyCalories()
@@ -36,10 +37,22 @@ export function OnboardingComplete() {
 
       if (error) throw error
 
+      // Invalidate the profile query to trigger immediate refetch
+      await queryClient.invalidateQueries({
+        queryKey: ['profile', user.id]
+      })
+
       toast({
         title: "Başarılı!",
-        description: "Profilin oluşturuldu. Artık uygulamayı kullanmaya başlayabilirsin!"
+        description: "Profilin oluşturuldu. Dashboard'a yönlendiriliyorsun!"
       })
+
+      // Small delay for smooth transition
+      setTimeout(() => {
+        // The profile query invalidation will automatically trigger the redirect
+        // since Index.tsx checks onboarding_completed status
+      }, 500)
+
     } catch (error) {
       console.error('Error completing onboarding:', error)
       toast({
