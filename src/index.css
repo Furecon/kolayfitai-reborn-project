@@ -31,8 +31,8 @@
     --foreground: 30 41 59;
     --card: 255 255 255;
     --card-foreground: 30 41 59;
-    --popover: 255 255 255;
-    --popover-foreground: 30 41 59;
+    --popover: 0 0% 100%; /* White background */
+    --popover-foreground: 0 0% 9%; /* Dark text */
     --muted: 241 245 249;
     --muted-foreground: 100 116 139;
     --border: 226 232 240;
@@ -60,8 +60,8 @@
     --foreground: 248 250 252;
     --card: 30 41 59;
     --card-foreground: 248 250 252;
-    --popover: 30 41 59;
-    --popover-foreground: 248 250 252;
+    --popover: 0 0% 100%; /* White background even in dark mode */
+    --popover-foreground: 0 0% 9%; /* Dark text */
     --muted: 51 65 85;
     --muted-foreground: 148 163 184;
     --border: 51 65 85;
