@@ -35,23 +35,26 @@ export function OnboardingActivity() {
             <Button
               onClick={() => handleActivitySelect('sedanter')}
               variant={onboardingData.activityLevel === 'sedanter' ? 'default' : 'outline'}
-              className="w-full py-4 text-lg border-gray-300"
+              className="w-full py-4 text-lg border-gray-300 flex flex-col items-center"
             >
-              Hareketsiz
+              <span className="font-semibold">Az Aktif</span>
+              <span className="text-sm text-gray-600 mt-1">Egzersiz yok</span>
             </Button>
             <Button
               onClick={() => handleActivitySelect('orta_aktif')}
               variant={onboardingData.activityLevel === 'orta_aktif' ? 'default' : 'outline'}
-              className="w-full py-4 text-lg border-gray-300"
+              className="w-full py-4 text-lg border-gray-300 flex flex-col items-center"
             >
-              Orta Aktif
+              <span className="font-semibold">Orta Aktif</span>
+              <span className="text-sm text-gray-600 mt-1">Haftada bir kaç egzersiz</span>
             </Button>
             <Button
               onClick={() => handleActivitySelect('aktif')}
               variant={onboardingData.activityLevel === 'aktif' ? 'default' : 'outline'}
-              className="w-full py-4 text-lg border-gray-300"
+              className="w-full py-4 text-lg border-gray-300 flex flex-col items-center"
             >
-              Aktif
+              <span className="font-semibold">Aktif</span>
+              <span className="text-sm text-gray-600 mt-1">Düzenli egzersiz</span>
             </Button>
           </div>
 
@@ -63,7 +66,7 @@ export function OnboardingActivity() {
               </p>
               <div className="bg-gray-50 p-3 rounded text-sm">
                 <div className="flex justify-between mb-1">
-                  <span>Hareketsiz:</span>
+                  <span>Az Aktif:</span>
                   <span className="font-medium">~1800 kcal</span>
                 </div>
                 <div className="flex justify-between mb-1">
