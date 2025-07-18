@@ -2,19 +2,21 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Clock, Trash2, Edit } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Plus, Camera, Utensils, Clock } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
-import { format } from 'date-fns'
-import { tr } from 'date-fns/locale'
 
 interface MealLog {
   id: string
   meal_type: string
   total_calories: number
-  created_at: string
+  total_protein: number
+  total_carbs: number
+  total_fat: number
   food_items: any[]
   photo_url?: string
+  created_at: string
 }
 
 interface MealsListProps {
@@ -37,52 +39,73 @@ export function MealsList({ onAddMeal, refreshTrigger }: MealsListProps) {
     if (!user) return
 
     setLoading(true)
-    const today = new Date().toISOString().split('T')[0]
+    try {
+      const today = new Date().toISOString().split('T')[0]
 
-    const { data, error } = await supabase
-      .from('meal_logs')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('date', today)
-      .order('created_at', { ascending: false })
+      const { data, error } = await supabase
+        .from('meal_logs')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .order('created_at', { ascending: false })
 
-    if (error) {
+      if (error) throw error
+
+      setMeals(data?.map(meal => ({
+        ...meal,
+        food_items: Array.isArray(meal.food_items) ? meal.food_items : []
+      })) || [])
+    } catch (error) {
       console.error('Error fetching meals:', error)
-    } else {
-      setMeals(data || [])
-    }
-    setLoading(false)
-  }
-
-  const deleteMeal = async (mealId: string) => {
-    const { error } = await supabase
-      .from('meal_logs')
-      .delete()
-      .eq('id', mealId)
-
-    if (error) {
-      console.error('Error deleting meal:', error)
-    } else {
-      setMeals(meals.filter(meal => meal.id !== mealId))
+    } finally {
+      setLoading(false)
     }
   }
 
-  const getMealTypeDisplay = (type: string) => {
-    const types: { [key: string]: string } = {
+  const getMealIcon = (mealType: string) => {
+    switch (mealType.toLowerCase()) {
+      case 'kahvaltı':
+        return '🌅'
+      case 'öğle':
+        return '☀️'
+      case 'akşam':
+        return '🌙'
+      case 'atıştırmalık':
+        return '🍎'
+      default:
+        return '🍽️'
+    }
+  }
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('tr-TR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const getMealTypeInTurkish = (mealType: string) => {
+    const translations = {
+      'breakfast': 'Kahvaltı',
+      'lunch': 'Öğle Yemeği',
+      'dinner': 'Akşam Yemeği',
+      'snack': 'Atıştırmalık',
       'kahvaltı': 'Kahvaltı',
       'öğle': 'Öğle Yemeği',
       'akşam': 'Akşam Yemeği',
       'atıştırmalık': 'Atıştırmalık'
     }
-    return types[type] || type
+    return translations[mealType.toLowerCase() as keyof typeof translations] || mealType
   }
 
   if (loading) {
     return (
-      <div className="px-4 py-4">
+      <div className="px-4 pb-6">
         <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-gray-600">Öğünler yükleniyor...</p>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -90,78 +113,82 @@ export function MealsList({ onAddMeal, refreshTrigger }: MealsListProps) {
   }
 
   return (
-    <div className="px-4 py-4">
+    <div className="px-4 pb-6">
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg text-black">Bugünkü Öğünler</CardTitle>
+            <CardTitle className="text-lg font-semibold text-black">
+              Bugünkü Öğünler
+            </CardTitle>
             <Button
               onClick={onAddMeal}
-              size="sm"
               className="bg-green-500 hover:bg-green-600 text-white"
+              size="sm"
             >
-              <Plus className="h-4 w-4 mr-1" />
+              <Plus className="h-4 w-4 mr-2" />
               Öğün Ekle
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        
+        <CardContent>
           {meals.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-600 mb-4">Henüz öğün eklenmemiş</p>
+              <Utensils className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-4">Henüz bugün için öğün eklenmemiş</p>
               <Button
                 onClick={onAddMeal}
                 className="bg-green-500 hover:bg-green-600 text-white"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                İlk Öğününüzü Ekleyin
+                <Camera className="h-4 w-4 mr-2" />
+                İlk Öğününü Ekle
               </Button>
             </div>
           ) : (
-            meals.map((meal) => (
-              <div
-                key={meal.id}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-              >
-                <div className="flex items-center space-x-3">
-                  {meal.photo_url && (
-                    <img
-                      src={meal.photo_url}
-                      alt="Meal"
-                      className="w-12 h-12 rounded-lg object-cover"
-                    />
-                  )}
-                  <div>
-                    <h4 className="font-medium text-black">
-                      {getMealTypeDisplay(meal.meal_type)}
-                    </h4>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {format(new Date(meal.created_at), 'HH:mm', { locale: tr })}
+            <div className="space-y-3">
+              {meals.map((meal) => (
+                <div
+                  key={meal.id}
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="text-2xl">
+                      {getMealIcon(meal.meal_type)}
+                    </div>
+                    
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-medium text-black">
+                          {getMealTypeInTurkish(meal.meal_type)}
+                        </h3>
+                        <Badge variant="secondary" className="text-xs">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {formatTime(meal.created_at)}
+                        </Badge>
+                      </div>
+                      
+                      <p className="text-sm text-gray-600">
+                        {meal.food_items.length > 0 
+                          ? `${meal.food_items.length} yemek türü`
+                          : 'Detay yok'
+                        }
+                      </p>
                     </div>
                   </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
+                  
                   <div className="text-right">
-                    <p className="font-semibold text-black">
+                    <p className="font-semibold text-green-600">
                       {Math.round(meal.total_calories)} kcal
                     </p>
-                    <p className="text-xs text-gray-600">
-                      {meal.food_items.length} yemek
+                    <p className="text-xs text-gray-500">
+                      P: {meal.total_protein?.toFixed(1)}g • 
+                      K: {meal.total_carbs?.toFixed(1)}g • 
+                      Y: {meal.total_fat?.toFixed(1)}g
                     </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteMeal(meal.id)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>

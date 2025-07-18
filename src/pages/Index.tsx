@@ -1,22 +1,31 @@
-import FoodAnalysis from '@/components/FoodAnalysis'
 
-const Index = () => {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      <div className="container mx-auto py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            KolayfitAI
-          </h1>
-          <p className="text-xl text-gray-600">
-            AI destekli yemek tanıma ve kalori takibi
-          </p>
-        </div>
-        
-        <FoodAnalysis />
+import { AuthProvider } from '@/components/Auth/AuthProvider'
+import { AuthScreen } from '@/components/Auth/AuthScreen'
+import { Dashboard } from '@/components/Dashboard/Dashboard'
+import { useAuth } from '@/components/Auth/AuthProvider'
+
+function AppContent() {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
       </div>
-    </div>
-  );
-};
+    )
+  }
 
-export default Index;
+  if (!user) {
+    return <AuthScreen />
+  }
+
+  return <Dashboard />
+}
+
+export default function Index() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  )
+}
