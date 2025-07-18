@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -196,13 +197,16 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
         }
       }
 
+      // Convert FoodItem[] to Json format
+      const foodItemsJson = JSON.parse(JSON.stringify(analysisResult.nutritionalAnalysis.foodItems))
+
       // Save meal log
       const { data: mealData, error: mealError } = await supabase
         .from('meal_logs')
         .insert({
           user_id: user.id,
           meal_type: selectedMealType,
-          food_items: analysisResult.nutritionalAnalysis.foodItems,
+          food_items: foodItemsJson,
           total_calories: analysisResult.nutritionalAnalysis.totalCalories,
           total_protein: analysisResult.nutritionalAnalysis.totalProtein,
           total_carbs: analysisResult.nutritionalAnalysis.totalCarbs,
@@ -215,15 +219,23 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
 
       if (mealError) throw mealError
 
-      // Save AI analysis
+      // Save AI analysis with proper Json formatting
       if (mealData) {
+        const nutritionalAnalysisJson = {
+          totalCalories: analysisResult.nutritionalAnalysis.totalCalories,
+          totalProtein: analysisResult.nutritionalAnalysis.totalProtein,
+          totalCarbs: analysisResult.nutritionalAnalysis.totalCarbs,
+          totalFat: analysisResult.nutritionalAnalysis.totalFat,
+          foodItems: foodItemsJson
+        }
+
         await supabase
           .from('ai_analysis')
           .insert({
             meal_log_id: mealData.id,
-            detected_foods: analysisResult.detectedFoods,
-            confidence_scores: analysisResult.confidenceScores,
-            nutritional_analysis: analysisResult.nutritionalAnalysis,
+            detected_foods: JSON.parse(JSON.stringify(analysisResult.detectedFoods)),
+            confidence_scores: JSON.parse(JSON.stringify(analysisResult.confidenceScores)),
+            nutritional_analysis: nutritionalAnalysisJson,
             ai_suggestions: analysisResult.aiSuggestions,
             requires_manual_review: analysisResult.requiresManualReview,
             processing_time_ms: analysisResult.processingTimeMs

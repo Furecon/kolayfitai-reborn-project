@@ -56,7 +56,8 @@ export function ProfileSetup() {
         height: data.height,
         weight: data.weight,
         activity_level: data.activity_level,
-        diet_goal: data.diet_goal
+        // Handle missing diet_goal property safely
+        diet_goal: (data as any).diet_goal || null
       })
     }
   }
@@ -108,22 +109,26 @@ export function ProfileSetup() {
       const dietAdjustment = getDietAdjustment(profile.diet_goal!)
       const dailyCalorieGoal = Math.round((bmr * activityMultiplier) + dietAdjustment)
 
+      const updateData: any = {
+        user_id: user.id,
+        name: profile.name,
+        age: profile.age,
+        gender: profile.gender,
+        height: profile.height,
+        weight: profile.weight,
+        activity_level: profile.activity_level,
+        daily_calorie_goal: dailyCalorieGoal,
+        updated_at: new Date().toISOString()
+      }
+
+      // Only add fields that exist in the current schema
+      if (profile.diet_goal) {
+        updateData.diet_goal = profile.diet_goal
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          user_id: user.id,
-          name: profile.name,
-          age: profile.age,
-          gender: profile.gender,
-          height: profile.height,
-          weight: profile.weight,
-          activity_level: profile.activity_level,
-          diet_goal: profile.diet_goal,
-          bmr: Math.round(bmr * 100) / 100,
-          daily_calorie_goal: dailyCalorieGoal,
-          activity_multiplier: activityMultiplier,
-          updated_at: new Date().toISOString()
-        })
+        .upsert(updateData)
 
       if (error) throw error
 
