@@ -66,7 +66,7 @@ export default function ProfileDropdown({ userName, userEmail }: ProfileDropdown
         <Button variant="ghost" size="icon" className="h-8 w-8 relative">
           <Avatar className="h-8 w-8">
             <AvatarImage alt={userName} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
               {userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
