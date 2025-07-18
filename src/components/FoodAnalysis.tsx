@@ -1,16 +1,17 @@
-
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, Camera, Upload, Edit3, Check, X, ArrowLeft } from 'lucide-react'
+import { Loader2, Camera, Edit3, Check, X, ArrowLeft } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from './Auth/AuthProvider'
+import AnalysisTypeSelection from './FoodAnalysis/AnalysisTypeSelection'
+import DetailedAnalysisForm from './FoodAnalysis/DetailedAnalysisForm'
+import MealTypeSelection from './FoodAnalysis/MealTypeSelection'
 
 interface FoodItem {
   name: string
@@ -25,6 +26,8 @@ interface FoodItem {
 
 interface AnalysisResult {
   detectedFoods: any[]
+  analysisType: 'quick' | 'detailed'
+  detailedData: any
   confidenceScores: {
     overall: number
     individual: { name: string; confidence: number }[]
@@ -46,15 +49,16 @@ interface FoodAnalysisProps {
   onBack?: () => void
 }
 
+type Screen = 'capture' | 'analysisType' | 'detailedForm' | 'analyzing' | 'results' | 'editResults' | 'mealType' | 'saving'
+
 export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps) {
   const { user } = useAuth()
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [currentScreen, setCurrentScreen] = useState<Screen>('capture')
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
-  const [selectedMealType, setSelectedMealType] = useState('kahvaltı')
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
-  const [showManualEdit, setShowManualEdit] = useState(false)
   const [editingFoods, setEditingFoods] = useState<FoodItem[]>([])
-  const [saving, setSaving] = useState(false)
+  const [selectedAnalysisType, setSelectedAnalysisType] = useState<'quick' | 'detailed'>('quick')
+  const [detailedFormData, setDetailedFormData] = useState(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
@@ -72,13 +76,14 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
     })
   }
 
-  const analyzeFood = async (imageBase64: string) => {
-    setIsAnalyzing(true)
+  const analyzeFood = async (imageBase64: string, analysisType: 'quick' | 'detailed', detailedData?: any) => {
+    setCurrentScreen('analyzing')
     try {
       const { data, error } = await supabase.functions.invoke('analyze-food', {
         body: {
           imageBase64,
-          mealType: selectedMealType
+          analysisType,
+          detailedData
         }
       })
 
@@ -88,13 +93,14 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       
       if (data.requiresManualReview) {
         setEditingFoods(data.nutritionalAnalysis.foodItems)
-        setShowManualEdit(true)
+        setCurrentScreen('editResults')
         toast({
           title: "Manuel İnceleme Gerekli",
           description: "AI'nın güven skoru düşük. Lütfen sonuçları kontrol edin.",
           variant: "destructive"
         })
       } else {
+        setCurrentScreen('results')
         toast({
           title: "Analiz Tamamlandı!",
           description: `${data.nutritionalAnalysis.foodItems.length} yemek tespit edildi.`
@@ -102,13 +108,12 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       }
     } catch (error) {
       console.error('Analysis error:', error)
+      setCurrentScreen('results')
       toast({
         title: "Analiz Hatası",
         description: "Yemek analizi sırasında hata oluştu. Lütfen tekrar deneyin.",
         variant: "destructive"
       })
-    } finally {
-      setIsAnalyzing(false)
     }
   }
 
@@ -127,7 +132,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
 
     try {
       const imageBase64 = await handleImageCapture(file)
-      await analyzeFood(imageBase64)
+      setCurrentScreen('analysisType')
     } catch (error) {
       toast({
         title: "Dosya Hatası",
@@ -139,6 +144,27 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
 
   const handleCameraCapture = () => {
     fileInputRef.current?.click()
+  }
+
+  const handleAnalysisTypeSelection = async (type: 'quick' | 'detailed') => {
+    setSelectedAnalysisType(type)
+    
+    if (type === 'quick') {
+      const imageBase64 = capturedImage?.split(',')[1]
+      if (imageBase64) {
+        await analyzeFood(imageBase64, 'quick')
+      }
+    } else {
+      setCurrentScreen('detailedForm')
+    }
+  }
+
+  const handleDetailedFormSubmit = async (formData: any) => {
+    setDetailedFormData(formData)
+    const imageBase64 = capturedImage?.split(',')[1]
+    if (imageBase64) {
+      await analyzeFood(imageBase64, 'detailed', formData)
+    }
   }
 
   const updateFoodItem = (index: number, field: keyof FoodItem, value: string | number) => {
@@ -167,17 +193,17 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
         requiresManualReview: false
       })
     }
-    setShowManualEdit(false)
+    setCurrentScreen('results')
     toast({
       title: "Güncellendi!",
       description: "Besin değerleri başarıyla güncellendi."
     })
   }
 
-  const saveMeal = async () => {
+  const handleMealTypeSave = async (mealType: string) => {
     if (!analysisResult || !user) return
 
-    setSaving(true)
+    setCurrentScreen('saving')
     try {
       // Upload image to storage if exists
       let photoUrl = null
@@ -205,7 +231,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
         .from('meal_logs')
         .insert({
           user_id: user.id,
-          meal_type: selectedMealType,
+          meal_type: mealType,
           food_items: foodItemsJson,
           total_calories: analysisResult.nutritionalAnalysis.totalCalories,
           total_protein: analysisResult.nutritionalAnalysis.totalProtein,
@@ -250,8 +276,9 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       // Reset form
       setAnalysisResult(null)
       setCapturedImage(null)
-      setShowManualEdit(false)
+      setCurrentScreen('capture')
       setEditingFoods([])
+      setDetailedFormData(null)
 
       if (onMealAdded) {
         onMealAdded()
@@ -259,13 +286,12 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
 
     } catch (error) {
       console.error('Save meal error:', error)
+      setCurrentScreen('results')
       toast({
         title: "Kayıt Hatası",
         description: "Öğün kaydedilirken hata oluştu.",
         variant: "destructive"
       })
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -286,6 +312,45 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
     return 'bg-red-500'
   }
 
+  const resetToCapture = () => {
+    setCurrentScreen('capture')
+    setAnalysisResult(null)
+    setCapturedImage(null)
+    setEditingFoods([])
+    setDetailedFormData(null)
+  }
+
+  // Screen routing
+  if (currentScreen === 'analysisType') {
+    return (
+      <AnalysisTypeSelection
+        onSelectType={handleAnalysisTypeSelection}
+        onBack={() => setCurrentScreen('capture')}
+        capturedImage={capturedImage || ''}
+      />
+    )
+  }
+
+  if (currentScreen === 'detailedForm') {
+    return (
+      <DetailedAnalysisForm
+        onSubmit={handleDetailedFormSubmit}
+        onBack={() => setCurrentScreen('analysisType')}
+        loading={false}
+      />
+    )
+  }
+
+  if (currentScreen === 'mealType') {
+    return (
+      <MealTypeSelection
+        onSubmit={handleMealTypeSave}
+        onBack={() => setCurrentScreen('results')}
+        loading={currentScreen === 'saving'}
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -303,74 +368,64 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       )}
 
       <div className="max-w-4xl mx-auto p-6 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-black">
-              <Camera className="h-5 w-5 text-green-500" />
-              AI Yemek Analizi
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="meal-type">Öğün Türü</Label>
-              <Select value={selectedMealType} onValueChange={setSelectedMealType}>
-                <SelectTrigger className="border-gray-300">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="kahvaltı">Kahvaltı</SelectItem>
-                  <SelectItem value="öğle">Öğle Yemeği</SelectItem>
-                  <SelectItem value="akşam">Akşam Yemeği</SelectItem>
-                  <SelectItem value="atıştırmalık">Atıştırmalık</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex gap-4">
-              <Button
-                onClick={handleCameraCapture}
-                disabled={isAnalyzing}
-                className="flex-1 bg-green-500 hover:bg-green-600 text-white"
-              >
-                <Camera className="mr-2 h-4 w-4" />
-                Fotoğraf Çek / Yükle
-              </Button>
-            </div>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-
-            {capturedImage && (
-              <div className="mt-4">
-                <img
-                  src={capturedImage}
-                  alt="Captured food"
-                  className="w-full max-w-md mx-auto rounded-lg shadow-md"
-                />
+        {currentScreen === 'capture' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-black">
+                <Camera className="h-5 w-5 text-green-500" />
+                AI Yemek Analizi
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-4">
+                <Button
+                  onClick={handleCameraCapture}
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                >
+                  <Camera className="mr-2 h-4 w-4" />
+                  Fotoğraf Çek / Yükle
+                </Button>
               </div>
-            )}
 
-            {isAnalyzing && (
-              <div className="flex items-center justify-center p-8">
-                <Loader2 className="mr-2 h-6 w-6 animate-spin text-green-500" />
-                <span>AI yemeğinizi analiz ediyor...</span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {currentScreen === 'analyzing' && (
+          <Card>
+            <CardContent className="flex items-center justify-center p-8">
+              <div className="text-center space-y-4">
+                <Loader2 className="mx-auto h-8 w-8 animate-spin text-green-500" />
+                <div>
+                  <h3 className="text-lg font-medium text-black">AI Analiz Ediyor</h3>
+                  <p className="text-gray-600">
+                    {selectedAnalysisType === 'detailed' ? 'Detaylı analiz yapılıyor...' : 'Hızlı analiz yapılıyor...'}
+                  </p>
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
-        {analysisResult && (
+        {(currentScreen === 'results' || currentScreen === 'editResults') && analysisResult && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-black">
-                <span>Analiz Sonuçları</span>
-                {analysisResult.requiresManualReview && (
+                <span>
+                  Analiz Sonuçları 
+                  {analysisResult.analysisType === 'detailed' && 
+                    <Badge variant="secondary" className="ml-2">Detaylı Analiz</Badge>
+                  }
+                </span>
+                {analysisResult.requiresManualReview && currentScreen !== 'editResults' && (
                   <Badge variant="destructive">Manuel İnceleme Gerekli</Badge>
                 )}
               </CardTitle>
@@ -390,23 +445,10 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
                 </div>
               </div>
 
-              {/* Food Items */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label>Tespit Edilen Yemekler</Label>
-                  {!showManualEdit && analysisResult.requiresManualReview && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowManualEdit(true)}
-                    >
-                      <Edit3 className="mr-2 h-4 w-4" />
-                      Düzenle
-                    </Button>
-                  )}
-                </div>
-
-                {showManualEdit ? (
+              {/* Food Items - Edit Mode */}
+              {currentScreen === 'editResults' ? (
+                <div className="space-y-3">
+                  <Label>Tespit Edilen Yemekler - Düzenleme</Label>
                   <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
                     {editingFoods.map((food, index) => (
                       <div key={index} className="grid grid-cols-2 md:grid-cols-6 gap-3">
@@ -471,13 +513,32 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
                         <Check className="mr-2 h-4 w-4" />
                         Kaydet
                       </Button>
-                      <Button variant="outline" onClick={() => setShowManualEdit(false)}>
+                      <Button variant="outline" onClick={() => setCurrentScreen('results')}>
                         <X className="mr-2 h-4 w-4" />
                         İptal
                       </Button>
                     </div>
                   </div>
-                ) : (
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Tespit Edilen Yemekler</Label>
+                    {analysisResult.requiresManualReview && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingFoods(analysisResult.nutritionalAnalysis.foodItems)
+                          setCurrentScreen('editResults')
+                        }}
+                      >
+                        <Edit3 className="mr-2 h-4 w-4" />
+                        Düzenle
+                      </Button>
+                    )}
+                  </div>
+
                   <div className="grid gap-3">
                     {analysisResult.nutritionalAnalysis.foodItems.map((food, index) => (
                       <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
@@ -496,8 +557,8 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Total Nutrition */}
               <div className="mt-6 p-4 bg-primary/10 rounded-lg">
@@ -539,29 +600,26 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
                 </Alert>
               )}
 
-              {/* Save Button */}
+              {/* Action Buttons */}
               <div className="flex gap-2 pt-4">
                 <Button
-                  onClick={saveMeal}
-                  disabled={saving}
+                  onClick={() => setCurrentScreen('mealType')}
                   className="flex-1 bg-green-500 hover:bg-green-600 text-white"
                 >
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Kaydediliyor...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="mr-2 h-4 w-4" />
-                      Öğünü Kaydet
-                    </>
-                  )}
+                  <Check className="mr-2 h-4 w-4" />
+                  Devam Et
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={resetToCapture}
+                >
+                  Yeniden Çek
                 </Button>
               </div>
 
               <p className="text-xs text-muted-foreground text-center">
                 Analiz süresi: {analysisResult.processingTimeMs}ms
+                {analysisResult.analysisType === 'detailed' && ' • Detaylı Analiz'}
               </p>
             </CardContent>
           </Card>

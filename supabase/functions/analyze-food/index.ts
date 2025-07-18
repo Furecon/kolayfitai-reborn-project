@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
@@ -12,7 +13,12 @@ serve(async (req) => {
   }
 
   try {
-    const { imageBase64, mealType = 'kahvaltı' } = await req.json()
+    const { 
+      imageBase64, 
+      mealType = 'kahvaltı',
+      analysisType = 'quick',
+      detailedData = null
+    } = await req.json()
 
     if (!imageBase64) {
       throw new Error('Image data is required')
@@ -23,27 +29,39 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured')
     }
 
-    console.log('Starting food analysis...')
+    console.log('Starting food analysis...', { analysisType, detailedData })
     const startTime = Date.now()
 
-    // AI food analysis with confidence scoring
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `Sen uzman bir besin analisti ve yemek tanıma uzmanısın. Verilen yemek fotoğrafını analiz ederek şunları yap:
+    // Create detailed prompt based on analysis type
+    let systemPrompt = `Sen uzman bir besin analisti ve yemek tanıma uzmanısın. Verilen yemek fotoğrafını analiz ederek şunları yap:
 
 1. Fotoğraftaki tüm yiyecekleri ve içecekleri tespit et (Türk, İtalyan, Çin, Amerikan, Fransız, Hint, Meksikan, Akdeniz ve diğer dünya mutfaklarından)
 2. Her yiyecek için 100g başına besin değerlerini hesapla
 3. Porsiyon miktarını tahmin et
-4. Güven skorunu (0-1 arası) belirle
+4. Güven skorunu (0-1 arası) belirle`
+
+    // Add detailed analysis context if provided
+    if (analysisType === 'detailed' && detailedData) {
+      systemPrompt += `
+
+DETAYLI ANALİZ BİLGİLERİ:
+- Yemek kaynağı: ${detailedData.foodSource === 'homemade' ? 'Ev yapımı' : 'Paketli/dışarıdan hazır'}
+- Pişirme yöntemi: ${detailedData.cookingMethod}
+- Tüketim miktarı: ${detailedData.consumedAmount}
+- Yemek tipi: ${detailedData.mealType === 'single' ? 'Tek tip yemek' : 'Karışık tabak'}
+${detailedData.hiddenIngredients && !detailedData.noHiddenIngredients ? 
+  `- Ek malzemeler: ${detailedData.hiddenIngredients}` : 
+  '- Ek malzemeler: Belirtilmedi'}
+
+Bu ek bilgileri kullanarak daha hassas kalori ve besin değeri hesabı yap. Özellikle:
+- Pişirme yönteminin kalori değerlerine etkisini hesapla (kızartma +20-30%, haşlama değişiklik yok)
+- Ev yapımı yemeklerde ortalama yağ/tuz kullanımını hesapla
+- Paketli ürünlerde işlenmiş gıda ekstra kalori artışını hesapla
+- Belirtilen porsiyon miktarına göre hassas hesaplama yap
+- Ek malzemelerin kalori katkısını hesaba kat`
+    }
+
+    systemPrompt += `
 
 Çıktını SADECE aşağıdaki JSON formatında ver:
 {
@@ -67,6 +85,20 @@ serve(async (req) => {
   "requiresManualReview": false,
   "suggestions": "AI önerileri"
 }`
+
+    // AI food analysis with confidence scoring
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
           },
           {
             role: 'user',
@@ -85,7 +117,7 @@ serve(async (req) => {
           }
         ],
         max_tokens: 1500,
-        temperature: 0.3
+        temperature: analysisType === 'detailed' ? 0.2 : 0.3
       }),
     })
 
@@ -121,13 +153,15 @@ serve(async (req) => {
       totalFat += food.nutritionPer100g.fat * portionMultiplier
     })
 
-    // Determine if manual review is needed
-    const lowConfidenceThreshold = 0.70
+    // Determine if manual review is needed (more lenient for detailed analysis)
+    const lowConfidenceThreshold = analysisType === 'detailed' ? 0.60 : 0.70
     const requiresReview = analysisResult.overallConfidence < lowConfidenceThreshold || 
                           analysisResult.detectedFoods.some((food: any) => food.confidence < lowConfidenceThreshold)
 
     const result = {
       detectedFoods: analysisResult.detectedFoods,
+      analysisType,
+      detailedData,
       confidenceScores: {
         overall: analysisResult.overallConfidence,
         individual: analysisResult.detectedFoods.map((food: any) => ({
