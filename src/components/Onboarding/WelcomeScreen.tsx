@@ -12,8 +12,12 @@ export function WelcomeScreen({ onNext }: WelcomeScreenProps) {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-            <span className="text-white text-2xl font-bold">K</span>
+          <div className="w-24 h-24 mx-auto mb-4">
+            <img 
+              src="/lovable-uploads/b58d5cf4-7921-4fa7-8701-c50dae907760.png" 
+              alt="KolayfitAI Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
           <h1 className="text-3xl font-bold text-black mb-2">KolayfitAI'ye Hoş Geldin!</h1>
           <p className="text-gray-600 text-lg">
