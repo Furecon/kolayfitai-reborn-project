@@ -255,7 +255,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      search_foods: {
+        Args: { search_term: string }
+        Returns: {
+          id: string
+          name: string
+          name_en: string
+          calories_per_100g: number
+          protein_per_100g: number
+          carbs_per_100g: number
+          fat_per_100g: number
+          category: string
+          similarity: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
