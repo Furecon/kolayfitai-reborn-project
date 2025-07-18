@@ -59,13 +59,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const redirectUrl = `${window.location.origin}/`
-    
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl,
         data: {
           full_name: fullName,
         },
@@ -81,22 +78,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error
     }
 
-    // Update the user's profile with the full name
-    const { data: { user: newUser } } = await supabase.auth.getUser()
-    if (newUser) {
+    // Since email confirmation is disabled, user should be automatically logged in
+    if (data.user) {
+      // Update the user's profile with the full name
       await supabase
         .from('profiles')
         .upsert({
-          user_id: newUser.id,
+          user_id: data.user.id,
           name: fullName,
           updated_at: new Date().toISOString()
         })
-    }
 
-    toast({
-      title: "Başarılı!",
-      description: "Hesabınız oluşturuldu. Onboarding'e yönlendiriliyorsunuz."
-    })
+      toast({
+        title: "Başarılı!",
+        description: "Hesabınız oluşturuldu. Onboarding'e yönlendiriliyorsunuz."
+      })
+    }
   }
 
   const signOut = async () => {
