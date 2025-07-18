@@ -164,6 +164,7 @@ export type Database = {
           height: number | null
           id: string
           name: string | null
+          onboarding_completed: boolean | null
           subscription_status: string | null
           trial_end_date: string | null
           updated_at: string
@@ -179,6 +180,7 @@ export type Database = {
           height?: number | null
           id?: string
           name?: string | null
+          onboarding_completed?: boolean | null
           subscription_status?: string | null
           trial_end_date?: string | null
           updated_at?: string
@@ -194,6 +196,7 @@ export type Database = {
           height?: number | null
           id?: string
           name?: string | null
+          onboarding_completed?: boolean | null
           subscription_status?: string | null
           trial_end_date?: string | null
           updated_at?: string
