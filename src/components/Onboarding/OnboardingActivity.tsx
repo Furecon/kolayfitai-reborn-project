@@ -35,7 +35,7 @@ export function OnboardingActivity() {
             <Button
               onClick={() => handleActivitySelect('sedanter')}
               variant={onboardingData.activityLevel === 'sedanter' ? 'default' : 'outline'}
-              className="w-full py-4 text-lg border-gray-300 flex flex-col items-center"
+              className="w-full py-6 min-h-[80px] text-lg border-gray-300 flex flex-col items-center justify-center text-center"
             >
               <span className="font-semibold">Az Aktif</span>
               <span className="text-sm text-gray-600 mt-1">Egzersiz yok</span>
@@ -43,7 +43,7 @@ export function OnboardingActivity() {
             <Button
               onClick={() => handleActivitySelect('orta_aktif')}
               variant={onboardingData.activityLevel === 'orta_aktif' ? 'default' : 'outline'}
-              className="w-full py-4 text-lg border-gray-300 flex flex-col items-center"
+              className="w-full py-6 min-h-[80px] text-lg border-gray-300 flex flex-col items-center justify-center text-center"
             >
               <span className="font-semibold">Orta Aktif</span>
               <span className="text-sm text-gray-600 mt-1">Haftada bir kaç egzersiz</span>
@@ -51,7 +51,7 @@ export function OnboardingActivity() {
             <Button
               onClick={() => handleActivitySelect('aktif')}
               variant={onboardingData.activityLevel === 'aktif' ? 'default' : 'outline'}
-              className="w-full py-4 text-lg border-gray-300 flex flex-col items-center"
+              className="w-full py-6 min-h-[80px] text-lg border-gray-300 flex flex-col items-center justify-center text-center"
             >
               <span className="font-semibold">Aktif</span>
               <span className="text-sm text-gray-600 mt-1">Düzenli egzersiz</span>
