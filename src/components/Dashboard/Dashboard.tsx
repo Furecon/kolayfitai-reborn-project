@@ -1,8 +1,9 @@
-
 import { useState, useEffect } from 'react'
 import { DashboardHeader } from './DashboardHeader'
 import { CalorieCards } from './CalorieCards'
 import { MealsList } from './MealsList'
+import { AIInsights } from './AIInsights'
+import { HistoryMeals } from './HistoryMeals'
 import FoodAnalysis from '../FoodAnalysis'
 import { ProfileSetup } from '../Profile/ProfileSetup'
 import { ContactPage } from '../Support/ContactPage'
@@ -217,6 +218,10 @@ export function Dashboard() {
         onAddMeal={() => setCurrentView('camera')}
         refreshTrigger={refreshTrigger}
       />
+
+      <AIInsights dailyStats={dailyStats} />
+      
+      <HistoryMeals />
 
       {/* AI Assistant Button */}
       <div className="fixed bottom-6 right-6">

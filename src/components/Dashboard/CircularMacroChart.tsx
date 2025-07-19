@@ -32,7 +32,7 @@ const CircularProgress = ({
   const strokeDashoffset = circumference - (percentage / 100) * circumference
 
   return (
-    <div className={`relative ${size === 'large' ? 'w-44 h-44' : 'w-36 h-36'}`}>
+    <div className={`relative ${size === 'large' ? 'w-44 h-44' : 'w-36 h-36'} flex items-center justify-center`}>
       <svg
         height={radius * 2}
         width={radius * 2}
@@ -62,12 +62,10 @@ const CircularProgress = ({
         />
       </svg>
       
-      {/* Center content */}
+      {/* Center content - Fixed positioning */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-center max-w-full px-3">
-          <div className={`${size === 'large' ? 'text-3xl' : 'text-2xl'} font-bold text-gray-900 leading-tight`}>
-            {Math.round(current)}
-          </div>
+        <div className={`${size === 'large' ? 'text-3xl' : 'text-2xl'} font-bold text-gray-900 text-center`}>
+          {Math.round(current)}
         </div>
       </div>
     </div>
