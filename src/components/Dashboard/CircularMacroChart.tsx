@@ -16,23 +16,20 @@ const CircularProgress = ({
   current, 
   goal, 
   color, 
-  icon: Icon, 
   size = 'normal' 
 }: { 
   current: number
   goal: number
   color: string
-  icon?: LucideIcon
   size?: 'large' | 'normal'
 }) => {
   const percentage = Math.min((current / goal) * 100, 100)
   const radius = size === 'large' ? 80 : 65
-  const strokeWidth = size === 'large' ? 14 : 12
+  const strokeWidth = size === 'large' ? 8 : 6
   const normalizedRadius = radius - strokeWidth * 2
   const circumference = normalizedRadius * 2 * Math.PI
   const strokeDasharray = `${circumference} ${circumference}`
   const strokeDashoffset = circumference - (percentage / 100) * circumference
-  const iconSize = size === 'large' ? 28 : 20
 
   return (
     <div className={`relative ${size === 'large' ? 'w-44 h-44' : 'w-36 h-36'}`}>
@@ -68,13 +65,7 @@ const CircularProgress = ({
       {/* Center content */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center max-w-full px-3">
-          {Icon && (
-            <Icon 
-              className="mx-auto mb-1 text-gray-600" 
-              size={iconSize}
-            />
-          )}
-          <div className={`${size === 'large' ? 'text-2xl' : 'text-xl'} font-bold text-gray-900 leading-tight`}>
+          <div className={`${size === 'large' ? 'text-3xl' : 'text-2xl'} font-bold text-gray-900 leading-tight`}>
             {Math.round(current)}
           </div>
         </div>
@@ -89,7 +80,6 @@ export function CircularMacroChart({
   label, 
   color, 
   unit, 
-  icon, 
   size = 'normal' 
 }: CircularMacroChartProps) {
   return (
@@ -98,7 +88,6 @@ export function CircularMacroChart({
         current={current} 
         goal={goal} 
         color={color} 
-        icon={icon}
         size={size}
       />
       <div className="text-center max-w-full px-2">
