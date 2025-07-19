@@ -89,11 +89,12 @@ export function FavoriteMeals({ onBack, onMealAdded }: FavoriteMealsProps) {
     try {
       const recipe = favorite.recipe
       
+      // Use the meal_type from the favorite (already in Turkish from database)
       const { error } = await supabase
         .from('meal_logs')
         .insert({
           user_id: user.id,
-          meal_type: favorite.meal_type,
+          meal_type: favorite.meal_type, // This is already in Turkish format
           food_items: [
             {
               name: favorite.meal_name,
