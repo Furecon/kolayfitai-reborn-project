@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -116,9 +115,8 @@ export function HistoryMeals() {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('tr-TR', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
+      weekday: 'short',
+      month: 'short',
       day: 'numeric'
     })
   }
@@ -173,7 +171,7 @@ export function HistoryMeals() {
           <div className="flex flex-col gap-3 mt-3 sm:mt-4">
             <div className="flex flex-col sm:flex-row gap-2">
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger className="w-full sm:flex-1 h-10">
+                <SelectTrigger className="w-full sm:flex-1 h-9 sm:h-10 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -184,7 +182,7 @@ export function HistoryMeals() {
               </Select>
               
               <Select value={selectedMealType} onValueChange={setSelectedMealType}>
-                <SelectTrigger className="w-full sm:flex-1 h-10">
+                <SelectTrigger className="w-full sm:flex-1 h-9 sm:h-10 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -198,12 +196,12 @@ export function HistoryMeals() {
             </div>
             
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
               <Input
                 placeholder="Yemek veya tarih ara..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-10"
+                className="pl-9 sm:pl-10 h-9 sm:h-10 text-sm"
               />
             </div>
           </div>
@@ -213,19 +211,19 @@ export function HistoryMeals() {
           {loading ? (
             <div className="flex items-center justify-center py-6 sm:py-8">
               <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-blue-500"></div>
-              <span className="ml-2 text-sm sm:text-base text-gray-600">Yemekler yükleniyor...</span>
+              <span className="ml-2 text-sm text-gray-600">Yükleniyor...</span>
             </div>
           ) : filteredMeals.length === 0 ? (
             <div className="text-center py-6 sm:py-8">
               <Utensils className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-              <p className="text-sm sm:text-base text-gray-600 mb-2 px-2">
-                {searchTerm ? 'Arama kriterlerinize uygun yemek bulunamadı' : 'Bu dönemde kayıtlı yemek bulunamadı'}
+              <p className="text-sm text-gray-600 mb-2 px-2">
+                {searchTerm ? 'Arama sonucu bulunamadı' : 'Bu dönemde yemek bulunamadı'}
               </p>
               {searchTerm && (
                 <Button
                   variant="ghost"
                   onClick={() => setSearchTerm('')}
-                  className="text-blue-600 text-sm"
+                  className="text-blue-600 text-sm h-8"
                 >
                   Aramayı Temizle
                 </Button>
@@ -233,15 +231,15 @@ export function HistoryMeals() {
             </div>
           ) : (
             <>
-              <div className="space-y-4 sm:space-y-6">
+              <div className="space-y-3 sm:space-y-4">
                 {Object.entries(groupedMeals).map(([date, dayMeals]) => (
-                  <div key={date} className="space-y-2 sm:space-y-3">
+                  <div key={date} className="space-y-2">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                      <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
-                      <h3 className="text-sm sm:text-base font-medium text-gray-900 flex-1 min-w-0">
-                        <span className="truncate block">{formatDate(date)}</span>
+                      <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0" />
+                      <h3 className="text-sm font-medium text-gray-900 flex-1 min-w-0 truncate">
+                        {formatDate(date)}
                       </h3>
-                      <Badge variant="secondary" className="text-xs flex-shrink-0">
+                      <Badge variant="secondary" className="text-xs flex-shrink-0 h-5">
                         {dayMeals.length} öğün
                       </Badge>
                     </div>
@@ -249,25 +247,25 @@ export function HistoryMeals() {
                     {dayMeals.map((meal) => (
                       <div
                         key={meal.id}
-                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors gap-3"
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors gap-3"
                       >
-                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                          <div className="text-lg sm:text-xl flex-shrink-0">
+                        <div className="flex items-start sm:items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                          <div className="text-lg sm:text-xl flex-shrink-0 mt-0.5 sm:mt-0">
                             {getMealIcon(meal.meal_type)}
                           </div>
                           
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
-                              <h4 className="text-sm sm:text-base font-medium text-gray-900 truncate">
+                              <h4 className="text-sm font-medium text-gray-900 truncate">
                                 {getMealTypeInTurkish(meal.meal_type)}
                               </h4>
-                              <Badge variant="outline" className="text-xs self-start sm:self-auto flex-shrink-0">
-                                <Clock className="h-3 w-3 mr-1" />
+                              <Badge variant="outline" className="text-xs self-start sm:self-auto flex-shrink-0 h-5">
+                                <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
                                 {formatTime(meal.created_at)}
                               </Badge>
                             </div>
                             
-                            <p className="text-xs sm:text-sm text-gray-600 truncate">
+                            <p className="text-xs text-gray-600 truncate">
                               {meal.food_items.length > 0 
                                 ? `${meal.food_items.length} yemek türü`
                                 : 'Detay yok'
@@ -276,14 +274,14 @@ export function HistoryMeals() {
                           </div>
                         </div>
                         
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-sm sm:text-base font-semibold text-blue-600">
+                        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 sm:gap-0 flex-shrink-0">
+                          <p className="text-sm font-semibold text-blue-600">
                             {Math.round(meal.total_calories)} kcal
                           </p>
                           <p className="text-xs text-gray-500 whitespace-nowrap">
-                            P: {meal.total_protein?.toFixed(1)}g • 
-                            K: {meal.total_carbs?.toFixed(1)}g • 
-                            Y: {meal.total_fat?.toFixed(1)}g
+                            P:{meal.total_protein?.toFixed(0)}g • 
+                            K:{meal.total_carbs?.toFixed(0)}g • 
+                            Y:{meal.total_fat?.toFixed(0)}g
                           </p>
                         </div>
                       </div>
@@ -294,9 +292,9 @@ export function HistoryMeals() {
 
               {/* Pagination - Mobile Optimized */}
               {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-100">
-                  <p className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
-                    {filteredMeals.length} yemekten {(currentPage - 1) * mealsPerPage + 1}-{Math.min(currentPage * mealsPerPage, filteredMeals.length)} arası gösteriliyor
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-100">
+                  <p className="text-xs text-gray-600 text-center sm:text-left">
+                    {filteredMeals.length} yemekten {(currentPage - 1) * mealsPerPage + 1}-{Math.min(currentPage * mealsPerPage, filteredMeals.length)} arası
                   </p>
                   <div className="flex gap-2 justify-center sm:justify-end">
                     <Button
@@ -304,7 +302,7 @@ export function HistoryMeals() {
                       size="sm"
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
-                      className="h-9 px-3 text-sm"
+                      className="h-8 px-3 text-sm"
                     >
                       Önceki
                     </Button>
@@ -313,7 +311,7 @@ export function HistoryMeals() {
                       size="sm"
                       onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages}
-                      className="h-9 px-3 text-sm"
+                      className="h-8 px-3 text-sm"
                     >
                       Sonraki
                     </Button>
