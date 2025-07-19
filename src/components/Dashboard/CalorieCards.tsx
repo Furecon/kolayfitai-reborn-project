@@ -32,14 +32,14 @@ export function CalorieCards({
 }: CalorieCardsProps) {
 
   return (
-    <div className="px-4 py-4 space-y-4">
+    <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4">
       {/* Main Macro Nutrients Card */}
       <Card className="bg-white border-gray-200">
-        <CardContent className="p-6">
-          <h2 className="text-xl font-bold text-center text-black mb-6">Günlük İlerleme</h2>
+        <CardContent className="p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-bold text-center text-black mb-4 sm:mb-6">Günlük İlerleme</h2>
           
           {/* Kalori - Büyük ve üstte tek başına */}
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-6 sm:mb-8">
             <CircularMacroChart
               current={totalCalories}
               goal={goalCalories}
@@ -51,8 +51,8 @@ export function CalorieCards({
             />
           </div>
           
-          {/* Makrolar - Alt kısımda yan yana */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* Makrolar - Alt kısımda responsive grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
             {/* Protein */}
             <div className="flex justify-center">
               <CircularMacroChart
@@ -95,28 +95,28 @@ export function CalorieCards({
         </CardContent>
       </Card>
 
-      {/* Additional Nutrition Info - Simplified */}
+      {/* Additional Nutrition Info - Responsive grid */}
       <Card className="bg-white border-gray-200">
-        <CardContent className="p-6">
-          <h3 className="text-lg font-semibold text-black mb-4 text-center">Diğer Besin Değerleri</h3>
-          <div className="grid grid-cols-3 gap-4">
+        <CardContent className="p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-black mb-3 sm:mb-4 text-center">Diğer Besin Değerleri</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mb-2">
-                <span className="text-2xl font-bold text-purple-600">{totalFiber.toFixed(1)}</span>
+              <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-purple-100 rounded-full mb-2">
+                <span className="text-lg sm:text-xl font-bold text-purple-600">{totalFiber.toFixed(1)}</span>
               </div>
-              <div className="text-sm text-gray-600">Lif (g)</div>
+              <div className="text-xs sm:text-sm text-gray-600">Lif (g)</div>
             </div>
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-pink-100 rounded-full mb-2">
-                <span className="text-2xl font-bold text-pink-600">{totalSugar.toFixed(1)}</span>
+              <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-pink-100 rounded-full mb-2">
+                <span className="text-lg sm:text-xl font-bold text-pink-600">{totalSugar.toFixed(1)}</span>
               </div>
-              <div className="text-sm text-gray-600">Şeker (g)</div>
+              <div className="text-xs sm:text-sm text-gray-600">Şeker (g)</div>
             </div>
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mb-2">
-                <span className="text-xl font-bold text-red-600">{Math.round(totalSodium)}</span>
+              <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-red-100 rounded-full mb-2">
+                <span className="text-sm sm:text-lg font-bold text-red-600">{Math.round(totalSodium)}</span>
               </div>
-              <div className="text-sm text-gray-600">Sodyum (mg)</div>
+              <div className="text-xs sm:text-sm text-gray-600">Sodyum (mg)</div>
             </div>
           </div>
         </CardContent>

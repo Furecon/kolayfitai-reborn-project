@@ -161,19 +161,19 @@ export function HistoryMeals() {
   }, {} as Record<string, MealHistory[]>)
 
   return (
-    <div className="px-4 pb-6">
+    <div className="px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
       <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-            <History className="h-5 w-5 text-blue-600" />
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-semibold text-gray-900">
+            <History className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
             Geçmiş Yemekler
           </CardTitle>
           
-          {/* Filters */}
-          <div className="flex flex-col gap-3 mt-4">
-            <div className="flex gap-2">
+          {/* Filters - Responsive Layout */}
+          <div className="flex flex-col gap-3 mt-3 sm:mt-4">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger className="flex-1">
+                <SelectTrigger className="w-full sm:flex-1 h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -184,7 +184,7 @@ export function HistoryMeals() {
               </Select>
               
               <Select value={selectedMealType} onValueChange={setSelectedMealType}>
-                <SelectTrigger className="flex-1">
+                <SelectTrigger className="w-full sm:flex-1 h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -203,7 +203,7 @@ export function HistoryMeals() {
                 placeholder="Yemek veya tarih ara..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-10"
               />
             </div>
           </div>
@@ -211,21 +211,21 @@ export function HistoryMeals() {
         
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-              <span className="ml-2 text-gray-600">Yemekler yükleniyor...</span>
+            <div className="flex items-center justify-center py-6 sm:py-8">
+              <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-blue-500"></div>
+              <span className="ml-2 text-sm sm:text-base text-gray-600">Yemekler yükleniyor...</span>
             </div>
           ) : filteredMeals.length === 0 ? (
-            <div className="text-center py-8">
-              <Utensils className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-2">
+            <div className="text-center py-6 sm:py-8">
+              <Utensils className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+              <p className="text-sm sm:text-base text-gray-600 mb-2 px-2">
                 {searchTerm ? 'Arama kriterlerinize uygun yemek bulunamadı' : 'Bu dönemde kayıtlı yemek bulunamadı'}
               </p>
               {searchTerm && (
                 <Button
                   variant="ghost"
                   onClick={() => setSearchTerm('')}
-                  className="text-blue-600"
+                  className="text-blue-600 text-sm"
                 >
                   Aramayı Temizle
                 </Button>
@@ -233,13 +233,15 @@ export function HistoryMeals() {
             </div>
           ) : (
             <>
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {Object.entries(groupedMeals).map(([date, dayMeals]) => (
-                  <div key={date} className="space-y-3">
+                  <div key={date} className="space-y-2 sm:space-y-3">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                      <Calendar className="h-4 w-4 text-blue-600" />
-                      <h3 className="font-medium text-gray-900">{formatDate(date)}</h3>
-                      <Badge variant="secondary" className="text-xs">
+                      <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+                      <h3 className="text-sm sm:text-base font-medium text-gray-900 flex-1 min-w-0">
+                        <span className="truncate block">{formatDate(date)}</span>
+                      </h3>
+                      <Badge variant="secondary" className="text-xs flex-shrink-0">
                         {dayMeals.length} öğün
                       </Badge>
                     </div>
@@ -247,25 +249,25 @@ export function HistoryMeals() {
                     {dayMeals.map((meal) => (
                       <div
                         key={meal.id}
-                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors gap-3"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="text-xl">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                          <div className="text-lg sm:text-xl flex-shrink-0">
                             {getMealIcon(meal.meal_type)}
                           </div>
                           
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-medium text-gray-900">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                              <h4 className="text-sm sm:text-base font-medium text-gray-900 truncate">
                                 {getMealTypeInTurkish(meal.meal_type)}
                               </h4>
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="text-xs self-start sm:self-auto flex-shrink-0">
                                 <Clock className="h-3 w-3 mr-1" />
                                 {formatTime(meal.created_at)}
                               </Badge>
                             </div>
                             
-                            <p className="text-sm text-gray-600">
+                            <p className="text-xs sm:text-sm text-gray-600 truncate">
                               {meal.food_items.length > 0 
                                 ? `${meal.food_items.length} yemek türü`
                                 : 'Detay yok'
@@ -274,11 +276,11 @@ export function HistoryMeals() {
                           </div>
                         </div>
                         
-                        <div className="text-right">
-                          <p className="font-semibold text-blue-600">
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-sm sm:text-base font-semibold text-blue-600">
                             {Math.round(meal.total_calories)} kcal
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 whitespace-nowrap">
                             P: {meal.total_protein?.toFixed(1)}g • 
                             K: {meal.total_carbs?.toFixed(1)}g • 
                             Y: {meal.total_fat?.toFixed(1)}g
@@ -290,18 +292,19 @@ export function HistoryMeals() {
                 ))}
               </div>
 
-              {/* Pagination */}
+              {/* Pagination - Mobile Optimized */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
-                  <p className="text-sm text-gray-600">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-100">
+                  <p className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
                     {filteredMeals.length} yemekten {(currentPage - 1) * mealsPerPage + 1}-{Math.min(currentPage * mealsPerPage, filteredMeals.length)} arası gösteriliyor
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 justify-center sm:justify-end">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
+                      className="h-9 px-3 text-sm"
                     >
                       Önceki
                     </Button>
@@ -310,6 +313,7 @@ export function HistoryMeals() {
                       size="sm"
                       onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages}
+                      className="h-9 px-3 text-sm"
                     >
                       Sonraki
                     </Button>

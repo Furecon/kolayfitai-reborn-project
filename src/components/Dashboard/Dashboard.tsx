@@ -130,11 +130,11 @@ export function Dashboard() {
   if (currentView === 'profile') {
     return (
       <div className="min-h-screen bg-white">
-        <div className="border-b border-gray-200 px-4 py-4">
+        <div className="border-b border-gray-200 px-3 sm:px-4 py-3 sm:py-4">
           <Button
             variant="ghost"
             onClick={() => setCurrentView('dashboard')}
-            className="text-gray-600"
+            className="text-gray-600 h-10"
           >
             ← Geri
           </Button>
@@ -186,29 +186,29 @@ export function Dashboard() {
       
       <CalorieCards {...dailyStats} />
       
-      {/* Quick Action Buttons */}
-      <div className="px-4 pb-4">
-        <div className="grid grid-cols-2 gap-3">
+      {/* Quick Action Buttons - Responsive Grid */}
+      <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Button
             onClick={() => setCurrentView('suggestions')}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-3 h-auto"
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-3 h-auto min-h-[4rem] sm:min-h-[3.5rem]"
           >
-            <Sparkles className="h-5 w-5 mr-2" />
-            <div className="text-left">
-              <div className="font-semibold">AI Önerileri</div>
-              <div className="text-xs opacity-90">Kişisel öğün önerileri</div>
+            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+            <div className="text-left min-w-0">
+              <div className="font-semibold text-sm sm:text-base">AI Önerileri</div>
+              <div className="text-xs opacity-90 truncate">Kişisel öğün önerileri</div>
             </div>
           </Button>
           
           <Button
             onClick={() => setCurrentView('favorites')}
             variant="outline"
-            className="py-3 h-auto border-pink-200 hover:bg-pink-50"
+            className="py-3 h-auto min-h-[4rem] sm:min-h-[3.5rem] border-pink-200 hover:bg-pink-50"
           >
-            <Heart className="h-5 w-5 mr-2 text-pink-500" />
-            <div className="text-left">
-              <div className="font-semibold">Favorilerim</div>
-              <div className="text-xs text-gray-500">Sevdiğim tarifler</div>
+            <Heart className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-pink-500 flex-shrink-0" />
+            <div className="text-left min-w-0">
+              <div className="font-semibold text-sm sm:text-base">Favorilerim</div>
+              <div className="text-xs text-gray-500 truncate">Sevdiğim tarifler</div>
             </div>
           </Button>
         </div>
@@ -223,19 +223,19 @@ export function Dashboard() {
       
       <HistoryMeals />
 
-      {/* AI Assistant Button */}
-      <div className="fixed bottom-6 right-6">
+      {/* AI Assistant Button - Responsive positioning */}
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6">
         <Button
           onClick={() => setShowAssistant(!showAssistant)}
-          className="bg-green-500 hover:bg-green-600 text-white rounded-full w-14 h-14 shadow-lg"
+          className="bg-green-500 hover:bg-green-600 text-white rounded-full w-12 h-12 sm:w-14 sm:h-14 shadow-lg"
         >
-          {showAssistant ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+          {showAssistant ? <X className="h-5 w-5 sm:h-6 sm:w-6" /> : <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />}
         </Button>
       </div>
 
-      {/* AI Assistant Panel */}
+      {/* AI Assistant Panel - Responsive sizing */}
       {showAssistant && (
-        <div className="fixed bottom-24 right-6 w-80 h-96 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
+        <div className="fixed bottom-20 sm:bottom-24 right-4 sm:right-6 w-80 sm:w-80 h-80 sm:h-96 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
           <AIAssistant onClose={() => setShowAssistant(false)} />
         </div>
       )}

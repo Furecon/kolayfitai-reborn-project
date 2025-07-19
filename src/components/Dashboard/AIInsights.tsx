@@ -129,12 +129,12 @@ export function AIInsights({ dailyStats }: AIInsightsProps) {
 
   if (loading) {
     return (
-      <div className="px-4 pb-4">
+      <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-center">
-              <RefreshCw className="h-6 w-6 animate-spin text-green-500" />
-              <span className="ml-2 text-gray-600">AI analiz yapılıyor...</span>
+              <RefreshCw className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-green-500" />
+              <span className="ml-2 text-sm sm:text-base text-gray-600">AI analiz yapılıyor...</span>
             </div>
           </CardContent>
         </Card>
@@ -143,25 +143,25 @@ export function AIInsights({ dailyStats }: AIInsightsProps) {
   }
 
   return (
-    <div className="px-4 pb-4">
+    <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4">
       <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-            <Brain className="h-5 w-5 text-green-600" />
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-semibold text-gray-900">
+            <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
             AI Analiz ve Öneriler
           </CardTitle>
         </CardHeader>
         
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
           {/* Daily Progress */}
-          <div className="bg-white rounded-lg p-4 border border-green-100">
-            <div className="flex items-center gap-2 mb-3">
-              <Target className="h-4 w-4 text-blue-600" />
-              <h3 className="font-medium text-gray-900">Günlük İlerleme</h3>
+          <div className="bg-white rounded-lg p-3 sm:p-4 border border-green-100">
+            <div className="flex items-center gap-2 mb-2 sm:mb-3">
+              <Target className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+              <h3 className="text-sm sm:text-base font-medium text-gray-900">Günlük İlerleme</h3>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <p className="text-sm text-gray-600">Kalori</p>
+                <p className="text-xs sm:text-sm text-gray-600 mb-1">Kalori</p>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 bg-gray-200 rounded-full h-2">
                     <div 
@@ -169,13 +169,13 @@ export function AIInsights({ dailyStats }: AIInsightsProps) {
                       style={{ width: `${Math.min(insights?.dailyProgress.calorieProgress || 0, 100)}%` }}
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-xs sm:text-sm font-medium text-gray-900 min-w-[3rem]">
                     {Math.round(insights?.dailyProgress.calorieProgress || 0)}%
                   </span>
                 </div>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Protein</p>
+                <p className="text-xs sm:text-sm text-gray-600 mb-1">Protein</p>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 bg-gray-200 rounded-full h-2">
                     <div 
@@ -183,7 +183,7 @@ export function AIInsights({ dailyStats }: AIInsightsProps) {
                       style={{ width: `${Math.min(insights?.dailyProgress.proteinProgress || 0, 100)}%` }}
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-xs sm:text-sm font-medium text-gray-900 min-w-[3rem]">
                     {Math.round(insights?.dailyProgress.proteinProgress || 0)}%
                   </span>
                 </div>
@@ -191,39 +191,40 @@ export function AIInsights({ dailyStats }: AIInsightsProps) {
             </div>
             <Badge 
               variant={insights?.dailyProgress.recommendation === 'Mükemmel!' ? 'default' : 'secondary'}
-              className="mt-2"
+              className="mt-2 text-xs"
             >
               {insights?.dailyProgress.recommendation}
             </Badge>
           </div>
 
           {/* Weekly Trend */}
-          <div className="bg-white rounded-lg p-4 border border-green-100">
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="h-4 w-4 text-purple-600" />
-              <h3 className="font-medium text-gray-900">Haftalık Trend</h3>
+          <div className="bg-white rounded-lg p-3 sm:p-4 border border-green-100">
+            <div className="flex items-center gap-2 mb-2 sm:mb-3">
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
+              <h3 className="text-sm sm:text-base font-medium text-gray-900">Haftalık Trend</h3>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
               <div>
-                <p className="text-sm text-gray-600">Ortalama Kalori</p>
-                <p className="font-semibold text-gray-900">{insights?.weeklyTrend.averageCalories} kcal</p>
+                <p className="text-xs sm:text-sm text-gray-600">Ortalama Kalori</p>
+                <p className="text-sm sm:text-base font-semibold text-gray-900">{insights?.weeklyTrend.averageCalories} kcal</p>
               </div>
               <Badge 
                 variant={insights?.weeklyTrend.trend === 'up' ? 'destructive' : insights?.weeklyTrend.trend === 'down' ? 'secondary' : 'default'}
+                className="text-xs self-start sm:self-auto"
               >
                 {insights?.weeklyTrend.trend === 'up' ? '↗ Artış' : insights?.weeklyTrend.trend === 'down' ? '↘ Azalış' : '→ Stabil'}
               </Badge>
             </div>
-            <p className="text-sm text-gray-600 mt-2">{insights?.weeklyTrend.message}</p>
+            <p className="text-xs sm:text-sm text-gray-600 mt-2">{insights?.weeklyTrend.message}</p>
           </div>
 
           {/* AI Suggestion */}
-          <div className="bg-white rounded-lg p-4 border border-green-100">
-            <div className="flex items-center gap-2 mb-3">
-              <Lightbulb className="h-4 w-4 text-yellow-600" />
-              <h3 className="font-medium text-gray-900">AI Önerisi</h3>
+          <div className="bg-white rounded-lg p-3 sm:p-4 border border-green-100">
+            <div className="flex items-center gap-2 mb-2 sm:mb-3">
+              <Lightbulb className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
+              <h3 className="text-sm sm:text-base font-medium text-gray-900">AI Önerisi</h3>
             </div>
-            <p className="text-gray-700 text-sm leading-relaxed">
+            <p className="text-gray-700 text-xs sm:text-sm leading-relaxed">
               {insights?.aiSuggestion}
             </p>
           </div>
@@ -232,9 +233,9 @@ export function AIInsights({ dailyStats }: AIInsightsProps) {
             onClick={fetchInsights}
             variant="outline" 
             size="sm"
-            className="w-full border-green-300 text-green-700 hover:bg-green-50"
+            className="w-full border-green-300 text-green-700 hover:bg-green-50 h-10 sm:h-9 text-sm"
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
             Analizi Yenile
           </Button>
         </CardContent>
