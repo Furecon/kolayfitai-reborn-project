@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,9 +19,10 @@ interface FoodItem {
 }
 
 interface ManualFoodEntryProps {
-  onSubmit: (foods: FoodItem[]) => void
+  mealType: string
+  onSave: (foods: FoodItem[]) => Promise<void>
   onBack: () => void
-  capturedImage?: string | null
+  loading: boolean
 }
 
 interface SearchResult {
@@ -36,7 +36,7 @@ interface SearchResult {
   fat_per_100g: number
 }
 
-export default function ManualFoodEntry({ onSubmit, onBack, capturedImage }: ManualFoodEntryProps) {
+export default function ManualFoodEntry({ mealType, onSave, onBack, loading }: ManualFoodEntryProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [selectedFoods, setSelectedFoods] = useState<FoodItem[]>([])
@@ -126,7 +126,7 @@ export default function ManualFoodEntry({ onSubmit, onBack, capturedImage }: Man
       return
     }
 
-    onSubmit(selectedFoods)
+    onSave(selectedFoods)
   }
 
   const getTotalNutrition = () => {
@@ -156,17 +156,8 @@ export default function ManualFoodEntry({ onSubmit, onBack, capturedImage }: Man
             Geri
           </Button>
           <h1 className="text-xl font-semibold text-black">Manuel Yemek Girişi</h1>
+          <span className="text-sm text-gray-500">({mealType})</span>
         </div>
-
-        {capturedImage && (
-          <div className="mb-6">
-            <img
-              src={capturedImage}
-              alt="Captured food"
-              className="w-full max-w-md mx-auto rounded-lg shadow-md"
-            />
-          </div>
-        )}
 
         <Card>
           <CardHeader>
@@ -290,8 +281,9 @@ export default function ManualFoodEntry({ onSubmit, onBack, capturedImage }: Man
               <Button
                 onClick={handleSubmit}
                 className="w-full bg-green-500 hover:bg-green-600 text-white"
+                disabled={loading}
               >
-                Devam Et
+                {loading ? "Kaydediliyor..." : "Devam Et"}
               </Button>
             </CardContent>
           </Card>
