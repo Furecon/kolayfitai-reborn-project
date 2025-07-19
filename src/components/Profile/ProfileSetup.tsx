@@ -17,6 +17,9 @@ interface ProfileData {
   weight: number | null
   activity_level: string | null
   diet_goal: string | null
+  daily_protein_goal: number | null
+  daily_carbs_goal: number | null
+  daily_fat_goal: number | null
 }
 
 export function ProfileSetup() {
@@ -30,7 +33,10 @@ export function ProfileSetup() {
     height: null,
     weight: null,
     activity_level: null,
-    diet_goal: null
+    diet_goal: null,
+    daily_protein_goal: null,
+    daily_carbs_goal: null,
+    daily_fat_goal: null
   })
 
   useEffect(() => {
@@ -56,8 +62,10 @@ export function ProfileSetup() {
         height: data.height,
         weight: data.weight,
         activity_level: data.activity_level,
-        // Handle missing diet_goal property safely
-        diet_goal: (data as any).diet_goal || null
+        diet_goal: (data as any).diet_goal || null,
+        daily_protein_goal: data.daily_protein_goal,
+        daily_carbs_goal: data.daily_carbs_goal,
+        daily_fat_goal: data.daily_fat_goal
       })
     }
   }
@@ -90,6 +98,14 @@ export function ProfileSetup() {
     return adjustments[dietGoal] || 0
   }
 
+  const calculateMacroGoals = (calories: number) => {
+    return {
+      protein: Math.round((calories * 0.30) / 4), // 30% of calories from protein (4 cal/g)
+      carbs: Math.round((calories * 0.40) / 4),   // 40% of calories from carbs (4 cal/g)
+      fat: Math.round((calories * 0.30) / 9)      // 30% of calories from fat (9 cal/g)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
@@ -109,6 +125,9 @@ export function ProfileSetup() {
       const dietAdjustment = getDietAdjustment(profile.diet_goal!)
       const dailyCalorieGoal = Math.round((bmr * activityMultiplier) + dietAdjustment)
 
+      // Calculate macro goals
+      const macroGoals = calculateMacroGoals(dailyCalorieGoal)
+
       const updateData: any = {
         user_id: user.id,
         name: profile.name,
@@ -118,10 +137,13 @@ export function ProfileSetup() {
         weight: profile.weight,
         activity_level: profile.activity_level,
         daily_calorie_goal: dailyCalorieGoal,
+        daily_protein_goal: macroGoals.protein,
+        daily_carbs_goal: macroGoals.carbs,
+        daily_fat_goal: macroGoals.fat,
         updated_at: new Date().toISOString()
       }
 
-      // Only add fields that exist in the current schema
+      // Add diet_goal if it exists
       if (profile.diet_goal) {
         updateData.diet_goal = profile.diet_goal
       }
@@ -134,7 +156,7 @@ export function ProfileSetup() {
 
       toast({
         title: "Başarılı!",
-        description: "Profil bilgileriniz kaydedildi."
+        description: "Profil bilgileriniz ve makro hedefleriniz kaydedildi."
       })
 
     } catch (error) {
@@ -155,7 +177,7 @@ export function ProfileSetup() {
         <CardHeader>
           <CardTitle className="text-2xl text-black">Profil Bilgileri</CardTitle>
           <p className="text-gray-600">
-            Kişiselleştirilmiş kalori hedefi için bilgilerinizi girin
+            Kişiselleştirilmiş kalori ve makro hedefleri için bilgilerinizi girin
           </p>
         </CardHeader>
         <CardContent>

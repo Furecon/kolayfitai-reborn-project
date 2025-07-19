@@ -1,713 +1,437 @@
-import { useState, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, Camera, Edit3, Check, X, ArrowLeft } from 'lucide-react'
-import { supabase } from '@/integrations/supabase/client'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/use-toast'
-import { useAuth } from './Auth/AuthProvider'
-import AnalysisTypeSelection from './FoodAnalysis/AnalysisTypeSelection'
-import DetailedAnalysisForm from './FoodAnalysis/DetailedAnalysisForm'
-import MealTypeSelection from './FoodAnalysis/MealTypeSelection'
-import ManualFoodEntry from './FoodAnalysis/ManualFoodEntry'
-import AIVerification from './FoodAnalysis/AIVerification'
+import { Camera } from 'lucide-react'
+import Webcam from 'react-webcam'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/components/Auth/AuthProvider'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface FoodItem {
   name: string
   nameEn: string
-  category: string
-  portionSize: number
-  calories: number
-  protein: number
-  carbs: number
-  fat: number
-}
-
-interface AnalysisResult {
-  detectedFoods: any[]
-  analysisType: 'quick' | 'detailed' | 'manual'
-  detailedData: any
-  confidenceScores: {
-    overall: number
-    individual: { name: string; confidence: number }[]
+  estimatedAmount: string
+  nutritionPer100g: {
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+    fiber: number
+    sugar: number
+    sodium: number
   }
-  nutritionalAnalysis: {
-    totalCalories: number
-    totalProtein: number
-    totalCarbs: number
-    totalFat: number
-    foodItems: FoodItem[]
+  totalNutrition: {
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+    fiber: number
+    sugar: number
+    sodium: number
   }
-  aiSuggestions: string
-  requiresManualReview: boolean
-  processingTimeMs: number
 }
 
 interface FoodAnalysisProps {
-  onMealAdded?: () => void
-  onBack?: () => void
+  onMealAdded: () => void
+  onBack: () => void
 }
-
-type Screen = 'capture' | 'analysisType' | 'detailedForm' | 'manualEntry' | 'analyzing' | 'aiVerification' | 'results' | 'editResults' | 'mealType' | 'saving'
 
 export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps) {
   const { user } = useAuth()
-  const [currentScreen, setCurrentScreen] = useState<Screen>('capture')
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
-  const [capturedImage, setCapturedImage] = useState<string | null>(null)
-  const [editingFoods, setEditingFoods] = useState<FoodItem[]>([])
-  const [selectedAnalysisType, setSelectedAnalysisType] = useState<'quick' | 'detailed' | 'manual'>('quick')
-  const [detailedFormData, setDetailedFormData] = useState(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [manualFoods, setManualFoods] = useState<FoodItem[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState<{
+    detectedFoods: FoodItem[]
+    confidence: number
+    suggestions: string
+  } | null>(null)
+  const [mealType, setMealType] = useState('öğün')
+  const [foodName, setFoodName] = useState('')
+  const [calories, setCalories] = useState('')
+  const [protein, setProtein] = useState('')
+  const [carbs, setCarbs] = useState('')
+  const [fat, setFat] = useState('')
+  const [fiber, setFiber] = useState('')
+  const [sugar, setSugar] = useState('')
+  const [sodium, setSodium] = useState('')
+  const [manuallyAdding, setManuallyAdding] = useState(false)
+  const webcamRef = useRef<Webcam>(null)
 
-  const handleImageCapture = async (file: File) => {
-    return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string
-        const base64Data = base64.split(',')[1]
-        setCapturedImage(base64)
-        resolve(base64Data)
-      }
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
+  useEffect(() => {
+    if (!photoUrl) return
+
+    analyzeImage(photoUrl)
+  }, [photoUrl])
+
+  const capture = () => {
+    const imageSrc = webcamRef.current?.getScreenshot()
+    if (imageSrc) {
+      setPhotoUrl(imageSrc)
+      setAnalysisResult(null)
+    }
   }
 
-  const analyzeFood = async (imageBase64: string, analysisType: 'quick' | 'detailed', detailedData?: any) => {
-    setCurrentScreen('analyzing')
-    setIsLoading(true)
+  const analyzeImage = async (imageUrl: string) => {
+    if (!imageUrl) return
+
+    setAnalyzing(true)
     try {
-      const { data, error } = await supabase.functions.invoke('analyze-food', {
-        body: {
-          imageBase64,
-          analysisType,
-          detailedData
-        }
-      })
-
-      if (error) throw error
-
-      // Check if AI analysis failed and fallback to manual is suggested
-      if (data.fallbackToManual) {
-        toast({
-          title: "AI Analiz Hatası",
-          description: data.message || "AI analizi başarısız oldu. Manuel giriş yapabilirsiniz.",
-          variant: "destructive"
-        })
-        setCurrentScreen('manualEntry')
-        setIsLoading(false)
-        return
-      }
-
-      setAnalysisResult(data)
-      
-      // Always show verification screen first
-      setCurrentScreen('aiVerification')
-      setIsLoading(false)
-      
-    } catch (error) {
-      console.error('Analysis error:', error)
-      toast({
-        title: "Analiz Hatası",
-        description: "Yemek analizi sırasında hata oluştu. Manuel giriş yapmayı deneyin.",
-        variant: "destructive"
-      })
-      setCurrentScreen('manualEntry')
-      setIsLoading(false)
-    }
-  }
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Geçersiz Dosya",
-        description: "Lütfen bir resim dosyası seçin.",
-        variant: "destructive"
-      })
-      return
-    }
-
-    try {
-      const imageBase64 = await handleImageCapture(file)
-      setCurrentScreen('analysisType')
-    } catch (error) {
-      toast({
-        title: "Dosya Hatası",
-        description: "Resim yüklenirken hata oluştu.",
-        variant: "destructive"
-      })
-    }
-  }
-
-  const handleCameraCapture = () => {
-    fileInputRef.current?.click()
-  }
-
-  const handleAnalysisTypeSelection = async (type: 'quick' | 'detailed' | 'manual') => {
-    setSelectedAnalysisType(type)
-    
-    if (type === 'manual') {
-      setCurrentScreen('manualEntry')
-    } else if (type === 'quick') {
-      const imageBase64 = capturedImage?.split(',')[1]
-      if (imageBase64) {
-        await analyzeFood(imageBase64, 'quick')
-      }
-    } else {
-      setCurrentScreen('detailedForm')
-    }
-  }
-
-  const handleDetailedFormSubmit = async (formData: any) => {
-    setDetailedFormData(formData)
-    const imageBase64 = capturedImage?.split(',')[1]
-    if (imageBase64) {
-      await analyzeFood(imageBase64, 'detailed', formData)
-    }
-  }
-
-  const handleManualFoodEntry = (foods: FoodItem[]) => {
-    setManualFoods(foods)
-    
-    // Create mock analysis result from manual foods
-    const totalCalories = foods.reduce((sum, food) => sum + food.calories, 0)
-    const totalProtein = foods.reduce((sum, food) => sum + food.protein, 0)
-    const totalCarbs = foods.reduce((sum, food) => sum + food.carbs, 0)
-    const totalFat = foods.reduce((sum, food) => sum + food.fat, 0)
-
-    const mockAnalysisResult: AnalysisResult = {
-      detectedFoods: [],
-      analysisType: 'manual' as any,
-      detailedData: null,
-      confidenceScores: {
-        overall: 1.0,
-        individual: foods.map(food => ({ name: food.name, confidence: 1.0 }))
-      },
-      nutritionalAnalysis: {
-        totalCalories: Math.round(totalCalories),
-        totalProtein: Math.round(totalProtein * 10) / 10,
-        totalCarbs: Math.round(totalCarbs * 10) / 10,
-        totalFat: Math.round(totalFat * 10) / 10,
-        foodItems: foods
-      },
-      aiSuggestions: 'Manuel giriş yapıldı.',
-      requiresManualReview: false,
-      processingTimeMs: 0
-    }
-
-    setAnalysisResult(mockAnalysisResult)
-    setCurrentScreen('results')
-  }
-
-  const handleAIVerificationConfirm = () => {
-    setCurrentScreen('results')
-  }
-
-  const handleAIVerificationEdit = () => {
-    if (analysisResult) {
-      setEditingFoods(analysisResult.nutritionalAnalysis.foodItems)
-      setCurrentScreen('editResults')
-    }
-  }
-
-  const handleAIVerificationManualEntry = () => {
-    setCurrentScreen('manualEntry')
-  }
-
-  const updateFoodItem = (index: number, field: keyof FoodItem, value: string | number) => {
-    const updated = [...editingFoods]
-    updated[index] = { ...updated[index], [field]: value }
-    setEditingFoods(updated)
-  }
-
-  const recalculateNutrition = () => {
-    const totalCalories = editingFoods.reduce((sum, food) => sum + food.calories, 0)
-    const totalProtein = editingFoods.reduce((sum, food) => sum + food.protein, 0)
-    const totalCarbs = editingFoods.reduce((sum, food) => sum + food.carbs, 0)
-    const totalFat = editingFoods.reduce((sum, food) => sum + food.fat, 0)
-
-    if (analysisResult) {
-      setAnalysisResult({
-        ...analysisResult,
-        nutritionalAnalysis: {
-          ...analysisResult.nutritionalAnalysis,
-          totalCalories: Math.round(totalCalories),
-          totalProtein: Math.round(totalProtein * 10) / 10,
-          totalCarbs: Math.round(totalCarbs * 10) / 10,
-          totalFat: Math.round(totalFat * 10) / 10,
-          foodItems: editingFoods
+      const response = await fetch('/api/analyze-food', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         },
-        requiresManualReview: false
+        body: JSON.stringify({ imageUrl, mealType })
       })
-    }
-    setCurrentScreen('results')
-    toast({
-      title: "Güncellendi!",
-      description: "Besin değerleri başarıyla güncellendi."
-    })
-  }
 
-  const handleMealTypeSave = async (mealType: string) => {
-    if (!analysisResult || !user) return
-
-    setCurrentScreen('saving')
-    setIsLoading(true)
-    try {
-      // Upload image to storage if exists
-      let photoUrl = null
-      if (capturedImage) {
-        const fileName = `meal-${Date.now()}.jpg`
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('meal-photos')
-          .upload(fileName, dataURItoBlob(capturedImage), {
-            contentType: 'image/jpeg'
-          })
-
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage
-            .from('meal-photos')
-            .getPublicUrl(uploadData.path)
-          photoUrl = urlData.publicUrl
-        }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      // Convert FoodItem[] to Json format
-      const foodItemsJson = JSON.parse(JSON.stringify(analysisResult.nutritionalAnalysis.foodItems))
+      const data = await response.json()
+      setAnalysisResult(data)
+    } catch (error: any) {
+      console.error('Failed to analyze image:', error)
+      toast({
+        title: "Hata",
+        description: "Yemek analizi sırasında bir hata oluştu. Lütfen tekrar deneyin.",
+        variant: "destructive"
+      })
+      setAnalysisResult({
+        detectedFoods: [],
+        confidence: 0,
+        suggestions: "Görüntü analizi sırasında hata oluştu. Lütfen manuel olarak yemek bilgilerini girin."
+      })
+    } finally {
+      setAnalyzing(false)
+    }
+  }
 
-      // Save meal log
-      const { data: mealData, error: mealError } = await supabase
+  const handleAddManually = () => {
+    setManuallyAdding(true)
+    setAnalysisResult(null)
+  }
+
+  const handleSaveManualEntry = () => {
+    const newFoodItem: FoodItem = {
+      name: foodName,
+      nameEn: foodName,
+      estimatedAmount: '1 porsiyon',
+      nutritionPer100g: {
+        calories: parseFloat(calories),
+        protein: parseFloat(protein),
+        carbs: parseFloat(carbs),
+        fat: parseFloat(fat),
+        fiber: parseFloat(fiber) || 0,
+        sugar: parseFloat(sugar) || 0,
+        sodium: parseFloat(sodium) || 0
+      },
+      totalNutrition: {
+        calories: parseFloat(calories),
+        protein: parseFloat(protein),
+        carbs: parseFloat(carbs),
+        fat: parseFloat(fat),
+        fiber: parseFloat(fiber) || 0,
+        sugar: parseFloat(sugar) || 0,
+        sodium: parseFloat(sodium) || 0
+      }
+    }
+
+    saveMealLog([newFoodItem], mealType)
+  }
+
+  const saveMealLog = async (foods: FoodItem[], mealType: string) => {
+    if (!user) return
+
+    try {
+      const totalNutrition = foods.reduce((acc, food) => ({
+        calories: acc.calories + food.totalNutrition.calories,
+        protein: acc.protein + food.totalNutrition.protein,
+        carbs: acc.carbs + food.totalNutrition.carbs,
+        fat: acc.fat + food.totalNutrition.fat,
+        fiber: acc.fiber + (food.totalNutrition.fiber || 0),
+        sugar: acc.sugar + (food.totalNutrition.sugar || 0),
+        sodium: acc.sodium + (food.totalNutrition.sodium || 0)
+      }), { 
+        calories: 0, 
+        protein: 0, 
+        carbs: 0, 
+        fat: 0, 
+        fiber: 0, 
+        sugar: 0, 
+        sodium: 0 
+      })
+
+      const { error } = await supabase
         .from('meal_logs')
         .insert({
           user_id: user.id,
           meal_type: mealType,
-          food_items: foodItemsJson,
-          total_calories: analysisResult.nutritionalAnalysis.totalCalories,
-          total_protein: analysisResult.nutritionalAnalysis.totalProtein,
-          total_carbs: analysisResult.nutritionalAnalysis.totalCarbs,
-          total_fat: analysisResult.nutritionalAnalysis.totalFat,
+          food_items: foods,
+          total_calories: totalNutrition.calories,
+          total_protein: totalNutrition.protein,
+          total_carbs: totalNutrition.carbs,
+          total_fat: totalNutrition.fat,
+          total_fiber: totalNutrition.fiber,
+          total_sugar: totalNutrition.sugar,
+          total_sodium: totalNutrition.sodium,
           photo_url: photoUrl,
           date: new Date().toISOString().split('T')[0]
         })
-        .select()
-        .single()
 
-      if (mealError) throw mealError
-
-      // Save AI analysis with proper Json formatting
-      if (mealData) {
-        const nutritionalAnalysisJson = {
-          totalCalories: analysisResult.nutritionalAnalysis.totalCalories,
-          totalProtein: analysisResult.nutritionalAnalysis.totalProtein,
-          totalCarbs: analysisResult.nutritionalAnalysis.totalCarbs,
-          totalFat: analysisResult.nutritionalAnalysis.totalFat,
-          foodItems: foodItemsJson
-        }
-
-        await supabase
-          .from('ai_analysis')
-          .insert({
-            meal_log_id: mealData.id,
-            detected_foods: JSON.parse(JSON.stringify(analysisResult.detectedFoods)),
-            confidence_scores: JSON.parse(JSON.stringify(analysisResult.confidenceScores)),
-            nutritional_analysis: nutritionalAnalysisJson,
-            ai_suggestions: analysisResult.aiSuggestions,
-            requires_manual_review: analysisResult.requiresManualReview,
-            processing_time_ms: analysisResult.processingTimeMs
-          })
-      }
+      if (error) throw error
 
       toast({
         title: "Başarılı!",
-        description: "Öğün başarıyla kaydedildi."
+        description: "Öğün kaydedildi."
       })
 
-      // Reset form
-      setAnalysisResult(null)
-      setCapturedImage(null)
-      setCurrentScreen('capture')
-      setEditingFoods([])
-      setDetailedFormData(null)
-      setIsLoading(false)
-
-      if (onMealAdded) {
-        onMealAdded()
-      }
-
+      onMealAdded()
     } catch (error) {
-      console.error('Save meal error:', error)
-      setCurrentScreen('results')
-      setIsLoading(false)
+      console.error('Error saving meal:', error)
       toast({
-        title: "Kayıt Hatası",
+        title: "Hata",
         description: "Öğün kaydedilirken hata oluştu.",
         variant: "destructive"
       })
     }
   }
 
-  const dataURItoBlob = (dataURI: string) => {
-    const byteString = atob(dataURI.split(',')[1])
-    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
-    const ab = new ArrayBuffer(byteString.length)
-    const ia = new Uint8Array(ab)
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i)
-    }
-    return new Blob([ab], { type: mimeString })
-  }
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return 'bg-green-500'
-    if (confidence >= 0.6) return 'bg-yellow-500'
-    return 'bg-red-500'
-  }
-
-  const resetToCapture = () => {
-    setCurrentScreen('capture')
-    setAnalysisResult(null)
-    setCapturedImage(null)
-    setEditingFoods([])
-    setDetailedFormData(null)
-    setIsLoading(false)
-  }
-
-  // Screen routing
-  if (currentScreen === 'analysisType') {
-    return (
-      <AnalysisTypeSelection
-        onSelectType={handleAnalysisTypeSelection}
-        onBack={() => setCurrentScreen('capture')}
-        capturedImage={capturedImage || ''}
-      />
-    )
-  }
-
-  if (currentScreen === 'detailedForm') {
-    return (
-      <DetailedAnalysisForm
-        onSubmit={handleDetailedFormSubmit}
-        onBack={() => setCurrentScreen('analysisType')}
-        loading={isLoading}
-      />
-    )
-  }
-
-  if (currentScreen === 'manualEntry') {
-    return (
-      <ManualFoodEntry
-        onSubmit={handleManualFoodEntry}
-        onBack={() => setCurrentScreen('analysisType')}
-        capturedImage={capturedImage}
-      />
-    )
-  }
-
-  if (currentScreen === 'aiVerification' && analysisResult) {
-    return (
-      <AIVerification
-        analysisResult={analysisResult}
-        capturedImage={capturedImage}
-        onConfirm={handleAIVerificationConfirm}
-        onEdit={handleAIVerificationEdit}
-        onManualEntry={handleAIVerificationManualEntry}
-        onBack={() => setCurrentScreen('analysisType')}
-      />
-    )
-  }
-
-  if (currentScreen === 'mealType') {
-    return (
-      <MealTypeSelection
-        onSubmit={handleMealTypeSave}
-        onBack={() => setCurrentScreen('results')}
-        loading={isLoading}
-      />
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      {onBack && (
-        <div className="border-b border-gray-200 px-4 py-4">
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="text-gray-600"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Geri
-          </Button>
-        </div>
-      )}
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <div className="border-b border-gray-200 px-4 py-4">
+        <Button
+          variant="ghost"
+          onClick={onBack}
+          className="text-gray-600"
+        >
+          ← Geri
+        </Button>
+      </div>
 
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
-        {currentScreen === 'capture' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-black">
-                <Camera className="h-5 w-5 text-green-500" />
-                AI Yemek Analizi
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-4">
-                <Button
-                  onClick={handleCameraCapture}
-                  className="flex-1 bg-green-500 hover:bg-green-600 text-white"
-                >
-                  <Camera className="mr-2 h-4 w-4" />
-                  Fotoğraf Çek / Yükle
-                </Button>
-              </div>
+      <div className="flex-grow flex items-center justify-center">
+        <Card className="w-full max-w-md mx-4 my-8">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold text-black">
+              Yemek Analizi
+            </CardTitle>
+          </CardHeader>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {currentScreen === 'analyzing' && (
-          <Card>
-            <CardContent className="flex items-center justify-center p-8">
-              <div className="text-center space-y-4">
-                <Loader2 className="mx-auto h-8 w-8 animate-spin text-green-500" />
-                <div>
-                  <h3 className="text-lg font-medium text-black">AI Analiz Ediyor</h3>
-                  <p className="text-gray-600">
-                    {selectedAnalysisType === 'detailed' ? 'Detaylı analiz yapılıyor...' : 'Hızlı analiz yapılıyor...'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {(currentScreen === 'results' || currentScreen === 'editResults') && analysisResult && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between text-black">
-                <span>
-                  Analiz Sonuçları 
-                  {analysisResult.analysisType === 'detailed' && 
-                    <Badge variant="secondary" className="ml-2">Detaylı Analiz</Badge>
-                  }
-                </span>
-                {analysisResult.requiresManualReview && currentScreen !== 'editResults' && (
-                  <Badge variant="destructive">Manuel İnceleme Gerekli</Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Confidence Scores */}
+          <CardContent className="space-y-4">
+            {!photoUrl && !manuallyAdding && (
               <div className="space-y-2">
-                <Label>Güven Skorları</Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">Genel:</span>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${getConfidenceColor(analysisResult.confidenceScores.overall)}`} />
-                    <span className="text-sm font-medium">
-                      %{Math.round(analysisResult.confidenceScores.overall * 100)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Food Items - Edit Mode */}
-              {currentScreen === 'editResults' ? (
-                <div className="space-y-3">
-                  <Label>Tespit Edilen Yemekler - Düzenleme</Label>
-                  <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-                    {editingFoods.map((food, index) => (
-                      <div key={index} className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                        <div>
-                          <Label className="text-xs">Yemek Adı</Label>
-                          <Input
-                            value={food.name}
-                            onChange={(e) => updateFoodItem(index, 'name', e.target.value)}
-                            className="h-8"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Porsiyon (g)</Label>
-                          <Input
-                            type="number"
-                            value={food.portionSize}
-                            onChange={(e) => updateFoodItem(index, 'portionSize', parseInt(e.target.value) || 0)}
-                            className="h-8"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Kalori</Label>
-                          <Input
-                            type="number"
-                            value={food.calories}
-                            onChange={(e) => updateFoodItem(index, 'calories', parseInt(e.target.value) || 0)}
-                            className="h-8"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Protein (g)</Label>
-                          <Input
-                            type="number"
-                            value={food.protein}
-                            onChange={(e) => updateFoodItem(index, 'protein', parseFloat(e.target.value) || 0)}
-                            className="h-8"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Karb. (g)</Label>
-                          <Input
-                            type="number"
-                            value={food.carbs}
-                            onChange={(e) => updateFoodItem(index, 'carbs', parseFloat(e.target.value) || 0)}
-                            className="h-8"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Yağ (g)</Label>
-                          <Input
-                            type="number"
-                            value={food.fat}
-                            onChange={(e) => updateFoodItem(index, 'fat', parseFloat(e.target.value) || 0)}
-                            className="h-8"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                    
-                    <div className="flex gap-2 pt-4">
-                      <Button onClick={recalculateNutrition} className="flex-1">
-                        <Check className="mr-2 h-4 w-4" />
-                        Kaydet
-                      </Button>
-                      <Button variant="outline" onClick={() => setCurrentScreen('results')}>
-                        <X className="mr-2 h-4 w-4" />
-                        İptal
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label>Tespit Edilen Yemekler</Label>
-                    {analysisResult.requiresManualReview && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditingFoods(analysisResult.nutritionalAnalysis.foodItems)
-                          setCurrentScreen('editResults')
-                        }}
-                      >
-                        <Edit3 className="mr-2 h-4 w-4" />
-                        Düzenle
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="grid gap-3">
-                    {analysisResult.nutritionalAnalysis.foodItems.map((food, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <h4 className="font-medium">{food.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {food.category} • {food.portionSize}g
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">{food.calories} kcal</p>
-                          <p className="text-xs text-muted-foreground">
-                            P: {food.protein}g • K: {food.carbs}g • Y: {food.fat}g
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Total Nutrition */}
-              <div className="mt-6 p-4 bg-primary/10 rounded-lg">
-                <h3 className="font-semibold mb-3">Toplam Besin Değerleri</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-primary">
-                      {analysisResult.nutritionalAnalysis.totalCalories}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Kalori</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-green-600">
-                      {analysisResult.nutritionalAnalysis.totalProtein}g
-                    </p>
-                    <p className="text-sm text-muted-foreground">Protein</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-blue-600">
-                      {analysisResult.nutritionalAnalysis.totalCarbs}g
-                    </p>
-                    <p className="text-sm text-muted-foreground">Karbonhidrat</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-orange-600">
-                      {analysisResult.nutritionalAnalysis.totalFat}g
-                    </p>
-                    <p className="text-sm text-muted-foreground">Yağ</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* AI Suggestions */}
-              {analysisResult.aiSuggestions && (
-                <Alert>
-                  <AlertDescription>
-                    <strong>AI Önerileri:</strong> {analysisResult.aiSuggestions}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-4">
+                <Webcam
+                  audio={false}
+                  ref={webcamRef}
+                  screenshotFormat="image/jpeg"
+                  className="rounded-md"
+                />
                 <Button
-                  onClick={() => setCurrentScreen('mealType')}
-                  className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                  onClick={capture}
+                  className="w-full bg-green-500 hover:bg-green-600 text-white"
                 >
-                  <Check className="mr-2 h-4 w-4" />
-                  Devam Et
+                  <Camera className="h-4 w-4 mr-2" />
+                  Fotoğraf Çek
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={resetToCapture}
+                  onClick={handleAddManually}
+                  className="w-full text-gray-600"
                 >
-                  Yeniden Çek
+                  Manuel Ekle
                 </Button>
               </div>
+            )}
 
-              <p className="text-xs text-muted-foreground text-center">
-                Analiz süresi: {analysisResult.processingTimeMs}ms
-                {analysisResult.analysisType === 'detailed' && ' • Detaylı Analiz'}
-              </p>
-            </CardContent>
-          </Card>
-        )}
+            {manuallyAdding && (
+              <div className="space-y-4">
+                <Label htmlFor="mealType">Öğün Tipi</Label>
+                <Select value={mealType} onValueChange={setMealType}>
+                  <SelectTrigger className="border-gray-300">
+                    <SelectValue placeholder="Öğün seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="kahvaltı">Kahvaltı</SelectItem>
+                    <SelectItem value="öğle">Öğle Yemeği</SelectItem>
+                    <SelectItem value="akşam">Akşam Yemeği</SelectItem>
+                    <SelectItem value="atıştırmalık">Atıştırmalık</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Label htmlFor="foodName">Yemek Adı</Label>
+                <Input
+                  id="foodName"
+                  type="text"
+                  placeholder="Yemek adı"
+                  value={foodName}
+                  onChange={(e) => setFoodName(e.target.value)}
+                  className="border-gray-300"
+                />
+
+                <Label htmlFor="calories">Kalori</Label>
+                <Input
+                  id="calories"
+                  type="number"
+                  placeholder="Kalori"
+                  value={calories}
+                  onChange={(e) => setCalories(e.target.value)}
+                  className="border-gray-300"
+                />
+
+                <Label htmlFor="protein">Protein (g)</Label>
+                <Input
+                  id="protein"
+                  type="number"
+                  placeholder="Protein"
+                  value={protein}
+                  onChange={(e) => setProtein(e.target.value)}
+                  className="border-gray-300"
+                />
+
+                <Label htmlFor="carbs">Karbonhidrat (g)</Label>
+                <Input
+                  id="carbs"
+                  type="number"
+                  placeholder="Karbonhidrat"
+                  value={carbs}
+                  onChange={(e) => setCarbs(e.target.value)}
+                  className="border-gray-300"
+                />
+
+                <Label htmlFor="fat">Yağ (g)</Label>
+                <Input
+                  id="fat"
+                  type="number"
+                  placeholder="Yağ"
+                  value={fat}
+                  onChange={(e) => setFat(e.target.value)}
+                  className="border-gray-300"
+                />
+
+                <Label htmlFor="fiber">Lif (g)</Label>
+                <Input
+                  id="fiber"
+                  type="number"
+                  placeholder="Lif"
+                  value={fiber}
+                  onChange={(e) => setFiber(e.target.value)}
+                  className="border-gray-300"
+                />
+
+                <Label htmlFor="sugar">Şeker (g)</Label>
+                <Input
+                  id="sugar"
+                  type="number"
+                  placeholder="Şeker"
+                  value={sugar}
+                  onChange={(e) => setSugar(e.target.value)}
+                  className="border-gray-300"
+                />
+
+                <Label htmlFor="sodium">Sodyum (mg)</Label>
+                <Input
+                  id="sodium"
+                  type="number"
+                  placeholder="Sodyum"
+                  value={sodium}
+                  onChange={(e) => setSodium(e.target.value)}
+                  className="border-gray-300"
+                />
+
+                <Button
+                  onClick={handleSaveManualEntry}
+                  className="w-full bg-green-500 hover:bg-green-600 text-white"
+                >
+                  Kaydet
+                </Button>
+              </div>
+            )}
+
+            {photoUrl && !manuallyAdding && (
+              <div className="space-y-4">
+                <div className="relative">
+                  <img src={photoUrl} alt="Captured Food" className="rounded-md" />
+                  {analyzing && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-md">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                    </div>
+                  )}
+                </div>
+
+                <Label htmlFor="mealType">Öğün Tipi</Label>
+                <Select value={mealType} onValueChange={setMealType}>
+                  <SelectTrigger className="border-gray-300">
+                    <SelectValue placeholder="Öğün seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="kahvaltı">Kahvaltı</SelectItem>
+                    <SelectItem value="öğle">Öğle Yemeği</SelectItem>
+                    <SelectItem value="akşam">Akşam Yemeği</SelectItem>
+                    <SelectItem value="atıştırmalık">Atıştırmalık</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {analysisResult && analysisResult.detectedFoods.length > 0 ? (
+                  <div className="space-y-2">
+                    <h3 className="text-md font-semibold text-gray-700">
+                      Analiz Sonuçları
+                    </h3>
+                    {analysisResult.detectedFoods.map((food, index) => (
+                      <div key={index} className="p-4 border border-gray-300 rounded-md">
+                        <h4 className="text-sm font-medium text-black">{food.name}</h4>
+                        <p className="text-xs text-gray-500">{food.estimatedAmount}</p>
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                          <div>
+                            <p className="text-xs text-gray-600">Kalori</p>
+                            <p className="text-sm font-semibold text-green-600">{Math.round(food.totalNutrition.calories)} kcal</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Protein</p>
+                            <p className="text-sm font-semibold text-blue-600">{food.totalNutrition.protein.toFixed(1)} g</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Karbonhidrat</p>
+                            <p className="text-sm font-semibold text-orange-600">{food.totalNutrition.carbs.toFixed(1)} g</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Yağ</p>
+                            <p className="text-sm font-semibold text-red-600">{food.totalNutrition.fat.toFixed(1)} g</p>
+                          </div>
+                           <div>
+                            <p className="text-xs text-gray-600">Lif</p>
+                            <p className="text-sm font-semibold text-purple-600">{food.totalNutrition.fiber.toFixed(1)} g</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Şeker</p>
+                            <p className="text-sm font-semibold text-pink-600">{food.totalNutrition.sugar.toFixed(1)} g</p>
+                          </div>
+                           <div>
+                            <p className="text-xs text-gray-600">Sodyum</p>
+                            <p className="text-sm font-semibold text-indigo-600">{Math.round(food.totalNutrition.sodium)} mg</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <Button
+                      onClick={() => saveMealLog(analysisResult.detectedFoods, mealType)}
+                      className="w-full bg-green-500 hover:bg-green-600 text-white"
+                    >
+                      Kaydet
+                    </Button>
+                  </div>
+                ) : analysisResult ? (
+                  <div className="text-center py-4">
+                    <p className="text-gray-600">{analysisResult.suggestions}</p>
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

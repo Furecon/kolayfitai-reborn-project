@@ -9,229 +9,149 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { 
-      imageBase64, 
-      mealType = 'kahvaltı',
-      analysisType = 'quick',
-      detailedData = null
-    } = await req.json()
-
-    if (!imageBase64) {
-      throw new Error('Image data is required')
+    const { imageUrl, mealType } = await req.json()
+    
+    if (!imageUrl) {
+      throw new Error('Image URL is required')
     }
 
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY')
-    if (!openAIApiKey) {
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
+    if (!openaiApiKey) {
       throw new Error('OpenAI API key not configured')
     }
 
-    console.log('Starting food analysis...', { analysisType, detailedData })
-    const startTime = Date.now()
+    console.log('Analyzing food image:', imageUrl)
 
-    // Create detailed prompt based on analysis type
-    let systemPrompt = `Sen uzman bir besin analisti ve yemek tanıma uzmanısın. Verilen yemek fotoğrafını analiz ederek şunları yap:
-
-1. Fotoğraftaki tüm yiyecekleri ve içecekleri tespit et (Türk, İtalyan, Çin, Amerikan, Fransız, Hint, Meksikan, Akdeniz ve diğer dünya mutfaklarından)
-2. Her yiyecek için 100g başına besin değerlerini hesapla
-3. Porsiyon miktarını tahmin et
-4. Güven skorunu (0-1 arası) belirle
-
-ÖNEMLİ: Yanıtını SADECE JSON formatında ver. Hiçbir açıklama, yorum veya ek metin ekleme. Sadece JSON objesi döndür.`
-
-    // Add detailed analysis context if provided
-    if (analysisType === 'detailed' && detailedData) {
-      systemPrompt += `
-
-DETAYLI ANALİZ BİLGİLERİ:
-- Yemek kaynağı: ${detailedData.foodSource === 'homemade' ? 'Ev yapımı' : 'Paketli/dışarıdan hazır'}
-- Pişirme yöntemi: ${detailedData.cookingMethod}
-- Tüketim miktarı: ${detailedData.consumedAmount}
-- Yemek tipi: ${detailedData.mealType === 'single' ? 'Tek tip yemek' : 'Karışık tabak'}
-${detailedData.hiddenIngredients && !detailedData.noHiddenIngredients ? 
-  `- Ek malzemeler: ${detailedData.hiddenIngredients}` : 
-  '- Ek malzemeler: Belirtilmedi'}
-
-Bu ek bilgileri kullanarak daha hassas kalori ve besin değeri hesabı yap.`
-    }
-
-    systemPrompt += `
-
-Çıktını SADECE aşağıdaki JSON formatında ver:
-{
-  "detectedFoods": [
-    {
-      "name": "yiyecek adı",
-      "nameEn": "english name",
-      "category": "kategori",
-      "confidence": 0.85,
-      "portionSize": 150,
-      "nutritionPer100g": {
-        "calories": 250,
-        "protein": 20,
-        "carbs": 30,
-        "fat": 10,
-        "fiber": 3
-      }
-    }
-  ],
-  "overallConfidence": 0.80,
-  "requiresManualReview": false,
-  "suggestions": "AI önerileri"
-}`
-
-    // AI food analysis with confidence scoring
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: `Bu ${mealType} fotoğrafını analiz et ve SADECE JSON yanıtı ver:`
+                text: `Analyze this food image and provide nutritional information. Return ONLY a valid JSON object with this exact structure:
+
+{
+  "detectedFoods": [
+    {
+      "name": "Food name in Turkish",
+      "nameEn": "Food name in English", 
+      "estimatedAmount": "Amount with unit (e.g., 1 porsiyon, 100g, 1 adet)",
+      "nutritionPer100g": {
+        "calories": number,
+        "protein": number,
+        "carbs": number,
+        "fat": number,
+        "fiber": number,
+        "sugar": number,
+        "sodium": number
+      },
+      "totalNutrition": {
+        "calories": number,
+        "protein": number,
+        "carbs": number,
+        "fat": number,
+        "fiber": number,
+        "sugar": number,
+        "sodium": number
+      }
+    }
+  ],
+  "mealType": "${mealType || 'öğün'}",
+  "confidence": number_between_0_and_1,
+  "suggestions": "Brief suggestions in Turkish"
+}
+
+Important notes:
+- All nutrition values should be realistic numbers
+- Fiber is in grams, sugar in grams, sodium in milligrams
+- Use Turkish food names when possible
+- Be as accurate as possible with portion estimates
+- Include fiber, sugar, and sodium values for comprehensive nutrition analysis`
               },
               {
                 type: 'image_url',
                 image_url: {
-                  url: `data:image/jpeg;base64,${imageBase64}`
+                  url: imageUrl,
+                  detail: 'high'
                 }
               }
             ]
           }
         ],
-        max_tokens: 1500,
-        temperature: analysisType === 'detailed' ? 0.2 : 0.3
+        max_tokens: 1000,
       }),
     })
 
     if (!response.ok) {
-      console.error('OpenAI API error:', response.statusText)
-      throw new Error(`OpenAI API error: ${response.statusText}`)
+      const errorText = await response.text()
+      console.error('OpenAI API error:', response.status, errorText)
+      throw new Error(`OpenAI API error: ${response.status}`)
     }
 
-    const aiResult = await response.json()
-    const processingTime = Date.now() - startTime
+    const data = await response.json()
+    console.log('OpenAI response:', data)
 
-    console.log('AI Response received:', aiResult.choices[0].message.content)
+    const content = data.choices[0]?.message?.content
+    if (!content) {
+      throw new Error('No content received from OpenAI')
+    }
 
-    // Parse AI response with better error handling
+    // Clean the response to extract JSON
+    let jsonStr = content.trim()
+    if (jsonStr.startsWith('```json')) {
+      jsonStr = jsonStr.replace(/```json\n?/, '').replace(/\n?```$/, '')
+    }
+    if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/```\n?/, '').replace(/\n?```$/, '')
+    }
+
     let analysisResult
     try {
-      const content = aiResult.choices[0].message.content.trim()
-      
-      // Try to extract JSON if it's wrapped in markdown or extra text
-      let jsonString = content
-      if (content.includes('```json')) {
-        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/)
-        if (jsonMatch) {
-          jsonString = jsonMatch[1]
-        }
-      } else if (content.includes('```')) {
-        const jsonMatch = content.match(/```\s*([\s\S]*?)\s*```/)
-        if (jsonMatch) {
-          jsonString = jsonMatch[1]
-        }
-      }
-      
-      // Try to find JSON object in the response
-      const jsonStart = jsonString.indexOf('{')
-      const jsonEnd = jsonString.lastIndexOf('}')
-      if (jsonStart !== -1 && jsonEnd !== -1) {
-        jsonString = jsonString.substring(jsonStart, jsonEnd + 1)
-      }
-      
-      analysisResult = JSON.parse(jsonString)
-      
-      // Validate required fields
-      if (!analysisResult.detectedFoods || !Array.isArray(analysisResult.detectedFoods)) {
-        throw new Error('Invalid response structure: missing detectedFoods array')
-      }
-      
+      analysisResult = JSON.parse(jsonStr)
     } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError)
-      console.error('Raw AI response:', aiResult.choices[0].message.content)
-      
-      // Fallback: return error that triggers manual review
-      return new Response(JSON.stringify({
-        error: 'AI_PARSE_ERROR',
-        message: 'AI yanıtı işlenemedi. Manuel giriş gerekli.',
-        requiresManualReview: true,
-        fallbackToManual: true,
-        processingTimeMs: processingTime
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 // Return 200 so frontend can handle gracefully
-      })
+      console.error('JSON parse error:', parseError)
+      console.error('Raw content:', content)
+      throw new Error('Invalid JSON response from AI')
     }
 
-    // Calculate total nutrition for the meal
-    let totalCalories = 0
-    let totalProtein = 0
-    let totalCarbs = 0
-    let totalFat = 0
+    // Validate the response structure
+    if (!analysisResult.detectedFoods || !Array.isArray(analysisResult.detectedFoods)) {
+      throw new Error('Invalid response structure: missing detectedFoods array')
+    }
 
-    analysisResult.detectedFoods.forEach((food: any) => {
-      const portionMultiplier = food.portionSize / 100
-      totalCalories += food.nutritionPer100g.calories * portionMultiplier
-      totalProtein += food.nutritionPer100g.protein * portionMultiplier
-      totalCarbs += food.nutritionPer100g.carbs * portionMultiplier
-      totalFat += food.nutritionPer100g.fat * portionMultiplier
+    // Ensure all required nutrition fields are present
+    analysisResult.detectedFoods.forEach((food: any, index: number) => {
+      if (!food.nutritionPer100g || !food.totalNutrition) {
+        throw new Error(`Missing nutrition data for food item ${index}`)
+      }
+      
+      // Ensure fiber, sugar, and sodium are present
+      const requiredFields = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium']
+      requiredFields.forEach(field => {
+        if (typeof food.nutritionPer100g[field] !== 'number') {
+          food.nutritionPer100g[field] = 0
+        }
+        if (typeof food.totalNutrition[field] !== 'number') {
+          food.totalNutrition[field] = 0
+        }
+      })
     })
 
-    // Determine if manual review is needed
-    const lowConfidenceThreshold = analysisType === 'detailed' ? 0.60 : 0.70
-    const requiresReview = analysisResult.overallConfidence < lowConfidenceThreshold || 
-                          analysisResult.detectedFoods.some((food: any) => food.confidence < lowConfidenceThreshold)
+    console.log('Analysis result:', analysisResult)
 
-    const result = {
-      detectedFoods: analysisResult.detectedFoods,
-      analysisType,
-      detailedData,
-      confidenceScores: {
-        overall: analysisResult.overallConfidence,
-        individual: analysisResult.detectedFoods.map((food: any) => ({
-          name: food.name,
-          confidence: food.confidence
-        }))
-      },
-      nutritionalAnalysis: {
-        totalCalories: Math.round(totalCalories),
-        totalProtein: Math.round(totalProtein * 10) / 10,
-        totalCarbs: Math.round(totalCarbs * 10) / 10,
-        totalFat: Math.round(totalFat * 10) / 10,
-        foodItems: analysisResult.detectedFoods.map((food: any) => ({
-          name: food.name,
-          nameEn: food.nameEn,
-          category: food.category,
-          portionSize: food.portionSize,
-          calories: Math.round(food.nutritionPer100g.calories * food.portionSize / 100),
-          protein: Math.round(food.nutritionPer100g.protein * food.portionSize / 100 * 10) / 10,
-          carbs: Math.round(food.nutritionPer100g.carbs * food.portionSize / 100 * 10) / 10,
-          fat: Math.round(food.nutritionPer100g.fat * food.portionSize / 100 * 10) / 10
-        }))
-      },
-      aiSuggestions: analysisResult.suggestions,
-      processingTimeMs: processingTime,
-      requiresManualReview: requiresReview
-    }
-
-    console.log('Analysis completed successfully')
-    
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify(analysisResult), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
@@ -239,15 +159,14 @@ Bu ek bilgileri kullanarak daha hassas kalori ve besin değeri hesabı yap.`
     console.error('Error in analyze-food function:', error)
     return new Response(
       JSON.stringify({ 
-        error: 'ANALYSIS_FAILED',
-        message: 'Yemek analizi başarısız oldu. Manuel giriş yapabilirsiniz.',
-        details: error.message,
-        requiresManualReview: true,
-        fallbackToManual: true
+        error: error.message,
+        detectedFoods: [],
+        confidence: 0,
+        suggestions: "Görüntü analizi sırasında hata oluştu. Lütfen manuel olarak yemek bilgilerini girin."
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-        status: 200 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
   }

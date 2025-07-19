@@ -80,6 +80,8 @@ export type Database = {
           name: string
           name_en: string | null
           protein_per_100g: number
+          sodium_per_100g: number | null
+          sugar_per_100g: number | null
         }
         Insert: {
           calories_per_100g: number
@@ -93,6 +95,8 @@ export type Database = {
           name: string
           name_en?: string | null
           protein_per_100g?: number
+          sodium_per_100g?: number | null
+          sugar_per_100g?: number | null
         }
         Update: {
           calories_per_100g?: number
@@ -106,6 +110,8 @@ export type Database = {
           name?: string
           name_en?: string | null
           protein_per_100g?: number
+          sodium_per_100g?: number | null
+          sugar_per_100g?: number | null
         }
         Relationships: []
       }
@@ -121,7 +127,10 @@ export type Database = {
           total_calories: number
           total_carbs: number
           total_fat: number
+          total_fiber: number | null
           total_protein: number
+          total_sodium: number | null
+          total_sugar: number | null
           user_id: string
         }
         Insert: {
@@ -135,7 +144,10 @@ export type Database = {
           total_calories?: number
           total_carbs?: number
           total_fat?: number
+          total_fiber?: number | null
           total_protein?: number
+          total_sodium?: number | null
+          total_sugar?: number | null
           user_id: string
         }
         Update: {
@@ -149,7 +161,10 @@ export type Database = {
           total_calories?: number
           total_carbs?: number
           total_fat?: number
+          total_fiber?: number | null
           total_protein?: number
+          total_sodium?: number | null
+          total_sugar?: number | null
           user_id?: string
         }
         Relationships: []
@@ -160,6 +175,9 @@ export type Database = {
           age: number | null
           created_at: string
           daily_calorie_goal: number | null
+          daily_carbs_goal: number | null
+          daily_fat_goal: number | null
+          daily_protein_goal: number | null
           gender: string | null
           height: number | null
           id: string
@@ -176,6 +194,9 @@ export type Database = {
           age?: number | null
           created_at?: string
           daily_calorie_goal?: number | null
+          daily_carbs_goal?: number | null
+          daily_fat_goal?: number | null
+          daily_protein_goal?: number | null
           gender?: string | null
           height?: number | null
           id?: string
@@ -192,6 +213,9 @@ export type Database = {
           age?: number | null
           created_at?: string
           daily_calorie_goal?: number | null
+          daily_carbs_goal?: number | null
+          daily_fat_goal?: number | null
+          daily_protein_goal?: number | null
           gender?: string | null
           height?: number | null
           id?: string
