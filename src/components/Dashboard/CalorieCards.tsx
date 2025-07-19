@@ -36,7 +36,7 @@ export function CalorieCards({
       {/* Main Macro Nutrients Card */}
       <Card className="bg-white border-gray-200">
         <CardContent className="p-6">
-          <h2 className="text-xl font-bold text-center text-black mb-6">Günlük Besin Değerleri</h2>
+          <h2 className="text-xl font-bold text-center text-black mb-6">Günlük İlerleme</h2>
           
           {/* Kalori - Büyük ve üstte tek başına */}
           <div className="flex justify-center mb-8">
@@ -44,7 +44,7 @@ export function CalorieCards({
               current={totalCalories}
               goal={goalCalories}
               label="Kalori"
-              color="#ef4444"
+              color="#22c55e"
               unit="kcal"
               icon={Flame}
               size="large"
@@ -59,7 +59,7 @@ export function CalorieCards({
                 current={totalProtein}
                 goal={proteinGoal}
                 label="Protein"
-                color="#10b981"
+                color="#3b82f6"
                 unit="g"
                 icon={Beef}
                 size="normal"
@@ -72,7 +72,7 @@ export function CalorieCards({
                 current={totalCarbs}
                 goal={carbsGoal}
                 label="Karbonhidrat"
-                color="#3b82f6"
+                color="#f97316"
                 unit="g"
                 icon={Wheat}
                 size="normal"
@@ -85,7 +85,7 @@ export function CalorieCards({
                 current={totalFat}
                 goal={fatGoal}
                 label="Yağ"
-                color="#f59e0b"
+                color="#a855f7"
                 unit="g"
                 icon={Droplets}
                 size="normal"

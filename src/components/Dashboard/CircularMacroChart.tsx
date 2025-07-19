@@ -26,16 +26,16 @@ const CircularProgress = ({
   size?: 'large' | 'normal'
 }) => {
   const percentage = Math.min((current / goal) * 100, 100)
-  const radius = size === 'large' ? 70 : 55
-  const strokeWidth = size === 'large' ? 12 : 10
+  const radius = size === 'large' ? 80 : 65
+  const strokeWidth = size === 'large' ? 14 : 12
   const normalizedRadius = radius - strokeWidth * 2
   const circumference = normalizedRadius * 2 * Math.PI
   const strokeDasharray = `${circumference} ${circumference}`
   const strokeDashoffset = circumference - (percentage / 100) * circumference
-  const iconSize = size === 'large' ? 32 : 24
+  const iconSize = size === 'large' ? 28 : 20
 
   return (
-    <div className={`relative ${size === 'large' ? 'w-40 h-40' : 'w-32 h-32'}`}>
+    <div className={`relative ${size === 'large' ? 'w-44 h-44' : 'w-36 h-36'}`}>
       <svg
         height={radius * 2}
         width={radius * 2}
@@ -43,7 +43,7 @@ const CircularProgress = ({
       >
         {/* Background circle */}
         <circle
-          stroke="#e5e7eb"
+          stroke="#f3f4f6"
           fill="transparent"
           strokeWidth={strokeWidth}
           r={normalizedRadius}
@@ -67,15 +67,15 @@ const CircularProgress = ({
       
       {/* Center content */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-center max-w-full px-2">
+        <div className="text-center max-w-full px-3">
           {Icon && (
             <Icon 
-              className={`mx-auto mb-1 text-gray-700`} 
+              className="mx-auto mb-1 text-gray-600" 
               size={iconSize}
             />
           )}
-          <div className={`${size === 'large' ? 'text-xl' : 'text-lg'} font-bold text-gray-800 leading-tight`}>
-            {Math.round(percentage)}%
+          <div className={`${size === 'large' ? 'text-2xl' : 'text-xl'} font-bold text-gray-900 leading-tight`}>
+            {Math.round(current)}
           </div>
         </div>
       </div>
@@ -101,12 +101,12 @@ export function CircularMacroChart({
         icon={icon}
         size={size}
       />
-      <div className="text-center max-w-full px-1">
-        <div className={`${size === 'large' ? 'text-lg' : 'text-base'} font-medium text-gray-800 mb-1 leading-tight`}>
+      <div className="text-center max-w-full px-2">
+        <div className={`${size === 'large' ? 'text-lg' : 'text-base'} font-semibold text-gray-900 mb-1 leading-tight`}>
           {label}
         </div>
         <div className={`${size === 'large' ? 'text-sm' : 'text-xs'} text-gray-600 leading-tight`}>
-          {Math.round(current)} / {Math.round(goal)} {unit}
+          Hedef: {Math.round(goal)} {unit}
         </div>
       </div>
     </div>
