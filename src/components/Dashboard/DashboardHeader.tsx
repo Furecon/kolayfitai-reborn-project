@@ -1,14 +1,17 @@
 
 import { Button } from '@/components/ui/button'
-import { Camera, User } from 'lucide-react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Camera, User, Lightbulb, Phone, BookOpen } from 'lucide-react'
 import { useAuth } from '@/components/Auth/AuthProvider'
 
 interface DashboardHeaderProps {
   onCameraClick: () => void
   onProfileClick: () => void
+  onContactClick: () => void
+  onResourcesClick: () => void
 }
 
-export function DashboardHeader({ onCameraClick, onProfileClick }: DashboardHeaderProps) {
+export function DashboardHeader({ onCameraClick, onProfileClick, onContactClick, onResourcesClick }: DashboardHeaderProps) {
   const { signOut, user } = useAuth()
 
   return (
@@ -44,6 +47,38 @@ export function DashboardHeader({ onCameraClick, onProfileClick }: DashboardHead
           >
             <User className="h-5 w-5" />
           </Button>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="border-gray-300"
+              >
+                <Lightbulb className="h-5 w-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2">
+              <div className="space-y-1">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={onContactClick}
+                >
+                  <Phone className="h-4 w-4 mr-2" />
+                  İletişim ve Destek
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={onResourcesClick}
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Kaynaklar
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
           
           <Button
             variant="ghost"

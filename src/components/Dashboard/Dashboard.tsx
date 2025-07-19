@@ -5,6 +5,8 @@ import { CalorieCards } from './CalorieCards'
 import { MealsList } from './MealsList'
 import FoodAnalysis from '../FoodAnalysis'
 import { ProfileSetup } from '../Profile/ProfileSetup'
+import { ContactPage } from '../Support/ContactPage'
+import { ResourcesPage } from '../Support/ResourcesPage'
 import { AIAssistant } from '../AI/AIAssistant'
 import { MealSuggestions } from '../MealSuggestions/MealSuggestions'
 import { FavoriteMeals } from '../MealSuggestions/FavoriteMeals'
@@ -13,7 +15,7 @@ import { useAuth } from '@/components/Auth/AuthProvider'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, X, Sparkles, Heart } from 'lucide-react'
 
-type View = 'dashboard' | 'camera' | 'profile' | 'assistant' | 'suggestions' | 'favorites'
+type View = 'dashboard' | 'camera' | 'profile' | 'assistant' | 'suggestions' | 'favorites' | 'contact' | 'resources'
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -141,6 +143,18 @@ export function Dashboard() {
     )
   }
 
+  if (currentView === 'contact') {
+    return (
+      <ContactPage onBack={() => setCurrentView('dashboard')} />
+    )
+  }
+
+  if (currentView === 'resources') {
+    return (
+      <ResourcesPage onBack={() => setCurrentView('dashboard')} />
+    )
+  }
+
   if (currentView === 'suggestions') {
     return (
       <MealSuggestions
@@ -165,6 +179,8 @@ export function Dashboard() {
       <DashboardHeader
         onCameraClick={() => setCurrentView('camera')}
         onProfileClick={() => setCurrentView('profile')}
+        onContactClick={() => setCurrentView('contact')}
+        onResourcesClick={() => setCurrentView('resources')}
       />
       
       <CalorieCards {...dailyStats} />
