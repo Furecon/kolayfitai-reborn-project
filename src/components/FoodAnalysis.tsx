@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,6 +12,7 @@ import { useAuth } from '@/components/Auth/AuthProvider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface FoodItem {
+  [key: string]: any; // Add index signature for Json compatibility
   name: string
   nameEn: string
   estimatedAmount: string
@@ -171,7 +173,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
         .insert({
           user_id: user.id,
           meal_type: mealType,
-          food_items: foods,
+          food_items: foods as any, // Cast to any to satisfy Json type
           total_calories: totalNutrition.calories,
           total_protein: totalNutrition.protein,
           total_carbs: totalNutrition.carbs,
