@@ -1,7 +1,8 @@
 
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { CircularMacroChart } from './CircularMacroChart'
-import { Flame, Beef, Wheat, Droplets } from 'lucide-react'
+import { Flame, Beef, Wheat, Droplets, Camera } from 'lucide-react'
 
 interface CalorieCardsProps {
   totalCalories: number
@@ -15,6 +16,7 @@ interface CalorieCardsProps {
   proteinGoal?: number
   carbsGoal?: number
   fatGoal?: number
+  onCameraClick?: () => void
 }
 
 export function CalorieCards({ 
@@ -28,7 +30,8 @@ export function CalorieCards({
   totalSodium = 0,
   proteinGoal = 125,
   carbsGoal = 200,
-  fatGoal = 67
+  fatGoal = 67,
+  onCameraClick
 }: CalorieCardsProps) {
 
   return (
@@ -94,6 +97,17 @@ export function CalorieCards({
           </div>
         </CardContent>
       </Card>
+
+      {/* Camera Button */}
+      <div className="flex justify-center">
+        <Button
+          onClick={onCameraClick}
+          className="bg-green-500 hover:bg-green-600 text-white h-12 px-6 rounded-full shadow-lg"
+        >
+          <Camera className="h-5 w-5 mr-2" />
+          Fotoğraf Çek
+        </Button>
+      </div>
 
       {/* Additional Nutrition Info - Responsive grid */}
       <Card className="bg-white border-gray-200">
