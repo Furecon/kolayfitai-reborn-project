@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/use-toast'
-import { Camera } from 'lucide-react'
+import { Camera, Upload, AlertCircle } from 'lucide-react'
 import Webcam from 'react-webcam'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
@@ -61,20 +60,118 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   const [sugar, setSugar] = useState('')
   const [sodium, setSodium] = useState('')
   const [manuallyAdding, setManuallyAdding] = useState(false)
+  const [cameraError, setCameraError] = useState<string | null>(null)
+  const [isHttps, setIsHttps] = useState(false)
   const webcamRef = useRef<Webcam>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    // Check if we're on HTTPS
+    setIsHttps(window.location.protocol === 'https:')
+    console.log('Current protocol:', window.location.protocol)
+    console.log('Is HTTPS:', window.location.protocol === 'https:')
+  }, [])
 
   useEffect(() => {
     if (!photoUrl) return
 
+    console.log('Photo captured, starting analysis...')
     analyzeImage(photoUrl)
   }, [photoUrl])
 
-  const capture = () => {
-    const imageSrc = webcamRef.current?.getScreenshot()
-    if (imageSrc) {
+  const checkCameraPermissions = async () => {
+    try {
+      console.log('Checking camera permissions...')
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+      console.log('Camera permission granted')
+      stream.getTracks().forEach(track => track.stop()) // Clean up
+      return true
+    } catch (error: any) {
+      console.error('Camera permission error:', error)
+      setCameraError(`Kamera erişimi hatası: ${error.message}`)
+      return false
+    }
+  }
+
+  const capture = async () => {
+    console.log('Capture button clicked!')
+    
+    try {
+      // Check HTTPS requirement
+      if (!isHttps) {
+        toast({
+          title: "HTTPS Gerekli",
+          description: "Kamera erişimi için HTTPS bağlantısı gereklidir. Lütfen güvenli bağlantı kullanın.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      // Check camera permissions first
+      const hasPermission = await checkCameraPermissions()
+      if (!hasPermission) {
+        toast({
+          title: "Kamera İzni Gerekli",
+          description: "Lütfen tarayıcınızdan kamera erişim izni verin.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      console.log('Attempting to capture image from webcam...')
+      const imageSrc = webcamRef.current?.getScreenshot()
+      
+      if (!imageSrc) {
+        console.error('Failed to capture image from webcam')
+        toast({
+          title: "Fotoğraf Çekilemedi",
+          description: "Kameradan fotoğraf çekilemedi. Lütfen tekrar deneyin.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      console.log('Image captured successfully, length:', imageSrc.length)
       setPhotoUrl(imageSrc)
       setAnalysisResult(null)
+      setCameraError(null)
+
+    } catch (error: any) {
+      console.error('Error during capture:', error)
+      setCameraError(error.message)
+      toast({
+        title: "Hata",
+        description: "Fotoğraf çekme sırasında hata oluştu: " + error.message,
+        variant: "destructive"
+      })
     }
+  }
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('File upload triggered')
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    console.log('File selected:', file.name, file.type, file.size)
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Geçersiz Dosya",
+        description: "Lütfen bir resim dosyası seçin.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const result = e.target?.result as string
+      console.log('File converted to base64, length:', result.length)
+      setPhotoUrl(result)
+      setAnalysisResult(null)
+      setCameraError(null)
+    }
+    reader.readAsDataURL(file)
   }
 
   const analyzeImage = async (imageUrl: string) => {
@@ -82,8 +179,10 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
 
     setAnalyzing(true)
     console.log('Starting food analysis with image:', imageUrl.substring(0, 50) + '...')
+    console.log('Meal type:', mealType)
     
     try {
+      console.log('Calling supabase function: analyze-food')
       const { data, error } = await supabase.functions.invoke('analyze-food', {
         body: { 
           imageUrl: imageUrl,
@@ -99,23 +198,37 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       }
 
       if (!data) {
+        console.error('No data received from analysis')
         throw new Error('Analiz sonucu alınamadı')
+      }
+
+      // Check if this is an error response
+      if (data.error) {
+        console.error('Analysis returned error:', data.error)
+        throw new Error(data.error)
       }
 
       console.log('Analysis result:', data)
       setAnalysisResult(data)
 
-      toast({
-        title: "Başarılı!",
-        description: "Yemek analizi tamamlandı.",
-      })
+      if (data.detectedFoods && data.detectedFoods.length > 0) {
+        toast({
+          title: "Başarılı!",
+          description: `${data.detectedFoods.length} yemek tespit edildi.`,
+        })
+      } else {
+        toast({
+          title: "Yemek Bulunamadı",
+          description: data.suggestions || "Görüntüde yemek tespit edilemedi. Manuel olarak ekleyebilirsiniz.",
+        })
+      }
 
     } catch (error: any) {
       console.error('Failed to analyze image:', error)
       
       toast({
-        title: "Hata",
-        description: "Yemek analizi sırasında bir hata oluştu. Lütfen tekrar deneyin veya manuel olarak ekleyin.",
+        title: "Analiz Hatası",
+        description: error.message || "Yemek analizi sırasında bir hata oluştu. Lütfen tekrar deneyin.",
         variant: "destructive"
       })
       
@@ -131,6 +244,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   }
 
   const handleAddManually = () => {
+    console.log('Switching to manual entry mode')
     setManuallyAdding(true)
     setAnalysisResult(null)
   }
@@ -235,6 +349,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   }
 
   const retryAnalysis = () => {
+    console.log('Retrying analysis...')
     if (photoUrl) {
       setAnalysisResult(null)
       analyzeImage(photoUrl)
@@ -259,23 +374,72 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
             <CardTitle className="text-lg font-semibold text-black">
               Yemek Analizi
             </CardTitle>
+            {!isHttps && (
+              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <p className="text-sm text-yellow-700">
+                  Kamera için HTTPS bağlantısı gereklidir
+                </p>
+              </div>
+            )}
           </CardHeader>
 
           <CardContent className="space-y-4">
             {!photoUrl && !manuallyAdding && (
               <div className="space-y-2">
-                <Webcam
-                  audio={false}
-                  ref={webcamRef}
-                  screenshotFormat="image/jpeg"
-                  className="rounded-md"
+                {isHttps ? (
+                  <>
+                    <Webcam
+                      audio={false}
+                      ref={webcamRef}
+                      screenshotFormat="image/jpeg"
+                      className="rounded-md"
+                      onUserMediaError={(error) => {
+                        console.error('Webcam error:', error)
+                        setCameraError(error.toString())
+                      }}
+                    />
+                    {cameraError && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                        <p className="text-sm text-red-700">{cameraError}</p>
+                      </div>
+                    )}
+                    <Button
+                      onClick={capture}
+                      className="w-full bg-green-500 hover:bg-green-600 text-white"
+                      disabled={!!cameraError}
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Fotoğraf Çek
+                    </Button>
+                  </>
+                ) : (
+                  <div className="text-center p-4 bg-gray-50 rounded-md">
+                    <AlertCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600 mb-3">
+                      Kamera HTTPS bağlantısı gerektiriyor
+                    </p>
+                  </div>
+                )}
+                
+                <div className="text-center">
+                  <span className="text-sm text-gray-500">veya</span>
+                </div>
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
                 />
                 <Button
-                  onClick={capture}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full text-gray-600"
                 >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Fotoğraf Çek
+                  <Upload className="h-4 w-4 mr-2" />
+                  Dosyadan Yükle
                 </Button>
                 <Button
                   variant="outline"
