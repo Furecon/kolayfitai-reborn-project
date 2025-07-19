@@ -81,28 +81,45 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
     if (!imageUrl) return
 
     setAnalyzing(true)
+    console.log('Starting food analysis with image:', imageUrl.substring(0, 50) + '...')
+    
     try {
-      const response = await fetch('/api/analyze-food', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ imageUrl, mealType })
+      const { data, error } = await supabase.functions.invoke('analyze-food', {
+        body: { 
+          imageUrl: imageUrl,
+          mealType: mealType 
+        }
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+      console.log('Supabase function response:', { data, error })
+
+      if (error) {
+        console.error('Supabase function error:', error)
+        throw new Error(error.message || 'Analiz sırasında hata oluştu')
       }
 
-      const data = await response.json()
+      if (!data) {
+        throw new Error('Analiz sonucu alınamadı')
+      }
+
+      console.log('Analysis result:', data)
       setAnalysisResult(data)
+
+      toast({
+        title: "Başarılı!",
+        description: "Yemek analizi tamamlandı.",
+      })
+
     } catch (error: any) {
       console.error('Failed to analyze image:', error)
+      
       toast({
         title: "Hata",
-        description: "Yemek analizi sırasında bir hata oluştu. Lütfen tekrar deneyin.",
+        description: "Yemek analizi sırasında bir hata oluştu. Lütfen tekrar deneyin veya manuel olarak ekleyin.",
         variant: "destructive"
       })
+      
+      // Provide fallback state
       setAnalysisResult({
         detectedFoods: [],
         confidence: 0,
@@ -119,6 +136,15 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   }
 
   const handleSaveManualEntry = () => {
+    if (!foodName || !calories || !protein || !carbs || !fat) {
+      toast({
+        title: "Hata",
+        description: "Lütfen zorunlu alanları doldurun (Yemek adı, Kalori, Protein, Karbonhidrat, Yağ).",
+        variant: "destructive"
+      })
+      return
+    }
+
     const newFoodItem: FoodItem = {
       name: foodName,
       nameEn: foodName,
@@ -168,6 +194,8 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
         sodium: 0 
       })
 
+      console.log('Saving meal log:', { foods, totalNutrition, mealType })
+
       const { error } = await supabase
         .from('meal_logs')
         .insert({
@@ -185,7 +213,10 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
           date: new Date().toISOString().split('T')[0]
         })
 
-      if (error) throw error
+      if (error) {
+        console.error('Error saving meal:', error)
+        throw error
+      }
 
       toast({
         title: "Başarılı!",
@@ -200,6 +231,13 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
         description: "Öğün kaydedilirken hata oluştu.",
         variant: "destructive"
       })
+    }
+  }
+
+  const retryAnalysis = () => {
+    if (photoUrl) {
+      setAnalysisResult(null)
+      analyzeImage(photoUrl)
     }
   }
 
@@ -264,7 +302,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
                   </SelectContent>
                 </Select>
 
-                <Label htmlFor="foodName">Yemek Adı</Label>
+                <Label htmlFor="foodName">Yemek Adı *</Label>
                 <Input
                   id="foodName"
                   type="text"
@@ -274,7 +312,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
                   className="border-gray-300"
                 />
 
-                <Label htmlFor="calories">Kalori</Label>
+                <Label htmlFor="calories">Kalori *</Label>
                 <Input
                   id="calories"
                   type="number"
@@ -284,7 +322,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
                   className="border-gray-300"
                 />
 
-                <Label htmlFor="protein">Protein (g)</Label>
+                <Label htmlFor="protein">Protein (g) *</Label>
                 <Input
                   id="protein"
                   type="number"
@@ -294,7 +332,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
                   className="border-gray-300"
                 />
 
-                <Label htmlFor="carbs">Karbonhidrat (g)</Label>
+                <Label htmlFor="carbs">Karbonhidrat (g) *</Label>
                 <Input
                   id="carbs"
                   type="number"
@@ -304,7 +342,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
                   className="border-gray-300"
                 />
 
-                <Label htmlFor="fat">Yağ (g)</Label>
+                <Label htmlFor="fat">Yağ (g) *</Label>
                 <Input
                   id="fat"
                   type="number"
@@ -359,7 +397,10 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
                   <img src={photoUrl} alt="Captured Food" className="rounded-md" />
                   {analyzing && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-md">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                      <div className="text-center text-white">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-2"></div>
+                        <p className="text-sm">Analiz ediliyor...</p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -426,8 +467,22 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
                     </Button>
                   </div>
                 ) : analysisResult ? (
-                  <div className="text-center py-4">
+                  <div className="text-center py-4 space-y-2">
                     <p className="text-gray-600">{analysisResult.suggestions}</p>
+                    <Button
+                      onClick={retryAnalysis}
+                      variant="outline"
+                      className="text-green-600 border-green-600 hover:bg-green-50"
+                    >
+                      Tekrar Dene
+                    </Button>
+                    <Button
+                      onClick={handleAddManually}
+                      variant="outline"
+                      className="w-full mt-2"
+                    >
+                      Manuel Ekle
+                    </Button>
                   </div>
                 ) : null}
               </div>

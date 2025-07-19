@@ -1,1 +1,11 @@
+
 project_id = "acsqneuzkukmvtfmbphb"
+
+[functions.analyze-food]
+verify_jwt = true
+
+[functions.diet-assistant]
+verify_jwt = true
+
+[functions.meal-suggestions]
+verify_jwt = true
