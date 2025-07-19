@@ -1,5 +1,6 @@
 
 import React from 'react'
+import { LucideIcon } from 'lucide-react'
 
 interface CircularMacroChartProps {
   current: number
@@ -7,19 +8,34 @@ interface CircularMacroChartProps {
   label: string
   color: string
   unit: string
+  icon?: LucideIcon
+  size?: 'large' | 'normal'
 }
 
-const CircularProgress = ({ current, goal, color }: { current: number; goal: number; color: string }) => {
+const CircularProgress = ({ 
+  current, 
+  goal, 
+  color, 
+  icon: Icon, 
+  size = 'normal' 
+}: { 
+  current: number
+  goal: number
+  color: string
+  icon?: LucideIcon
+  size?: 'large' | 'normal'
+}) => {
   const percentage = Math.min((current / goal) * 100, 100)
-  const radius = 45
-  const strokeWidth = 8
+  const radius = size === 'large' ? 55 : 45
+  const strokeWidth = size === 'large' ? 10 : 8
   const normalizedRadius = radius - strokeWidth * 2
   const circumference = normalizedRadius * 2 * Math.PI
   const strokeDasharray = `${circumference} ${circumference}`
   const strokeDashoffset = circumference - (percentage / 100) * circumference
+  const iconSize = size === 'large' ? 28 : 20
 
   return (
-    <div className="relative w-24 h-24">
+    <div className={`relative ${size === 'large' ? 'w-32 h-32' : 'w-24 h-24'}`}>
       <svg
         height={radius * 2}
         width={radius * 2}
@@ -49,26 +65,49 @@ const CircularProgress = ({ current, goal, color }: { current: number; goal: num
         />
       </svg>
       
-      {/* Center text */}
+      {/* Center content */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-sm font-bold text-gray-800">{Math.round(current)}</div>
-          <div className="text-xs text-gray-500">/ {Math.round(goal)}</div>
+          {Icon && (
+            <Icon 
+              className={`mx-auto mb-1 text-gray-700`} 
+              size={iconSize}
+            />
+          )}
+          <div className={`${size === 'large' ? 'text-lg' : 'text-sm'} font-bold text-gray-800`}>
+            {Math.round(percentage)}%
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-export function CircularMacroChart({ current, goal, label, color, unit }: CircularMacroChartProps) {
-  const percentage = Math.min((current / goal) * 100, 100)
-  
+export function CircularMacroChart({ 
+  current, 
+  goal, 
+  label, 
+  color, 
+  unit, 
+  icon, 
+  size = 'normal' 
+}: CircularMacroChartProps) {
   return (
-    <div className="flex flex-col items-center space-y-2">
-      <CircularProgress current={current} goal={goal} color={color} />
+    <div className="flex flex-col items-center space-y-3">
+      <CircularProgress 
+        current={current} 
+        goal={goal} 
+        color={color} 
+        icon={icon}
+        size={size}
+      />
       <div className="text-center">
-        <div className="text-sm font-medium text-gray-800">{label}</div>
-        <div className="text-xs text-gray-500">{Math.round(percentage)}% • {unit}</div>
+        <div className={`${size === 'large' ? 'text-base' : 'text-sm'} font-medium text-gray-800`}>
+          {label}
+        </div>
+        <div className={`${size === 'large' ? 'text-sm' : 'text-xs'} text-gray-600`}>
+          {Math.round(current)} / {Math.round(goal)} {unit}
+        </div>
       </div>
     </div>
   )
