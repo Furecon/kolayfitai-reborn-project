@@ -67,6 +67,33 @@ export type Database = {
           },
         ]
       }
+      favorite_meals: {
+        Row: {
+          created_at: string
+          id: string
+          meal_name: string
+          meal_type: string
+          recipe: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meal_name: string
+          meal_type: string
+          recipe: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meal_name?: string
+          meal_type?: string
+          recipe?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       foods: {
         Row: {
           calories_per_100g: number
@@ -165,6 +192,30 @@ export type Database = {
           total_protein?: number
           total_sodium?: number | null
           total_sugar?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      meal_suggestions: {
+        Row: {
+          generated_at: string
+          id: string
+          meal_type: string
+          suggestion_data: Json
+          user_id: string
+        }
+        Insert: {
+          generated_at?: string
+          id?: string
+          meal_type: string
+          suggestion_data: Json
+          user_id: string
+        }
+        Update: {
+          generated_at?: string
+          id?: string
+          meal_type?: string
+          suggestion_data?: Json
           user_id?: string
         }
         Relationships: []

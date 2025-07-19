@@ -6,12 +6,14 @@ import { MealsList } from './MealsList'
 import FoodAnalysis from '../FoodAnalysis'
 import { ProfileSetup } from '../Profile/ProfileSetup'
 import { AIAssistant } from '../AI/AIAssistant'
+import { MealSuggestions } from '../MealSuggestions/MealSuggestions'
+import { FavoriteMeals } from '../MealSuggestions/FavoriteMeals'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { Button } from '@/components/ui/button'
-import { MessageCircle, X } from 'lucide-react'
+import { MessageCircle, X, Sparkles, Heart } from 'lucide-react'
 
-type View = 'dashboard' | 'camera' | 'profile' | 'assistant'
+type View = 'dashboard' | 'camera' | 'profile' | 'assistant' | 'suggestions' | 'favorites'
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -139,6 +141,25 @@ export function Dashboard() {
     )
   }
 
+  if (currentView === 'suggestions') {
+    return (
+      <MealSuggestions
+        onBack={() => setCurrentView('dashboard')}
+        onMealAdded={handleMealAdded}
+        dailyStats={dailyStats}
+      />
+    )
+  }
+
+  if (currentView === 'favorites') {
+    return (
+      <FavoriteMeals
+        onBack={() => setCurrentView('dashboard')}
+        onMealAdded={handleMealAdded}
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader
@@ -147,6 +168,34 @@ export function Dashboard() {
       />
       
       <CalorieCards {...dailyStats} />
+      
+      {/* Quick Action Buttons */}
+      <div className="px-4 pb-4">
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            onClick={() => setCurrentView('suggestions')}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-3 h-auto"
+          >
+            <Sparkles className="h-5 w-5 mr-2" />
+            <div className="text-left">
+              <div className="font-semibold">AI Önerileri</div>
+              <div className="text-xs opacity-90">Kişisel öğün önerileri</div>
+            </div>
+          </Button>
+          
+          <Button
+            onClick={() => setCurrentView('favorites')}
+            variant="outline"
+            className="py-3 h-auto border-pink-200 hover:bg-pink-50"
+          >
+            <Heart className="h-5 w-5 mr-2 text-pink-500" />
+            <div className="text-left">
+              <div className="font-semibold">Favorilerim</div>
+              <div className="text-xs text-gray-500">Sevdiğim tarifler</div>
+            </div>
+          </Button>
+        </div>
+      </div>
       
       <MealsList
         onAddMeal={() => setCurrentView('camera')}
