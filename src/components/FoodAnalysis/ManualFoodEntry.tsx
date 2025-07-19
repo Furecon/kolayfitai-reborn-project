@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,12 +11,25 @@ import { useToast } from '@/components/ui/use-toast'
 interface FoodItem {
   name: string
   nameEn: string
-  category: string
-  portionSize: number
-  calories: number
-  protein: number
-  carbs: number
-  fat: number
+  estimatedAmount: string
+  nutritionPer100g: {
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+    fiber: number
+    sugar: number
+    sodium: number
+  }
+  totalNutrition: {
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+    fiber: number
+    sugar: number
+    sodium: number
+  }
 }
 
 interface ManualFoodEntryProps {
@@ -36,10 +50,21 @@ interface SearchResult {
   fat_per_100g: number
 }
 
+interface SelectedFood {
+  name: string
+  nameEn: string
+  category: string
+  portionSize: number
+  caloriesPer100g: number
+  proteinPer100g: number
+  carbsPer100g: number
+  fatPer100g: number
+}
+
 export default function ManualFoodEntry({ mealType, onSave, onBack, loading }: ManualFoodEntryProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
-  const [selectedFoods, setSelectedFoods] = useState<FoodItem[]>([])
+  const [selectedFoods, setSelectedFoods] = useState<SelectedFood[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const { toast } = useToast()
 
@@ -75,15 +100,15 @@ export default function ManualFoodEntry({ mealType, onSave, onBack, loading }: M
   }, [searchTerm])
 
   const addFoodToSelection = (searchResult: SearchResult) => {
-    const newFood: FoodItem = {
+    const newFood: SelectedFood = {
       name: searchResult.name,
       nameEn: searchResult.name_en || '',
       category: searchResult.category,
       portionSize: 100, // Default portion size
-      calories: Math.round(searchResult.calories_per_100g),
-      protein: Math.round(searchResult.protein_per_100g * 10) / 10,
-      carbs: Math.round(searchResult.carbs_per_100g * 10) / 10,
-      fat: Math.round(searchResult.fat_per_100g * 10) / 10
+      caloriesPer100g: searchResult.calories_per_100g,
+      proteinPer100g: searchResult.protein_per_100g,
+      carbsPer100g: searchResult.carbs_per_100g,
+      fatPer100g: searchResult.fat_per_100g
     }
 
     setSelectedFoods([...selectedFoods, newFood])
@@ -93,27 +118,46 @@ export default function ManualFoodEntry({ mealType, onSave, onBack, loading }: M
 
   const updateFoodPortion = (index: number, portionSize: number) => {
     const updated = [...selectedFoods]
-    const food = { ...updated[index] }
-    const multiplier = portionSize / 100
-    
-    // Recalculate nutrition based on new portion size
-    const baseCalories = food.calories / (food.portionSize / 100)
-    const baseProtein = food.protein / (food.portionSize / 100)
-    const baseCarbs = food.carbs / (food.portionSize / 100)
-    const baseFat = food.fat / (food.portionSize / 100)
-
-    food.portionSize = portionSize
-    food.calories = Math.round(baseCalories * multiplier)
-    food.protein = Math.round(baseProtein * multiplier * 10) / 10
-    food.carbs = Math.round(baseCarbs * multiplier * 10) / 10
-    food.fat = Math.round(baseFat * multiplier * 10) / 10
-
-    updated[index] = food
+    updated[index] = { ...updated[index], portionSize }
     setSelectedFoods(updated)
   }
 
   const removeFoodFromSelection = (index: number) => {
     setSelectedFoods(selectedFoods.filter((_, i) => i !== index))
+  }
+
+  const convertToFoodItems = (foods: SelectedFood[]): FoodItem[] => {
+    return foods.map(food => {
+      const multiplier = food.portionSize / 100
+      const totalCalories = Math.round(food.caloriesPer100g * multiplier)
+      const totalProtein = Math.round(food.proteinPer100g * multiplier * 10) / 10
+      const totalCarbs = Math.round(food.carbsPer100g * multiplier * 10) / 10
+      const totalFat = Math.round(food.fatPer100g * multiplier * 10) / 10
+
+      return {
+        name: food.name,
+        nameEn: food.nameEn,
+        estimatedAmount: `${food.portionSize}g`,
+        nutritionPer100g: {
+          calories: food.caloriesPer100g,
+          protein: food.proteinPer100g,
+          carbs: food.carbsPer100g,
+          fat: food.fatPer100g,
+          fiber: 0,
+          sugar: 0,
+          sodium: 0
+        },
+        totalNutrition: {
+          calories: totalCalories,
+          protein: totalProtein,
+          carbs: totalCarbs,
+          fat: totalFat,
+          fiber: 0,
+          sugar: 0,
+          sodium: 0
+        }
+      }
+    })
   }
 
   const handleSubmit = () => {
@@ -126,17 +170,21 @@ export default function ManualFoodEntry({ mealType, onSave, onBack, loading }: M
       return
     }
 
-    onSave(selectedFoods)
+    const foodItems = convertToFoodItems(selectedFoods)
+    onSave(foodItems)
   }
 
   const getTotalNutrition = () => {
     return selectedFoods.reduce(
-      (total, food) => ({
-        calories: total.calories + food.calories,
-        protein: total.protein + food.protein,
-        carbs: total.carbs + food.carbs,
-        fat: total.fat + food.fat
-      }),
+      (total, food) => {
+        const multiplier = food.portionSize / 100
+        return {
+          calories: total.calories + (food.caloriesPer100g * multiplier),
+          protein: total.protein + (food.proteinPer100g * multiplier),
+          carbs: total.carbs + (food.carbsPer100g * multiplier),
+          fat: total.fat + (food.fatPer100g * multiplier)
+        }
+      },
       { calories: 0, protein: 0, carbs: 0, fat: 0 }
     )
   }
@@ -241,8 +289,8 @@ export default function ManualFoodEntry({ mealType, onSave, onBack, loading }: M
                       />
                     </div>
                     <div className="text-sm space-y-1">
-                      <p><span className="font-medium">{food.calories}</span> kcal</p>
-                      <p>P: {food.protein}g • K: {food.carbs}g • Y: {food.fat}g</p>
+                      <p><span className="font-medium">{Math.round(food.caloriesPer100g * food.portionSize / 100)}</span> kcal</p>
+                      <p>P: {Math.round(food.proteinPer100g * food.portionSize / 100 * 10) / 10}g • K: {Math.round(food.carbsPer100g * food.portionSize / 100 * 10) / 10}g • Y: {Math.round(food.fatPer100g * food.portionSize / 100 * 10) / 10}g</p>
                     </div>
                   </div>
                 </div>
