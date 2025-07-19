@@ -26,16 +26,16 @@ const CircularProgress = ({
   size?: 'large' | 'normal'
 }) => {
   const percentage = Math.min((current / goal) * 100, 100)
-  const radius = size === 'large' ? 55 : 45
-  const strokeWidth = size === 'large' ? 10 : 8
+  const radius = size === 'large' ? 70 : 55
+  const strokeWidth = size === 'large' ? 12 : 10
   const normalizedRadius = radius - strokeWidth * 2
   const circumference = normalizedRadius * 2 * Math.PI
   const strokeDasharray = `${circumference} ${circumference}`
   const strokeDashoffset = circumference - (percentage / 100) * circumference
-  const iconSize = size === 'large' ? 28 : 20
+  const iconSize = size === 'large' ? 32 : 24
 
   return (
-    <div className={`relative ${size === 'large' ? 'w-32 h-32' : 'w-24 h-24'}`}>
+    <div className={`relative ${size === 'large' ? 'w-40 h-40' : 'w-32 h-32'}`}>
       <svg
         height={radius * 2}
         width={radius * 2}
@@ -67,14 +67,14 @@ const CircularProgress = ({
       
       {/* Center content */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-full px-2">
           {Icon && (
             <Icon 
               className={`mx-auto mb-1 text-gray-700`} 
               size={iconSize}
             />
           )}
-          <div className={`${size === 'large' ? 'text-lg' : 'text-sm'} font-bold text-gray-800`}>
+          <div className={`${size === 'large' ? 'text-xl' : 'text-lg'} font-bold text-gray-800 leading-tight`}>
             {Math.round(percentage)}%
           </div>
         </div>
@@ -93,7 +93,7 @@ export function CircularMacroChart({
   size = 'normal' 
 }: CircularMacroChartProps) {
   return (
-    <div className="flex flex-col items-center space-y-3">
+    <div className="flex flex-col items-center space-y-3 max-w-full">
       <CircularProgress 
         current={current} 
         goal={goal} 
@@ -101,11 +101,11 @@ export function CircularMacroChart({
         icon={icon}
         size={size}
       />
-      <div className="text-center">
-        <div className={`${size === 'large' ? 'text-base' : 'text-sm'} font-medium text-gray-800`}>
+      <div className="text-center max-w-full px-1">
+        <div className={`${size === 'large' ? 'text-lg' : 'text-base'} font-medium text-gray-800 mb-1 leading-tight`}>
           {label}
         </div>
-        <div className={`${size === 'large' ? 'text-sm' : 'text-xs'} text-gray-600`}>
+        <div className={`${size === 'large' ? 'text-sm' : 'text-xs'} text-gray-600 leading-tight`}>
           {Math.round(current)} / {Math.round(goal)} {unit}
         </div>
       </div>

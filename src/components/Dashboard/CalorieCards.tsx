@@ -38,22 +38,23 @@ export function CalorieCards({
         <CardContent className="p-6">
           <h2 className="text-xl font-bold text-center text-black mb-6">Günlük Besin Değerleri</h2>
           
-          <div className="grid grid-cols-2 gap-6">
-            {/* Kalori - Büyük ve sol üst */}
-            <div className="col-span-1 flex justify-center">
-              <CircularMacroChart
-                current={totalCalories}
-                goal={goalCalories}
-                label="Kalori"
-                color="#ef4444"
-                unit="kcal"
-                icon={Flame}
-                size="large"
-              />
-            </div>
-            
-            {/* Protein - Sağ üst */}
-            <div className="col-span-1 flex justify-center">
+          {/* Kalori - Büyük ve üstte tek başına */}
+          <div className="flex justify-center mb-8">
+            <CircularMacroChart
+              current={totalCalories}
+              goal={goalCalories}
+              label="Kalori"
+              color="#ef4444"
+              unit="kcal"
+              icon={Flame}
+              size="large"
+            />
+          </div>
+          
+          {/* Makrolar - Alt kısımda yan yana */}
+          <div className="grid grid-cols-3 gap-4">
+            {/* Protein */}
+            <div className="flex justify-center">
               <CircularMacroChart
                 current={totalProtein}
                 goal={proteinGoal}
@@ -61,11 +62,12 @@ export function CalorieCards({
                 color="#10b981"
                 unit="g"
                 icon={Beef}
+                size="normal"
               />
             </div>
             
-            {/* Karbonhidrat - Sol alt */}
-            <div className="col-span-1 flex justify-center">
+            {/* Karbonhidrat */}
+            <div className="flex justify-center">
               <CircularMacroChart
                 current={totalCarbs}
                 goal={carbsGoal}
@@ -73,11 +75,12 @@ export function CalorieCards({
                 color="#3b82f6"
                 unit="g"
                 icon={Wheat}
+                size="normal"
               />
             </div>
             
-            {/* Yağ - Sağ alt */}
-            <div className="col-span-1 flex justify-center">
+            {/* Yağ */}
+            <div className="flex justify-center">
               <CircularMacroChart
                 current={totalFat}
                 goal={fatGoal}
@@ -85,6 +88,7 @@ export function CalorieCards({
                 color="#f59e0b"
                 unit="g"
                 icon={Droplets}
+                size="normal"
               />
             </div>
           </div>
