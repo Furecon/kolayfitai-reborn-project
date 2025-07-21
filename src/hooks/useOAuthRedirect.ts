@@ -19,11 +19,8 @@ export function useOAuthRedirect() {
           const fragment = url.hash || url.search
           
           if (fragment) {
-            // Handle the OAuth callback
-            const { error } = await supabase.auth.getSessionFromUrl({
-              url: data.url,
-              storeSession: true
-            })
+            // Use exchangeCodeForSession instead of getSessionFromUrl
+            const { error } = await supabase.auth.exchangeCodeForSession(data.url)
             
             if (error) {
               console.error('OAuth callback error:', error)
@@ -38,10 +35,21 @@ export function useOAuthRedirect() {
     }
 
     // Listen for app URL opens (deep links)
-    const listener = App.addListener('appUrlOpen', handleAppUrlOpen)
+    const setupListener = async () => {
+      const listener = await App.addListener('appUrlOpen', handleAppUrlOpen)
+      return listener
+    }
+
+    let listenerHandle: any = null
+    
+    setupListener().then(handle => {
+      listenerHandle = handle
+    })
 
     return () => {
-      listener.remove()
+      if (listenerHandle) {
+        listenerHandle.remove()
+      }
     }
   }, [])
 }
