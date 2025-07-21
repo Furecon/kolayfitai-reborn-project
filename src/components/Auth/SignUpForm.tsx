@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from './AuthProvider'
+import { SocialAuthButtons } from './SocialAuthButtons'
 import { Eye, EyeOff } from 'lucide-react'
 
 interface SignUpFormProps {
@@ -38,7 +39,18 @@ export function SignUpForm({ onToggleMode }: SignUpFormProps) {
         <CardTitle className="text-2xl font-bold text-black">KolayfitAI</CardTitle>
         <p className="text-gray-600">Yeni hesap oluşturun</p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6">
+        <SocialAuthButtons mode="signup" />
+        
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-gray-300" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-white px-2 text-gray-500">veya</span>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="fullName">Ad Soyad</Label>
