@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
+import { Capacitor } from '@capacitor/core'
+import { GoogleAuth } from '@capacitor-community/google-auth'
 
 interface AuthContextType {
   user: User | null
@@ -20,6 +22,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast()
 
   useEffect(() => {
+    // Initialize Google Auth for native platforms
+    if (Capacitor.isNativePlatform()) {
+      GoogleAuth.initialize()
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
@@ -38,17 +45,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signInWithOAuth = async (provider: 'google' | 'facebook' | 'apple') => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/`
-      }
-    })
+    try {
+      if (provider === 'google' && Capacitor.isNativePlatform()) {
+        // Native Android Google Auth
+        const result = await GoogleAuth.signIn()
+        
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: result.authentication.idToken,
+        })
 
-    if (error) {
+        if (error) {
+          toast({
+            title: "Giriş Hatası",
+            description: error.message,
+            variant: "destructive"
+          })
+          throw error
+        }
+      } else {
+        // Web OAuth flow (fallback)
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: {
+            redirectTo: `${window.location.origin}/`
+          }
+        })
+
+        if (error) {
+          toast({
+            title: "Giriş Hatası",
+            description: error.message,
+            variant: "destructive"
+          })
+          throw error
+        }
+      }
+    } catch (error: any) {
       toast({
         title: "Giriş Hatası",
-        description: error.message,
+        description: error.message || "Bir hata oluştu",
         variant: "destructive"
       })
       throw error

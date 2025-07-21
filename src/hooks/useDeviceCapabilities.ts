@@ -9,6 +9,7 @@ interface DeviceCapabilities {
   hasCamera: boolean
   canTakePhotos: boolean
   canAccessGallery: boolean
+  hasGoogleAuth: boolean
 }
 
 export function useDeviceCapabilities() {
@@ -17,7 +18,8 @@ export function useDeviceCapabilities() {
     platform: 'web',
     hasCamera: false,
     canTakePhotos: false,
-    canAccessGallery: false
+    canAccessGallery: false,
+    hasGoogleAuth: false
   })
 
   useEffect(() => {
@@ -37,13 +39,17 @@ export function useDeviceCapabilities() {
       const hasCamera = isNative || hasWebCamera
       const canTakePhotos = isNative || hasWebCamera
       const canAccessGallery = isNative || (typeof window !== 'undefined' && 'File' in window)
+      
+      // Google Auth is available on native platforms and web
+      const hasGoogleAuth = true
 
       setCapabilities({
         isNative,
         platform,
         hasCamera,
         canTakePhotos,
-        canAccessGallery
+        canAccessGallery,
+        hasGoogleAuth
       })
     }
 
