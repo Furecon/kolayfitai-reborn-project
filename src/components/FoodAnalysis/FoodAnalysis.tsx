@@ -24,6 +24,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   const [analysisType, setAnalysisType] = useState<'quick' | 'detailed' | null>(null)
   const [selectedMealType, setSelectedMealType] = useState<string>('')
   const [analysisResult, setAnalysisResult] = useState<any>(null)
+  const [detectedFoods, setDetectedFoods] = useState<any[]>([])
 
   const isNative = Capacitor.isNativePlatform()
 
@@ -32,9 +33,13 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
     setCurrentStep('analysis-type')
   }
 
-  const handleAnalysisTypeSelected = (type: 'quick' | 'detailed') => {
-    setAnalysisType(type)
-    setCurrentStep('meal-type')
+  const handleAnalysisTypeSelected = (type: 'quick' | 'detailed' | 'manual') => {
+    if (type === 'manual') {
+      setCurrentStep('manual-entry')
+    } else {
+      setAnalysisType(type)
+      setCurrentStep('meal-type')
+    }
   }
 
   const handleMealTypeSelected = (mealType: string) => {
@@ -46,18 +51,19 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
     }
   }
 
-  const handleQuickAnalysisComplete = (result: any) => {
-    setAnalysisResult(result)
+  const handleQuickAnalysisComplete = (foods: any[]) => {
+    setDetectedFoods(foods)
     setCurrentStep('ai-verification')
   }
 
-  const handleDetailedAnalysisComplete = (result: any) => {
-    setAnalysisResult(result)
+  const handleDetailedAnalysisComplete = (data: any) => {
+    // Process detailed analysis data
+    setAnalysisResult(data)
     setCurrentStep('ai-verification')
   }
 
-  const handleManualEntryComplete = (result: any) => {
-    setAnalysisResult(result)
+  const handleManualEntryComplete = (foods: any[]) => {
+    setDetectedFoods(foods)
     setCurrentStep('ai-verification')
   }
 
@@ -86,8 +92,10 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       case 'ai-verification':
         if (analysisType === 'quick') {
           setCurrentStep('quick-result')
-        } else {
+        } else if (analysisType === 'detailed') {
           setCurrentStep('detailed-form')
+        } else {
+          setCurrentStep('manual-entry')
         }
         break
       default:
@@ -143,46 +151,53 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
           />
         )}
 
-        {currentStep === 'analysis-type' && (
+        {currentStep === 'analysis-type' && capturedImage && (
           <AnalysisTypeSelection
-            onAnalysisTypeSelected={handleAnalysisTypeSelected}
-            onManualEntry={() => setCurrentStep('manual-entry')}
+            onSelectType={handleAnalysisTypeSelected}
+            onBack={handleBack}
+            capturedImage={capturedImage}
           />
         )}
 
         {currentStep === 'meal-type' && (
           <MealTypeSelection
-            onMealTypeSelected={handleMealTypeSelected}
+            onSubmit={handleMealTypeSelected}
+            onBack={handleBack}
           />
         )}
 
         {currentStep === 'quick-result' && capturedImage && (
           <QuickAnalysisResult
-            image={capturedImage}
-            mealType={selectedMealType}
-            onAnalysisComplete={handleQuickAnalysisComplete}
+            detectedFoods={detectedFoods}
+            onSave={() => handleQuickAnalysisComplete(detectedFoods)}
+            onRetry={() => setCurrentStep('camera')}
           />
         )}
 
-        {currentStep === 'detailed-form' && capturedImage && (
+        {currentStep === 'detailed-form' && (
           <DetailedAnalysisForm
-            image={capturedImage}
-            mealType={selectedMealType}
-            onAnalysisComplete={handleDetailedAnalysisComplete}
+            onSubmit={handleDetailedAnalysisComplete}
+            onBack={handleBack}
           />
         )}
 
         {currentStep === 'manual-entry' && (
           <ManualFoodEntry
             mealType={selectedMealType}
-            onEntryComplete={handleManualEntryComplete}
+            onSave={handleManualEntryComplete}
+            onBack={handleBack}
+            loading={false}
           />
         )}
 
-        {currentStep === 'ai-verification' && analysisResult && (
+        {currentStep === 'ai-verification' && (
           <AIVerification
             analysisResult={analysisResult}
-            onVerificationComplete={handleVerificationComplete}
+            capturedImage={capturedImage}
+            onConfirm={handleVerificationComplete}
+            onEdit={() => setCurrentStep('manual-entry')}
+            onManualEntry={() => setCurrentStep('manual-entry')}
+            onBack={handleBack}
           />
         )}
       </div>
