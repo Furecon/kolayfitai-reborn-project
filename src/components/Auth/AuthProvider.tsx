@@ -3,7 +3,18 @@ import { User } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
 import { Capacitor } from '@capacitor/core'
-import { GoogleAuth } from '@capacitor-community/google-auth'
+
+// Dynamic import for Google Auth to handle potential missing dependency
+let GoogleAuth: any = null
+if (Capacitor.isNativePlatform()) {
+  try {
+    import('@capacitor-community/google-auth').then((module) => {
+      GoogleAuth = module.GoogleAuth
+    })
+  } catch (error) {
+    console.warn('Google Auth plugin not available:', error)
+  }
+}
 
 interface AuthContextType {
   user: User | null
@@ -23,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Initialize Google Auth for native platforms
-    if (Capacitor.isNativePlatform()) {
+    if (Capacitor.isNativePlatform() && GoogleAuth) {
       GoogleAuth.initialize()
     }
 
@@ -46,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithOAuth = async (provider: 'google' | 'facebook' | 'apple') => {
     try {
-      if (provider === 'google' && Capacitor.isNativePlatform()) {
+      if (provider === 'google' && Capacitor.isNativePlatform() && GoogleAuth) {
         // Native Android Google Auth
         const result = await GoogleAuth.signIn()
         
