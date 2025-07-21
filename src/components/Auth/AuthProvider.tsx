@@ -53,11 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (isNative && isAndroid) {
         // Android deep link for OAuth redirect
-        redirectTo = 'app.lovable.b1d7ea18170b4e01986ac52642c4683a://oauth-callback'
+        redirectTo = 'com.kolayfitai.app://oauth-callback'
         console.log('Using Android deep link redirect:', redirectTo)
       } else if (isNative) {
         // iOS deep link for OAuth redirect
-        redirectTo = 'app.lovable.b1d7ea18170b4e01986ac52642c4683a://oauth-callback'
+        redirectTo = 'com.kolayfitai.app://oauth-callback'
         console.log('Using iOS deep link redirect:', redirectTo)
       } else {
         // Web redirect
