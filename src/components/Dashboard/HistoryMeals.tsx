@@ -1,12 +1,25 @@
+
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { History, Calendar, Search, Filter, Clock, Utensils } from 'lucide-react'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { History, Calendar, Search, Clock, Utensils, ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
+
+interface FoodItem {
+  id?: string
+  name: string
+  amount: number
+  unit: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+}
 
 interface MealHistory {
   id: string
@@ -16,7 +29,7 @@ interface MealHistory {
   total_protein: number
   total_carbs: number
   total_fat: number
-  food_items: any[]
+  food_items: FoodItem[]
   created_at: string
 }
 
@@ -28,6 +41,7 @@ export function HistoryMeals() {
   const [selectedPeriod, setSelectedPeriod] = useState('week')
   const [selectedMealType, setSelectedMealType] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
+  const [expandedMeals, setExpandedMeals] = useState<Set<string>>(new Set())
   const mealsPerPage = 10
 
   useEffect(() => {
@@ -56,7 +70,7 @@ export function HistoryMeals() {
         .select('*')
         .eq('user_id', user.id)
         .gte('date', startDate.toISOString().split('T')[0])
-        .lt('date', new Date().toISOString().split('T')[0]) // Exclude today
+        .lt('date', new Date().toISOString().split('T')[0])
         .order('date', { ascending: false })
         .order('created_at', { ascending: false })
 
@@ -77,6 +91,18 @@ export function HistoryMeals() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const toggleMealExpansion = (mealId: string) => {
+    setExpandedMeals(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(mealId)) {
+        newSet.delete(mealId)
+      } else {
+        newSet.add(mealId)
+      }
+      return newSet
+    })
   }
 
   const getMealIcon = (mealType: string) => {
@@ -126,6 +152,42 @@ export function HistoryMeals() {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  const renderFoodItems = (foodItems: FoodItem[]) => {
+    if (!foodItems || foodItems.length === 0) {
+      return (
+        <p className="text-sm text-gray-500 italic">Bu öğün için yemek detayı bulunamadı</p>
+      )
+    }
+
+    return (
+      <div className="space-y-2">
+        {foodItems.map((item, index) => (
+          <div 
+            key={index}
+            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-2 bg-gray-50 rounded border"
+          >
+            <div className="flex-1 min-w-0">
+              <h5 className="text-sm font-medium text-gray-900 truncate">
+                {item.name}
+              </h5>
+              <p className="text-xs text-gray-600">
+                {item.amount} {item.unit}
+              </p>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-gray-600 mt-1 sm:mt-0">
+              <span className="font-medium text-blue-600">
+                {Math.round(item.calories)} kcal
+              </span>
+              <span>P: {item.protein?.toFixed(1)}g</span>
+              <span>K: {item.carbs?.toFixed(1)}g</span>
+              <span>Y: {item.fat?.toFixed(1)}g</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
   }
 
   // Filter meals based on search term
@@ -245,46 +307,70 @@ export function HistoryMeals() {
                     </div>
                     
                     {dayMeals.map((meal) => (
-                      <div
+                      <Collapsible
                         key={meal.id}
-                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors gap-3"
+                        open={expandedMeals.has(meal.id)}
+                        onOpenChange={() => toggleMealExpansion(meal.id)}
                       >
-                        <div className="flex items-start sm:items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                          <div className="text-lg sm:text-xl flex-shrink-0 mt-0.5 sm:mt-0">
-                            {getMealIcon(meal.meal_type)}
-                          </div>
-                          
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
-                              <h4 className="text-sm font-medium text-gray-900 truncate">
-                                {getMealTypeInTurkish(meal.meal_type)}
-                              </h4>
-                              <Badge variant="outline" className="text-xs self-start sm:self-auto flex-shrink-0 h-5">
-                                <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-                                {formatTime(meal.created_at)}
-                              </Badge>
+                        <CollapsibleTrigger asChild>
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors gap-3 cursor-pointer">
+                            <div className="flex items-start sm:items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                              <div className="text-lg sm:text-xl flex-shrink-0 mt-0.5 sm:mt-0">
+                                {getMealIcon(meal.meal_type)}
+                              </div>
+                              
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                                  <h4 className="text-sm font-medium text-gray-900 truncate">
+                                    {getMealTypeInTurkish(meal.meal_type)}
+                                  </h4>
+                                  <Badge variant="outline" className="text-xs self-start sm:self-auto flex-shrink-0 h-5">
+                                    <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+                                    {formatTime(meal.created_at)}
+                                  </Badge>
+                                </div>
+                                
+                                <p className="text-xs text-gray-600 truncate">
+                                  {meal.food_items.length > 0 
+                                    ? meal.food_items.map(item => item.name).join(', ')
+                                    : 'Detay yok'
+                                  }
+                                </p>
+                              </div>
                             </div>
                             
-                            <p className="text-xs text-gray-600 truncate">
-                              {meal.food_items.length > 0 
-                                ? `${meal.food_items.length} yemek türü`
-                                : 'Detay yok'
-                              }
-                            </p>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 sm:gap-0">
+                                <p className="text-sm font-semibold text-blue-600">
+                                  {Math.round(meal.total_calories)} kcal
+                                </p>
+                                <p className="text-xs text-gray-500 whitespace-nowrap">
+                                  P:{meal.total_protein?.toFixed(0)}g • 
+                                  K:{meal.total_carbs?.toFixed(0)}g • 
+                                  Y:{meal.total_fat?.toFixed(0)}g
+                                </p>
+                              </div>
+                              
+                              {expandedMeals.has(meal.id) ? (
+                                <ChevronUp className="h-4 w-4 text-gray-400" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-gray-400" />
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        </CollapsibleTrigger>
                         
-                        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 sm:gap-0 flex-shrink-0">
-                          <p className="text-sm font-semibold text-blue-600">
-                            {Math.round(meal.total_calories)} kcal
-                          </p>
-                          <p className="text-xs text-gray-500 whitespace-nowrap">
-                            P:{meal.total_protein?.toFixed(0)}g • 
-                            K:{meal.total_carbs?.toFixed(0)}g • 
-                            Y:{meal.total_fat?.toFixed(0)}g
-                          </p>
-                        </div>
-                      </div>
+                        <CollapsibleContent>
+                          <div className="px-3 pb-3 pt-1">
+                            <div className="border-t border-gray-100 pt-3">
+                              <h5 className="text-sm font-medium text-gray-900 mb-3">
+                                Yemek Detayları:
+                              </h5>
+                              {renderFoodItems(meal.food_items)}
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
                     ))}
                   </div>
                 ))}
