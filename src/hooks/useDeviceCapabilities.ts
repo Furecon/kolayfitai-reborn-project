@@ -30,8 +30,12 @@ export function useDeviceCapabilities() {
         platform = deviceInfo.platform
       }
 
-      const hasCamera = isNative || (navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
-      const canTakePhotos = isNative || hasCamera
+      // Check if getUserMedia is available (for web)
+      const hasWebCamera = !isNative && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function'
+      
+      // For native platforms, assume camera is available
+      const hasCamera = isNative || hasWebCamera
+      const canTakePhotos = isNative || hasWebCamera
       const canAccessGallery = isNative || (typeof window !== 'undefined' && 'File' in window)
 
       setCapabilities({
