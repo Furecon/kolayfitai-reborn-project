@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
@@ -8,7 +9,7 @@ import { Capacitor } from '@capacitor/core'
 let GoogleAuth: any = null
 if (Capacitor.isNativePlatform()) {
   try {
-    import('@capacitor-community/google-auth').then((module) => {
+    import('@capacitor/google-auth').then((module) => {
       GoogleAuth = module.GoogleAuth
     })
   } catch (error) {
