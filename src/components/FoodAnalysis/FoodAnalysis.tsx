@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
@@ -62,7 +61,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
     setCurrentStep('ai-verification')
   }
 
-  const handleManualEntryComplete = (foods: any[]) => {
+  const handleManualEntryComplete = async (foods: any[]) => {
     setDetectedFoods(foods)
     setCurrentStep('ai-verification')
   }
