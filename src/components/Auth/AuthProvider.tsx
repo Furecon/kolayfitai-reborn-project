@@ -1,9 +1,9 @@
-
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
 import { Capacitor } from '@capacitor/core'
+import { usePlatform } from '@/hooks/usePlatform'
 
 interface AuthContextType {
   user: User | null
@@ -20,44 +20,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
+  const { platform, isNative, isAndroid } = usePlatform()
 
   useEffect(() => {
+    console.log('AuthProvider initialized for platform:', platform)
+    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       setLoading(false)
+      console.log('Initial session loaded:', session ? 'authenticated' : 'not authenticated')
     })
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session ? 'authenticated' : 'not authenticated')
         setUser(session?.user ?? null)
         setLoading(false)
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [platform])
 
   const signInWithOAuth = async (provider: 'google' | 'facebook' | 'apple') => {
     try {
-      // Use standard OAuth flow for both web and native platforms
+      console.log(`Starting OAuth flow for ${provider} on platform: ${platform}`)
+      
+      // Configure redirect URL based on platform
+      let redirectTo: string
+      
+      if (isNative && isAndroid) {
+        // Android deep link for OAuth redirect
+        redirectTo = 'app.lovable.b1d7ea18170b4e01986ac52642c4683a://oauth-callback'
+        console.log('Using Android deep link redirect:', redirectTo)
+      } else if (isNative) {
+        // iOS deep link for OAuth redirect
+        redirectTo = 'app.lovable.b1d7ea18170b4e01986ac52642c4683a://oauth-callback'
+        console.log('Using iOS deep link redirect:', redirectTo)
+      } else {
+        // Web redirect
+        redirectTo = `${window.location.origin}/`
+        console.log('Using web redirect:', redirectTo)
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/`
+          redirectTo,
+          ...(isNative && {
+            skipBrowserRedirect: true
+          })
         }
       })
 
       if (error) {
+        console.error('OAuth error:', error)
         toast({
           title: "Giriş Hatası",
-          description: error.message,
+          description: `${provider} girişi başarısız: ${error.message}`,
           variant: "destructive"
         })
         throw error
       }
+
+      console.log(`OAuth flow initiated successfully for ${provider}`)
     } catch (error: any) {
+      console.error('OAuth exception:', error)
       toast({
         title: "Giriş Hatası",
         description: error.message || "Bir hata oluştu",

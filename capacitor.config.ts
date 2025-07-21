@@ -25,6 +25,30 @@ const config: CapacitorConfig = {
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert']
     }
+  },
+  android: {
+    // Deep link configuration for OAuth redirects
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true,
+    // Enable deep linking for OAuth
+    deepLinks: [
+      {
+        host: 'oauth-callback',
+        scheme: 'app.lovable.b1d7ea18170b4e01986ac52642c4683a'
+      }
+    ]
+  },
+  ios: {
+    // Deep link configuration for OAuth redirects
+    scheme: 'app.lovable.b1d7ea18170b4e01986ac52642c4683a',
+    // Enable deep linking for OAuth
+    deepLinks: [
+      {
+        host: 'oauth-callback',
+        scheme: 'app.lovable.b1d7ea18170b4e01986ac52642c4683a'
+      }
+    ]
   }
 };
 
