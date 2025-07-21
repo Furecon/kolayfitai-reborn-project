@@ -5,18 +5,6 @@ import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
 import { Capacitor } from '@capacitor/core'
 
-// Dynamic import for Google Auth to handle potential missing dependency
-let GoogleAuth: any = null
-if (Capacitor.isNativePlatform()) {
-  try {
-    import('@capacitor/google-auth').then((module) => {
-      GoogleAuth = module.GoogleAuth
-    })
-  } catch (error) {
-    console.warn('Google Auth plugin not available:', error)
-  }
-}
-
 interface AuthContextType {
   user: User | null
   loading: boolean
@@ -34,11 +22,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast()
 
   useEffect(() => {
-    // Initialize Google Auth for native platforms
-    if (Capacitor.isNativePlatform() && GoogleAuth) {
-      GoogleAuth.initialize()
-    }
-
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
@@ -58,40 +41,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithOAuth = async (provider: 'google' | 'facebook' | 'apple') => {
     try {
-      if (provider === 'google' && Capacitor.isNativePlatform() && GoogleAuth) {
-        // Native Android Google Auth
-        const result = await GoogleAuth.signIn()
-        
-        const { error } = await supabase.auth.signInWithIdToken({
-          provider: 'google',
-          token: result.authentication.idToken,
-        })
-
-        if (error) {
-          toast({
-            title: "Giriş Hatası",
-            description: error.message,
-            variant: "destructive"
-          })
-          throw error
+      // Use standard OAuth flow for both web and native platforms
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/`
         }
-      } else {
-        // Web OAuth flow (fallback)
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider,
-          options: {
-            redirectTo: `${window.location.origin}/`
-          }
-        })
+      })
 
-        if (error) {
-          toast({
-            title: "Giriş Hatası",
-            description: error.message,
-            variant: "destructive"
-          })
-          throw error
-        }
+      if (error) {
+        toast({
+          title: "Giriş Hatası",
+          description: error.message,
+          variant: "destructive"
+        })
+        throw error
       }
     } catch (error: any) {
       toast({

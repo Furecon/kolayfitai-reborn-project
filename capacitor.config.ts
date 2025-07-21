@@ -24,11 +24,6 @@ const config: CapacitorConfig = {
     },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert']
-    },
-    GoogleAuth: {
-      scopes: ['profile', 'email'],
-      serverClientId: '', // Google OAuth Client ID for Android - to be filled from Google Cloud Console
-      forceCodeForRefreshToken: true
     }
   }
 };
