@@ -82,10 +82,31 @@ export function HistoryMeals() {
 
       if (error) throw error
 
-      setMeals(data?.map(meal => ({
-        ...meal,
-        food_items: Array.isArray(meal.food_items) ? meal.food_items : []
-      })) || [])
+      // Transform the data to match our interface
+      const transformedMeals: MealHistory[] = data?.map(meal => ({
+        id: meal.id,
+        date: meal.date,
+        meal_type: meal.meal_type,
+        total_calories: meal.total_calories,
+        total_protein: meal.total_protein,
+        total_carbs: meal.total_carbs,
+        total_fat: meal.total_fat,
+        created_at: meal.created_at,
+        food_items: Array.isArray(meal.food_items) 
+          ? meal.food_items.map((item: any) => ({
+              id: item.id,
+              name: item.name || 'Bilinmeyen yemek',
+              amount: item.amount || 0,
+              unit: item.unit || 'g',
+              calories: item.calories || 0,
+              protein: item.protein || 0,
+              carbs: item.carbs || 0,
+              fat: item.fat || 0
+            }))
+          : []
+      })) || []
+
+      setMeals(transformedMeals)
     } catch (error) {
       console.error('Error fetching history meals:', error)
     } finally {
