@@ -57,7 +57,7 @@ export function ScreenshotMode({ children, overlayType = 'none' }: ScreenshotMod
   return (
     <div className="relative min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Main Content with Screenshot Optimizations */}
-      <div className="screenshot-optimized">
+      <div className="screenshot-optimized text-lg">
         {children}
       </div>
 
@@ -124,7 +124,7 @@ export function ScreenshotMode({ children, overlayType = 'none' }: ScreenshotMod
       )}
 
       {/* Screenshot Optimizations CSS */}
-      <style jsx global>{`
+      <style>{`
         .screenshot-optimized {
           /* Larger fonts for better readability in screenshots */
           font-size: 1.1em;
