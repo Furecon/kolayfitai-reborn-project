@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
@@ -28,11 +29,13 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   const isNative = Capacitor.isNativePlatform()
 
   const handleImageCaptured = (imageUrl: string) => {
+    console.log('Image captured:', imageUrl.substring(0, 50) + '...')
     setCapturedImage(imageUrl)
     setCurrentStep('analysis-type')
   }
 
   const handleAnalysisTypeSelected = (type: 'quick' | 'detailed' | 'manual') => {
+    console.log('Analysis type selected:', type)
     if (type === 'manual') {
       setCurrentStep('manual-entry')
     } else {
@@ -42,6 +45,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   }
 
   const handleMealTypeSelected = (mealType: string) => {
+    console.log('Meal type selected:', mealType)
     setSelectedMealType(mealType)
     if (analysisType === 'quick') {
       setCurrentStep('quick-result')
@@ -51,22 +55,25 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   }
 
   const handleQuickAnalysisComplete = (foods: any[]) => {
+    console.log('Quick analysis completed with foods:', foods)
     setDetectedFoods(foods)
     setCurrentStep('ai-verification')
   }
 
   const handleDetailedAnalysisComplete = (data: any) => {
-    // Process detailed analysis data
+    console.log('Detailed analysis completed:', data)
     setAnalysisResult(data)
     setCurrentStep('ai-verification')
   }
 
   const handleManualEntryComplete = async (foods: any[]) => {
+    console.log('Manual entry completed:', foods)
     setDetectedFoods(foods)
     setCurrentStep('ai-verification')
   }
 
   const handleVerificationComplete = () => {
+    console.log('Verification completed')
     onMealAdded()
   }
 
@@ -111,13 +118,13 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       case 'meal-type':
         return 'Öğün Türü'
       case 'quick-result':
-        return 'Hızlı Analiz'
+        return 'AI Analiz Sonucu'
       case 'detailed-form':
         return 'Detaylı Analiz'
       case 'manual-entry':
         return 'Manuel Giriş'
       case 'ai-verification':
-        return 'AI Doğrulama'
+        return 'Sonuç Doğrulama'
       default:
         return 'Yemek Analizi'
     }
@@ -167,8 +174,9 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
 
         {currentStep === 'quick-result' && capturedImage && (
           <QuickAnalysisResult
-            detectedFoods={detectedFoods}
-            onSave={() => handleQuickAnalysisComplete(detectedFoods)}
+            capturedImage={capturedImage}
+            mealType={selectedMealType}
+            onSave={handleQuickAnalysisComplete}
             onRetry={() => setCurrentStep('camera')}
           />
         )}

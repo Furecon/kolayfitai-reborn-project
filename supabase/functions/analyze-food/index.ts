@@ -51,47 +51,47 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: `Analyze this food image and provide nutritional information. Return ONLY a valid JSON object with this exact structure:
+                text: `Bu yemek fotoğrafını analiz et ve besin değerlerini hesapla. Sadece geçerli bir JSON objesi döndür:
 
 {
   "detectedFoods": [
     {
-      "name": "Food name in Turkish",
-      "nameEn": "Food name in English", 
-      "estimatedAmount": "Amount with unit (e.g., 1 porsiyon, 100g, 1 adet)",
+      "name": "Yemek adı (Türkçe)",
+      "nameEn": "Food name (English)", 
+      "estimatedAmount": "Miktar ve birim (örn: 1 porsiyon, 100g, 1 adet)",
       "nutritionPer100g": {
-        "calories": number,
-        "protein": number,
-        "carbs": number,
-        "fat": number,
-        "fiber": number,
-        "sugar": number,
-        "sodium": number
+        "calories": sayı,
+        "protein": sayı,
+        "carbs": sayı,
+        "fat": sayı,
+        "fiber": sayı,
+        "sugar": sayı,
+        "sodium": sayı
       },
       "totalNutrition": {
-        "calories": number,
-        "protein": number,
-        "carbs": number,
-        "fat": number,
-        "fiber": number,
-        "sugar": number,
-        "sodium": number
+        "calories": sayı,
+        "protein": sayı,
+        "carbs": sayı,
+        "fat": sayı,
+        "fiber": sayı,
+        "sugar": sayı,
+        "sodium": sayı
       }
     }
   ],
   "mealType": "${mealType || 'öğün'}",
-  "confidence": number_between_0_and_1,
-  "suggestions": "Brief suggestions in Turkish"
+  "confidence": 0_ile_1_arası_sayı,
+  "suggestions": "Türkçe kısa öneriler"
 }
 
-Important notes:
-- All nutrition values should be realistic numbers
-- Fiber is in grams, sugar in grams, sodium in milligrams
-- Use Turkish food names when possible
-- Be as accurate as possible with portion estimates
-- Include fiber, sugar, and sodium values for comprehensive nutrition analysis
-- If you cannot clearly identify any food, return an empty detectedFoods array
-- Always provide helpful suggestions in Turkish`
+Önemli notlar:
+- Tüm besin değerleri gerçekçi sayılar olmalı
+- Lif gram, şeker gram, sodyum miligram cinsinden
+- Mümkün olduğunca Türkçe yemek adları kullan
+- Porsiyon tahminlerinde mümkün olduğunca doğru ol
+- Kapsamlı beslenme analizi için lif, şeker ve sodyum değerlerini dahil et
+- Eğer hiçbir yemeği net olarak tanıyamıyorsan boş detectedFoods array'i döndür
+- Her zaman Türkçe yararlı öneriler ver`
               },
               {
                 type: 'image_url',
@@ -103,7 +103,8 @@ Important notes:
             ]
           }
         ],
-        max_tokens: 1000,
+        max_tokens: 1500,
+        temperature: 0.3,
       }),
     })
 
@@ -141,7 +142,10 @@ Important notes:
     let analysisResult
     try {
       analysisResult = JSON.parse(jsonStr)
-      console.log('Successfully parsed JSON result')
+      console.log('Successfully parsed JSON result:', {
+        detectedFoodsCount: analysisResult.detectedFoods?.length || 0,
+        confidence: analysisResult.confidence
+      })
     } catch (parseError) {
       console.error('JSON parse error:', parseError)
       console.error('Raw content that failed to parse:', content)
