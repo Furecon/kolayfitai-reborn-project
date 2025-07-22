@@ -241,7 +241,7 @@ export function FAQPage({ onBack }: FAQPageProps) {
                     <AccordionItem key={index} value={`subscription-${index}`}>
                       <AccordionTrigger className="text-left">{faq.q}</AccordionTrigger>
                       <AccordionContent className="whitespace-pre-line">{faq.a}</AccordionContent>
-                    </AccordionContent>
+                    </AccordionItem>
                   ))}
                 </Accordion>
               </TabsContent>
