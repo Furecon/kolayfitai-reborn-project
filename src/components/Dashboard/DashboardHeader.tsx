@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Camera, User, Lightbulb, Phone, BookOpen, LogOut } from 'lucide-react'
+import { Camera, User, Lightbulb, Phone, BookOpen, LogOut, FileText, HelpCircle } from 'lucide-react'
 import { useAuth } from '@/components/Auth/AuthProvider'
 
 interface DashboardHeaderProps {
@@ -9,9 +9,18 @@ interface DashboardHeaderProps {
   onProfileClick: () => void
   onContactClick: () => void
   onResourcesClick: () => void
+  onPoliciesClick: () => void
+  onFAQClick: () => void
 }
 
-export function DashboardHeader({ onCameraClick, onProfileClick, onContactClick, onResourcesClick }: DashboardHeaderProps) {
+export function DashboardHeader({ 
+  onCameraClick, 
+  onProfileClick, 
+  onContactClick, 
+  onResourcesClick,
+  onPoliciesClick,
+  onFAQClick
+}: DashboardHeaderProps) {
   const { signOut, user } = useAuth()
 
   return (
@@ -75,6 +84,22 @@ export function DashboardHeader({ onCameraClick, onProfileClick, onContactClick,
                 >
                   <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                   Kaynaklar
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-sm"
+                  onClick={onPoliciesClick}
+                >
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                  Politikalar
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-sm"
+                  onClick={onFAQClick}
+                >
+                  <HelpCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                  Sık Sorulan Sorular
                 </Button>
               </div>
             </PopoverContent>

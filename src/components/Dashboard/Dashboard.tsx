@@ -8,6 +8,8 @@ import FoodAnalysis from '../FoodAnalysis'
 import { ProfileSetup } from '../Profile/ProfileSetup'
 import { ContactPage } from '../Support/ContactPage'
 import { ResourcesPage } from '../Support/ResourcesPage'
+import { PoliciesPage } from '../Support/PoliciesPage'
+import { FAQPage } from '../Support/FAQPage'
 import { AIAssistant } from '../AI/AIAssistant'
 import { MealSuggestions } from '../MealSuggestions/MealSuggestions'
 import { FavoriteMeals } from '../MealSuggestions/FavoriteMeals'
@@ -16,7 +18,7 @@ import { useAuth } from '@/components/Auth/AuthProvider'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, X, Sparkles, Heart } from 'lucide-react'
 
-type View = 'dashboard' | 'camera' | 'profile' | 'assistant' | 'suggestions' | 'favorites' | 'contact' | 'resources'
+type View = 'dashboard' | 'camera' | 'profile' | 'assistant' | 'suggestions' | 'favorites' | 'contact' | 'resources' | 'policies' | 'faq'
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -156,6 +158,18 @@ export function Dashboard() {
     )
   }
 
+  if (currentView === 'policies') {
+    return (
+      <PoliciesPage onBack={() => setCurrentView('dashboard')} />
+    )
+  }
+
+  if (currentView === 'faq') {
+    return (
+      <FAQPage onBack={() => setCurrentView('dashboard')} />
+    )
+  }
+
   if (currentView === 'suggestions') {
     return (
       <MealSuggestions
@@ -182,6 +196,8 @@ export function Dashboard() {
         onProfileClick={() => setCurrentView('profile')}
         onContactClick={() => setCurrentView('contact')}
         onResourcesClick={() => setCurrentView('resources')}
+        onPoliciesClick={() => setCurrentView('policies')}
+        onFAQClick={() => setCurrentView('faq')}
       />
       
       <CalorieCards 
