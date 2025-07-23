@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { supabase } from '@/integrations/supabase/client'
-import { Loader2, AlertCircle } from 'lucide-react'
+import { Loader2, AlertCircle, CheckCircle } from 'lucide-react'
 
 interface FoodItem {
   name: string
@@ -49,6 +49,8 @@ export default function QuickAnalysisResult({
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [hasAnalyzed, setHasAnalyzed] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [confidence, setConfidence] = useState<number>(0)
+  const [suggestions, setSuggestions] = useState<string>('')
 
   useEffect(() => {
     if (capturedImage && !hasAnalyzed) {
@@ -68,7 +70,8 @@ export default function QuickAnalysisResult({
       const { data, error } = await supabase.functions.invoke('analyze-food', {
         body: {
           imageUrl: capturedImage,
-          mealType: mealType
+          mealType: mealType,
+          analysisType: 'quick'
         }
       })
 
@@ -85,17 +88,19 @@ export default function QuickAnalysisResult({
 
       if (data.detectedFoods && Array.isArray(data.detectedFoods)) {
         setDetectedFoods(data.detectedFoods)
+        setConfidence(data.confidence || 0)
+        setSuggestions(data.suggestions || '')
         setHasAnalyzed(true)
         
         if (data.detectedFoods.length > 0) {
           toast({
             title: "Analiz Tamamlandı!",
-            description: `${data.detectedFoods.length} yemek tespit edildi.`,
+            description: `${data.detectedFoods.length} yemek tespit edildi. Doğruluk oranı: %${Math.round((data.confidence || 0) * 100)}`,
           })
         } else {
           toast({
             title: "Yemek Tespit Edilemedi",
-            description: "Görüntüde net bir yemek bulunamadı.",
+            description: "Görüntüde net bir yemek bulunamadı. Lütfen daha net bir fotoğraf çekin.",
             variant: "destructive"
           })
         }
@@ -126,7 +131,21 @@ export default function QuickAnalysisResult({
     setHasAnalyzed(false)
     setDetectedFoods([])
     setError(null)
+    setConfidence(0)
+    setSuggestions('')
     onRetry()
+  }
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 0.8) return 'text-green-600'
+    if (confidence >= 0.6) return 'text-yellow-600'
+    return 'text-red-600'
+  }
+
+  const getConfidenceText = (confidence: number) => {
+    if (confidence >= 0.8) return 'Yüksek Doğruluk'
+    if (confidence >= 0.6) return 'Orta Doğruluk'
+    return 'Düşük Doğruluk'
   }
 
   if (isAnalyzing) {
@@ -211,6 +230,51 @@ export default function QuickAnalysisResult({
         </p>
       </div>
 
+      {/* Confidence Score */}
+      <div className="bg-gray-50 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-700">AI Doğruluk Oranı:</span>
+          <div className="flex items-center gap-2">
+            <span className={`text-lg font-bold ${getConfidenceColor(confidence)}`}>
+              %{Math.round(confidence * 100)}
+            </span>
+            <span className={`text-xs ${getConfidenceColor(confidence)}`}>
+              {getConfidenceText(confidence)}
+            </span>
+          </div>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div 
+            className={`h-2 rounded-full transition-all duration-300 ${
+              confidence >= 0.8 ? 'bg-green-500' : 
+              confidence >= 0.6 ? 'bg-yellow-500' : 'bg-red-500'
+            }`}
+            style={{ width: `${confidence * 100}%` }}
+          />
+        </div>
+      </div>
+
+      {/* AI Suggestions */}
+      {suggestions && (
+        <div className="bg-blue-50 rounded-lg p-4">
+          <h4 className="font-medium text-blue-800 mb-2">💡 AI Önerileri:</h4>
+          <p className="text-sm text-blue-700">{suggestions}</p>
+        </div>
+      )}
+
+      {/* Low Confidence Warning */}
+      {confidence < 0.7 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+            <span className="font-medium text-yellow-800">Dikkat!</span>
+          </div>
+          <p className="text-sm text-yellow-700">
+            AI doğruluk oranı %70'in altında. Sonuçları kontrol etmenizi öneriyoruz.
+          </p>
+        </div>
+      )}
+
       <div className="space-y-4">
         {detectedFoods.map((food, index) => (
           <div key={index} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
@@ -268,7 +332,10 @@ export default function QuickAnalysisResult({
               Kaydediliyor...
             </>
           ) : (
-            '✅ Sonuçları Kaydet'
+            <>
+              <CheckCircle className="h-5 w-5 mr-2" />
+              Devam Et
+            </>
           )}
         </Button>
         

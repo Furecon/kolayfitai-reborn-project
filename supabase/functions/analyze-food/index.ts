@@ -16,11 +16,13 @@ serve(async (req) => {
   try {
     console.log('Analyze-food function called')
     
-    const { imageUrl, mealType } = await req.json()
+    const { imageUrl, mealType, analysisType, detailsData } = await req.json()
     
     console.log('Request data:', { 
       imageUrlLength: imageUrl?.length,
       mealType,
+      analysisType,
+      detailsData,
       imageUrlPrefix: imageUrl?.substring(0, 50)
     })
     
@@ -35,6 +37,21 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured')
     }
 
+    // Build detailed prompt based on analysis type
+    let detailsPrompt = ''
+    if (analysisType === 'detailed' && detailsData) {
+      detailsPrompt = `
+
+ÖNEMLI EK BİLGİLER:
+- Yemek kaynağı: ${detailsData.foodSource === 'homemade' ? 'Ev yapımı' : 'Paketli/hazır'}
+- Pişirme yöntemi: ${detailsData.cookingMethod}
+- Tüketilen miktar: ${detailsData.consumedAmount}
+- Yemek türü: ${detailsData.mealType === 'single' ? 'Tek tip yemek' : 'Karışık tabak'}
+${detailsData.hiddenIngredients ? `- Gizli malzemeler/ekstralar: ${detailsData.hiddenIngredients}` : ''}
+
+Bu bilgileri kullanarak daha doğru besin değeri hesaplama yap.`
+    }
+
     console.log('Making request to OpenAI API...')
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -47,11 +64,19 @@ serve(async (req) => {
         model: 'gpt-4o-mini',
         messages: [
           {
+            role: 'system',
+            content: `Sen Türk mutfağı ve beslenme konusunda uzman bir yapay zeka asistanısın. Yemek fotoğraflarını analiz ederek doğru besin değerlerini hesaplıyorsun. Türkçe yemek adlarını tercih et ve gerçekçi porsiyon tahminleri yap.`
+          },
+          {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: `Bu yemek fotoğrafını analiz et ve besin değerlerini hesapla. Sadece geçerli bir JSON objesi döndür:
+                text: `Bu yemek fotoğrafını analiz et ve besin değerlerini hesapla. Mümkün olduğunca Türkçe yemek adları kullan ve gerçekçi porsiyon tahminleri yap.
+
+${detailsPrompt}
+
+Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
 
 {
   "detectedFoods": [
@@ -81,17 +106,16 @@ serve(async (req) => {
   ],
   "mealType": "${mealType || 'öğün'}",
   "confidence": 0_ile_1_arası_sayı,
-  "suggestions": "Türkçe kısa öneriler"
+  "suggestions": "Türkçe kısa öneriler (maksimum 2 cümle)"
 }
 
-Önemli notlar:
-- Tüm besin değerleri gerçekçi sayılar olmalı
+ÖNEMLI KURALLAR:
+- Tüm besin değerleri gerçekçi sayılar olmalı (0'dan büyük)
 - Lif gram, şeker gram, sodyum miligram cinsinden
-- Mümkün olduğunca Türkçe yemek adları kullan
-- Porsiyon tahminlerinde mümkün olduğunca doğru ol
-- Kapsamlı beslenme analizi için lif, şeker ve sodyum değerlerini dahil et
-- Eğer hiçbir yemeği net olarak tanıyamıyorsan boş detectedFoods array'i döndür
-- Her zaman Türkçe yararlı öneriler ver`
+- Porsiyon tahminlerinde gerçekçi ol
+- Eğer hiçbir yemeği net tanıyamıyorsan boş detectedFoods array'i döndür
+- Confidence değeri 0.1-1.0 arasında olmalı
+- Sadece JSON döndür, başka açıklama yapma`
               },
               {
                 type: 'image_url',
@@ -104,7 +128,7 @@ serve(async (req) => {
           }
         ],
         max_tokens: 1500,
-        temperature: 0.3,
+        temperature: 0.2, // Lower temperature for more consistent results
       }),
     })
 
@@ -152,34 +176,68 @@ serve(async (req) => {
       throw new Error('Invalid JSON response from AI')
     }
 
-    // Validate the response structure
+    // Validate and fix the response structure
     if (!analysisResult.detectedFoods || !Array.isArray(analysisResult.detectedFoods)) {
       console.error('Invalid response structure: missing detectedFoods array')
-      throw new Error('Invalid response structure: missing detectedFoods array')
+      analysisResult.detectedFoods = []
     }
 
-    // Ensure all required nutrition fields are present
+    // Set default confidence if missing
+    if (typeof analysisResult.confidence !== 'number') {
+      analysisResult.confidence = 0.7
+    }
+
+    // Ensure confidence is between 0 and 1
+    if (analysisResult.confidence > 1) {
+      analysisResult.confidence = analysisResult.confidence / 100
+    }
+
+    // Validate and fix nutrition data for each food
     analysisResult.detectedFoods.forEach((food: any, index: number) => {
-      if (!food.nutritionPer100g || !food.totalNutrition) {
-        console.error(`Missing nutrition data for food item ${index}`)
-        throw new Error(`Missing nutrition data for food item ${index}`)
+      if (!food.name) {
+        food.name = `Yemek ${index + 1}`
+      }
+      if (!food.nameEn) {
+        food.nameEn = food.name
+      }
+      if (!food.estimatedAmount) {
+        food.estimatedAmount = '1 porsiyon'
       }
       
-      // Ensure fiber, sugar, and sodium are present
+      // Ensure nutrition objects exist
+      if (!food.nutritionPer100g) {
+        food.nutritionPer100g = {}
+      }
+      if (!food.totalNutrition) {
+        food.totalNutrition = {}
+      }
+      
+      // Ensure all required nutrition fields are present with valid numbers
       const requiredFields = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium']
       requiredFields.forEach(field => {
-        if (typeof food.nutritionPer100g[field] !== 'number') {
+        if (typeof food.nutritionPer100g[field] !== 'number' || food.nutritionPer100g[field] < 0) {
           food.nutritionPer100g[field] = 0
         }
-        if (typeof food.totalNutrition[field] !== 'number') {
+        if (typeof food.totalNutrition[field] !== 'number' || food.totalNutrition[field] < 0) {
           food.totalNutrition[field] = 0
         }
       })
+
+      // Ensure calories is reasonable (at least some calories for detected food)
+      if (food.totalNutrition.calories < 10) {
+        food.totalNutrition.calories = 50 // Default minimum calories
+      }
     })
+
+    // Set default suggestions if missing
+    if (!analysisResult.suggestions) {
+      analysisResult.suggestions = 'Yemek analizi tamamlandı. Besin değerlerini kontrol ediniz.'
+    }
 
     console.log('Analysis result validated successfully:', {
       detectedFoodsCount: analysisResult.detectedFoods.length,
-      confidence: analysisResult.confidence
+      confidence: analysisResult.confidence,
+      totalCalories: analysisResult.detectedFoods.reduce((sum: number, food: any) => sum + (food.totalNutrition?.calories || 0), 0)
     })
 
     return new Response(JSON.stringify(analysisResult), {

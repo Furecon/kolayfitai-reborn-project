@@ -8,10 +8,11 @@ import QuickAnalysisResult from './QuickAnalysisResult'
 import DetailedAnalysisForm from './DetailedAnalysisForm'
 import ManualFoodEntry from './ManualFoodEntry'
 import AIVerification from './AIVerification'
+import MealSelectionAfterAnalysis from './MealSelectionAfterAnalysis'
 import NativeCameraCapture from './NativeCameraCapture'
 import { Capacitor } from '@capacitor/core'
 
-type AnalysisStep = 'camera' | 'analysis-type' | 'meal-type' | 'quick-result' | 'detailed-form' | 'manual-entry' | 'ai-verification'
+type AnalysisStep = 'camera' | 'analysis-type' | 'meal-type' | 'quick-result' | 'detailed-form' | 'manual-entry' | 'meal-selection' | 'ai-verification'
 
 interface FoodAnalysisProps {
   onMealAdded: () => void
@@ -25,6 +26,8 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   const [selectedMealType, setSelectedMealType] = useState<string>('')
   const [analysisResult, setAnalysisResult] = useState<any>(null)
   const [detectedFoods, setDetectedFoods] = useState<any[]>([])
+  const [finalMealType, setFinalMealType] = useState<string>('')
+  const [detailedFormData, setDetailedFormData] = useState<any>(null)
 
   const isNative = Capacitor.isNativePlatform()
 
@@ -57,18 +60,35 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   const handleQuickAnalysisComplete = (foods: any[]) => {
     console.log('Quick analysis completed with foods:', foods)
     setDetectedFoods(foods)
-    setCurrentStep('ai-verification')
+    setCurrentStep('meal-selection')
   }
 
   const handleDetailedAnalysisComplete = (data: any) => {
     console.log('Detailed analysis completed:', data)
-    setAnalysisResult(data)
-    setCurrentStep('ai-verification')
+    setDetailedFormData(data)
+    // Start detailed analysis with the form data
+    setCurrentStep('quick-result') // Use same result component but with detailed data
   }
 
   const handleManualEntryComplete = async (foods: any[]) => {
     console.log('Manual entry completed:', foods)
     setDetectedFoods(foods)
+    setCurrentStep('meal-selection')
+  }
+
+  const handleMealSelectionComplete = (mealType: string, foods: any[]) => {
+    console.log('Meal selection completed:', { mealType, foods })
+    setFinalMealType(mealType)
+    setDetectedFoods(foods)
+    
+    // Create analysis result for verification
+    const analysisResult = {
+      detectedFoods: foods,
+      confidence: 0.85, // Default confidence for manual/processed foods
+      suggestions: 'Analiz tamamlandı. Besin değerlerini kontrol ediniz.',
+      mealType: mealType
+    }
+    setAnalysisResult(analysisResult)
     setCurrentStep('ai-verification')
   }
 
@@ -95,7 +115,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       case 'manual-entry':
         setCurrentStep('analysis-type')
         break
-      case 'ai-verification':
+      case 'meal-selection':
         if (analysisType === 'quick') {
           setCurrentStep('quick-result')
         } else if (analysisType === 'detailed') {
@@ -103,6 +123,9 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
         } else {
           setCurrentStep('manual-entry')
         }
+        break
+      case 'ai-verification':
+        setCurrentStep('meal-selection')
         break
       default:
         setCurrentStep('camera')
@@ -123,6 +146,8 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
         return 'Detaylı Analiz'
       case 'manual-entry':
         return 'Manuel Giriş'
+      case 'meal-selection':
+        return 'Öğün Seçimi'
       case 'ai-verification':
         return 'Sonuç Doğrulama'
       default:
@@ -194,6 +219,14 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
             onSave={handleManualEntryComplete}
             onBack={handleBack}
             loading={false}
+          />
+        )}
+
+        {currentStep === 'meal-selection' && (
+          <MealSelectionAfterAnalysis
+            detectedFoods={detectedFoods}
+            onSubmit={handleMealSelectionComplete}
+            onBack={handleBack}
           />
         )}
 
