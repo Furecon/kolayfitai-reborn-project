@@ -40,16 +40,20 @@ serve(async (req) => {
     // Build detailed prompt based on analysis type
     let detailsPrompt = ''
     if (analysisType === 'detailed' && detailsData) {
+      const cookingMethodText = detailsData.cookingMethod === 'unsure' 
+        ? 'Pişirme yöntemi belirsiz - fotoğraftan tahmin et' 
+        : detailsData.cookingMethod
+      
       detailsPrompt = `
 
 ÖNEMLI EK BİLGİLER:
 - Yemek kaynağı: ${detailsData.foodSource === 'homemade' ? 'Ev yapımı' : 'Paketli/hazır'}
-- Pişirme yöntemi: ${detailsData.cookingMethod}
+- Pişirme yöntemi: ${cookingMethodText}
 - Tüketilen miktar: ${detailsData.consumedAmount}
 - Yemek türü: ${detailsData.mealType === 'single' ? 'Tek tip yemek' : 'Karışık tabak'}
 ${detailsData.hiddenIngredients ? `- Gizli malzemeler/ekstralar: ${detailsData.hiddenIngredients}` : ''}
 
-Bu bilgileri kullanarak daha doğru besin değeri hesaplama yap.`
+Bu bilgileri kullanarak daha doğru besin değeri hesaplama yap. Pişirme yöntemi belirsizse fotoğraftan tahmin et.`
     }
 
     console.log('Making request to OpenAI API...')
@@ -65,7 +69,18 @@ Bu bilgileri kullanarak daha doğru besin değeri hesaplama yap.`
         messages: [
           {
             role: 'system',
-            content: `Sen Türk mutfağı ve beslenme konusunda uzman bir yapay zeka asistanısın. Yemek fotoğraflarını analiz ederek doğru besin değerlerini hesaplıyorsun. Türkçe yemek adlarını tercih et ve gerçekçi porsiyon tahminleri yap.`
+            content: `Sen Türk mutfağı ve beslenme konusunda uzman bir yapay zeka asistanısın. Yemek fotoğraflarını analiz ederek doğru besin değerlerini hesaplıyorsun. Türkçe yemek adlarını tercih et ve gerçekçi porsiyon tahminleri yap.
+
+ÖNEMLI: Tüm besin değerlerini eksiksiz hesapla:
+- Kalori (kcal)
+- Protein (g)
+- Karbonhidrat (g) 
+- Yağ (g)
+- Lif (g)
+- Şeker (g)
+- Sodyum (mg)
+
+Pişirme yöntemi belirsizse fotoğraftan tahmin et ve açıkla.`
           },
           {
             role: 'user',
@@ -111,10 +126,12 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
 
 ÖNEMLI KURALLAR:
 - Tüm besin değerleri gerçekçi sayılar olmalı (0'dan büyük)
-- Lif gram, şeker gram, sodyum miligram cinsinden
+- Lif, şeker gram cinsinden, sodyum miligram cinsinden
 - Porsiyon tahminlerinde gerçekçi ol
 - Eğer hiçbir yemeği net tanıyamıyorsan boş detectedFoods array'i döndür
 - Confidence değeri 0.1-1.0 arasında olmalı
+- Sodyum değeri özellikle dikkatli hesapla (tuz, işlenmiş gıdalar)
+- Şeker değeri doğal ve eklenmiş şekeri içermeli
 - Sadece JSON döndür, başka açıklama yapma`
               },
               {
@@ -128,7 +145,7 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
           }
         ],
         max_tokens: 1500,
-        temperature: 0.2, // Lower temperature for more consistent results
+        temperature: 0.2,
       }),
     })
 

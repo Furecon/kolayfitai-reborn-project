@@ -12,7 +12,7 @@ interface DetailedAnalysisData {
   foodSource: 'homemade' | 'packaged' | ''
   hiddenIngredients: string
   noHiddenIngredients: boolean
-  cookingMethod: 'boiled' | 'oven' | 'grilled' | 'fried' | 'steamed' | 'raw' | ''
+  cookingMethod: 'boiled' | 'oven' | 'grilled' | 'fried' | 'steamed' | 'raw' | 'unsure' | ''
   consumedAmount: string
   mealType: 'single' | 'mixed' | ''
 }
@@ -127,7 +127,8 @@ export default function DetailedAnalysisForm({ onSubmit, onBack, loading }: Deta
                   { value: 'grilled', label: 'Izgara' },
                   { value: 'fried', label: 'Kızartma' },
                   { value: 'steamed', label: 'Buharda' },
-                  { value: 'raw', label: 'Çiğ / Karışık' }
+                  { value: 'raw', label: 'Çiğ / Karışık' },
+                  { value: 'unsure', label: 'Emin değilim' }
                 ].map((method) => (
                   <div key={method.value} className="flex items-center space-x-2">
                     <Checkbox 
@@ -139,6 +140,13 @@ export default function DetailedAnalysisForm({ onSubmit, onBack, loading }: Deta
                   </div>
                 ))}
               </div>
+              {formData.cookingMethod === 'unsure' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-700">
+                    💡 Emin değilseniz, yapay zeka fotoğrafı analiz ederek pişirme yöntemini tahmin edecek.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Soru 4: Tüketim Miktarı */}

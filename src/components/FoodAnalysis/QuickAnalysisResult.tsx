@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { supabase } from '@/integrations/supabase/client'
-import { Loader2, AlertCircle, CheckCircle } from 'lucide-react'
+import { Loader2, AlertCircle, CheckCircle, Expand, Zap, Droplets } from 'lucide-react'
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 
 interface FoodItem {
   name: string
@@ -148,6 +149,40 @@ export default function QuickAnalysisResult({
     return 'Düşük Doğruluk'
   }
 
+  const getNutritionIcon = (type: string) => {
+    switch (type) {
+      case 'calories': return '🔥'
+      case 'protein': return '🥩'
+      case 'carbs': return '🍞'
+      case 'fat': return '🥑'
+      case 'fiber': return '🌾'
+      case 'sugar': return '🍯'
+      case 'sodium': return '🧂'
+      default: return '📊'
+    }
+  }
+
+  const getNutritionColor = (type: string) => {
+    switch (type) {
+      case 'calories': return 'bg-red-50 text-red-700'
+      case 'protein': return 'bg-blue-50 text-blue-700'
+      case 'carbs': return 'bg-orange-50 text-orange-700'
+      case 'fat': return 'bg-green-50 text-green-700'
+      case 'fiber': return 'bg-purple-50 text-purple-700'
+      case 'sugar': return 'bg-yellow-50 text-yellow-700'
+      case 'sodium': return 'bg-gray-50 text-gray-700'
+      default: return 'bg-gray-50 text-gray-700'
+    }
+  }
+
+  const getNutritionUnit = (type: string) => {
+    switch (type) {
+      case 'calories': return 'kcal'
+      case 'sodium': return 'mg'
+      default: return 'g'
+    }
+  }
+
   if (isAnalyzing) {
     return (
       <div className="text-center py-8 space-y-4">
@@ -230,6 +265,37 @@ export default function QuickAnalysisResult({
         </p>
       </div>
 
+      {/* Captured Image Display */}
+      {capturedImage && (
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-medium text-gray-900">📸 Çekilen Fotoğraf</h4>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Expand className="h-4 w-4 mr-1" />
+                  Büyüt
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <img 
+                  src={capturedImage} 
+                  alt="Çekilen yemek fotoğrafı"
+                  className="w-full h-auto rounded-lg"
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
+          <div className="relative">
+            <img 
+              src={capturedImage} 
+              alt="Çekilen yemek fotoğrafı"
+              className="w-full h-40 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Confidence Score */}
       <div className="bg-gray-50 rounded-lg p-4">
         <div className="flex items-center justify-between mb-2">
@@ -278,7 +344,7 @@ export default function QuickAnalysisResult({
       <div className="space-y-4">
         {detectedFoods.map((food, index) => (
           <div key={index} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <div className="flex justify-between items-start mb-3">
+            <div className="flex justify-between items-start mb-4">
               <div>
                 <h4 className="text-lg font-semibold text-gray-900">{food.name}</h4>
                 <p className="text-sm text-gray-500">{food.estimatedAmount}</p>
@@ -290,31 +356,32 @@ export default function QuickAnalysisResult({
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-blue-50 rounded-lg p-3">
-                <p className="text-xs text-blue-600 font-medium">Protein</p>
-                <p className="text-lg font-bold text-blue-700">
-                  {food.totalNutrition.protein.toFixed(1)}g
-                </p>
-              </div>
-              <div className="bg-orange-50 rounded-lg p-3">
-                <p className="text-xs text-orange-600 font-medium">Karbonhidrat</p>
-                <p className="text-lg font-bold text-orange-700">
-                  {food.totalNutrition.carbs.toFixed(1)}g
-                </p>
-              </div>
-              <div className="bg-red-50 rounded-lg p-3">
-                <p className="text-xs text-red-600 font-medium">Yağ</p>
-                <p className="text-lg font-bold text-red-700">
-                  {food.totalNutrition.fat.toFixed(1)}g
-                </p>
-              </div>
-              <div className="bg-purple-50 rounded-lg p-3">
-                <p className="text-xs text-purple-600 font-medium">Lif</p>
-                <p className="text-lg font-bold text-purple-700">
-                  {food.totalNutrition.fiber.toFixed(1)}g
-                </p>
-              </div>
+            {/* Detailed Nutrition Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {Object.entries(food.totalNutrition).map(([key, value]) => {
+                if (key === 'calories') return null // Already shown above
+                return (
+                  <div key={key} className={`rounded-lg p-3 ${getNutritionColor(key)}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm">{getNutritionIcon(key)}</span>
+                      <p className="text-xs font-medium capitalize">
+                        {key === 'carbs' ? 'Karbonhidrat' : 
+                         key === 'protein' ? 'Protein' :
+                         key === 'fat' ? 'Yağ' :
+                         key === 'fiber' ? 'Lif' :
+                         key === 'sugar' ? 'Şeker' :
+                         key === 'sodium' ? 'Sodyum' : key}
+                      </p>
+                    </div>
+                    <p className="text-sm font-bold">
+                      {typeof value === 'number' ? 
+                        (key === 'sodium' ? Math.round(value) : value.toFixed(1)) : 
+                        value
+                      }{getNutritionUnit(key)}
+                    </p>
+                  </div>
+                )
+              })}
             </div>
           </div>
         ))}
