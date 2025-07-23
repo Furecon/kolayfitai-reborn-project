@@ -10,32 +10,38 @@ import { ArrowLeft, CheckCircle, XCircle, Edit3, Save, X } from 'lucide-react'
 interface FoodItem {
   name: string
   nameEn: string
-  category: string
-  portionSize: number
-  calories: number
-  protein: number
-  carbs: number
-  fat: number
+  estimatedAmount: string
+  nutritionPer100g: {
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+    fiber: number
+    sugar: number
+    sodium: number
+  }
+  totalNutrition: {
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+    fiber: number
+    sugar: number
+    sodium: number
+  }
 }
 
 interface AnalysisResult {
-  nutritionalAnalysis: {
-    totalCalories: number
-    totalProtein: number
-    totalCarbs: number
-    totalFat: number
-    foodItems: FoodItem[]
-  }
-  confidenceScores: {
-    overall: number
-    individual: { name: string; confidence: number }[]
-  }
+  detectedFoods: FoodItem[]
+  confidence: number
+  suggestions: string
+  mealType: string
 }
 
 interface AIVerificationProps {
-  analysisResult: AnalysisResult
+  analysisResult: AnalysisResult | null
   capturedImage?: string | null
-  onConfirm: () => void
+  onConfirm: (foods: FoodItem[]) => void
   onEdit: () => void
   onManualEntry: () => void
   onBack: () => void
@@ -50,7 +56,46 @@ export default function AIVerification({
   onBack 
 }: AIVerificationProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
-  const [editedFoods, setEditedFoods] = useState<FoodItem[]>(analysisResult.nutritionalAnalysis.foodItems)
+  const [editedFoods, setEditedFoods] = useState<FoodItem[]>(analysisResult?.detectedFoods || [])
+
+  // Handle case where analysisResult is null or undefined
+  if (!analysisResult || !analysisResult.detectedFoods) {
+    return (
+      <div className="min-h-screen bg-white p-4">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="flex items-center gap-4 mb-6">
+            <Button
+              variant="ghost"
+              onClick={onBack}
+              className="text-gray-600"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Geri
+            </Button>
+            <h1 className="text-xl font-semibold text-black">AI Analiz Doğrulaması</h1>
+          </div>
+
+          <Card>
+            <CardContent className="p-6 text-center">
+              <div className="space-y-4">
+                <XCircle className="h-12 w-12 text-red-500 mx-auto" />
+                <h3 className="text-lg font-medium text-gray-900">Analiz Sonucu Bulunamadı</h3>
+                <p className="text-gray-600">AI analizi tamamlanamadı veya sonuç alınamadı.</p>
+                <div className="space-y-2">
+                  <Button onClick={onManualEntry} className="w-full">
+                    Manuel Giriş Yap
+                  </Button>
+                  <Button variant="outline" onClick={onBack} className="w-full">
+                    Tekrar Dene
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 0.8) return 'bg-green-500'
@@ -70,10 +115,8 @@ export default function AIVerification({
     return 'destructive'
   }
 
-  const overallConfidence = analysisResult.confidenceScores.overall
-  const lowConfidenceItems = analysisResult.nutritionalAnalysis.foodItems.filter((_, index) => 
-    analysisResult.confidenceScores.individual[index]?.confidence < 0.7
-  )
+  const overallConfidence = analysisResult.confidence || 0
+  const lowConfidenceItems = editedFoods.filter(() => overallConfidence < 0.7)
 
   const handleEditFood = (index: number) => {
     setEditingIndex(index)
@@ -93,12 +136,15 @@ export default function AIVerification({
   const getTotalNutrition = () => {
     return editedFoods.reduce(
       (total, food) => ({
-        totalCalories: total.totalCalories + food.calories,
-        totalProtein: total.totalProtein + food.protein,
-        totalCarbs: total.totalCarbs + food.carbs,
-        totalFat: total.totalFat + food.fat
+        totalCalories: total.totalCalories + (food.totalNutrition?.calories || 0),
+        totalProtein: total.totalProtein + (food.totalNutrition?.protein || 0),
+        totalCarbs: total.totalCarbs + (food.totalNutrition?.carbs || 0),
+        totalFat: total.totalFat + (food.totalNutrition?.fat || 0),
+        totalFiber: total.totalFiber + (food.totalNutrition?.fiber || 0),
+        totalSugar: total.totalSugar + (food.totalNutrition?.sugar || 0),
+        totalSodium: total.totalSodium + (food.totalNutrition?.sodium || 0)
       }),
-      { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0 }
+      { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0, totalFiber: 0, totalSugar: 0, totalSodium: 0 }
     )
   }
 
@@ -171,9 +217,15 @@ export default function AIVerification({
               </div>
             )}
 
+            {analysisResult.suggestions && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h4 className="font-medium text-green-800 mb-2">AI Önerileri:</h4>
+                <p className="text-sm text-green-700">{analysisResult.suggestions}</p>
+              </div>
+            )}
+
             <div className="space-y-3">
               {editedFoods.map((food, index) => {
-                const confidence = analysisResult.confidenceScores.individual[index]?.confidence || 0
                 const isEditing = editingIndex === index
                 
                 return (
@@ -184,16 +236,16 @@ export default function AIVerification({
                           <div>
                             <h4 className="font-medium">{food.name}</h4>
                             <p className="text-sm text-gray-500">
-                              {food.category} • {food.portionSize}g
+                              {food.estimatedAmount}
                             </p>
                           </div>
                           <div className="text-right flex items-center gap-3">
                             <div className="text-center">
                               <div className="flex items-center gap-2 mb-1">
-                                <div className={`w-2 h-2 rounded-full ${getConfidenceColor(confidence)}`} />
-                                <span className="text-sm font-medium">%{Math.round(confidence * 100)}</span>
+                                <div className={`w-2 h-2 rounded-full ${getConfidenceColor(overallConfidence)}`} />
+                                <span className="text-sm font-medium">%{Math.round(overallConfidence * 100)}</span>
                               </div>
-                              <p className="font-medium">{food.calories} kcal</p>
+                              <p className="font-medium">{food.totalNutrition?.calories || 0} kcal</p>
                             </div>
                             <Button
                               size="sm"
@@ -206,7 +258,9 @@ export default function AIVerification({
                           </div>
                         </div>
                         <div className="text-xs text-gray-600">
-                          Protein: {food.protein}g • Karb: {food.carbs}g • Yağ: {food.fat}g
+                          Protein: {food.totalNutrition?.protein || 0}g • 
+                          Karb: {food.totalNutrition?.carbs || 0}g • 
+                          Yağ: {food.totalNutrition?.fat || 0}g
                         </div>
                       </>
                     ) : (
@@ -253,7 +307,7 @@ export default function AIVerification({
 
             <div className="space-y-3 pt-4">
               <Button
-                onClick={onConfirm}
+                onClick={() => onConfirm(editedFoods)}
                 className="w-full bg-green-500 hover:bg-green-600 text-white"
               >
                 <CheckCircle className="mr-2 h-4 w-4" />
@@ -295,11 +349,16 @@ interface EditFoodFormProps {
 function EditFoodForm({ food, onSave, onCancel }: EditFoodFormProps) {
   const [editedFood, setEditedFood] = useState({
     name: food.name,
-    portionSize: food.portionSize,
-    calories: food.calories,
-    protein: food.protein,
-    carbs: food.carbs,
-    fat: food.fat
+    estimatedAmount: food.estimatedAmount,
+    totalNutrition: {
+      calories: food.totalNutrition?.calories || 0,
+      protein: food.totalNutrition?.protein || 0,
+      carbs: food.totalNutrition?.carbs || 0,
+      fat: food.totalNutrition?.fat || 0,
+      fiber: food.totalNutrition?.fiber || 0,
+      sugar: food.totalNutrition?.sugar || 0,
+      sodium: food.totalNutrition?.sodium || 0
+    }
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -333,13 +392,12 @@ function EditFoodForm({ food, onSave, onCancel }: EditFoodFormProps) {
           />
         </div>
         
-        <div>
-          <Label htmlFor="portion" className="text-xs">Porsiyon (g)</Label>
+        <div className="col-span-2">
+          <Label htmlFor="amount" className="text-xs">Miktar</Label>
           <Input
-            id="portion"
-            type="number"
-            value={editedFood.portionSize}
-            onChange={(e) => setEditedFood({ ...editedFood, portionSize: parseInt(e.target.value) || 0 })}
+            id="amount"
+            value={editedFood.estimatedAmount}
+            onChange={(e) => setEditedFood({ ...editedFood, estimatedAmount: e.target.value })}
             className="h-8"
           />
         </div>
@@ -349,8 +407,11 @@ function EditFoodForm({ food, onSave, onCancel }: EditFoodFormProps) {
           <Input
             id="calories"
             type="number"
-            value={editedFood.calories}
-            onChange={(e) => setEditedFood({ ...editedFood, calories: parseInt(e.target.value) || 0 })}
+            value={editedFood.totalNutrition.calories}
+            onChange={(e) => setEditedFood({ 
+              ...editedFood, 
+              totalNutrition: { ...editedFood.totalNutrition, calories: parseInt(e.target.value) || 0 }
+            })}
             className="h-8"
           />
         </div>
@@ -361,8 +422,11 @@ function EditFoodForm({ food, onSave, onCancel }: EditFoodFormProps) {
             id="protein"
             type="number"
             step="0.1"
-            value={editedFood.protein}
-            onChange={(e) => setEditedFood({ ...editedFood, protein: parseFloat(e.target.value) || 0 })}
+            value={editedFood.totalNutrition.protein}
+            onChange={(e) => setEditedFood({ 
+              ...editedFood, 
+              totalNutrition: { ...editedFood.totalNutrition, protein: parseFloat(e.target.value) || 0 }
+            })}
             className="h-8"
           />
         </div>
@@ -373,8 +437,11 @@ function EditFoodForm({ food, onSave, onCancel }: EditFoodFormProps) {
             id="carbs"
             type="number"
             step="0.1"
-            value={editedFood.carbs}
-            onChange={(e) => setEditedFood({ ...editedFood, carbs: parseFloat(e.target.value) || 0 })}
+            value={editedFood.totalNutrition.carbs}
+            onChange={(e) => setEditedFood({ 
+              ...editedFood, 
+              totalNutrition: { ...editedFood.totalNutrition, carbs: parseFloat(e.target.value) || 0 }
+            })}
             className="h-8"
           />
         </div>
@@ -385,8 +452,11 @@ function EditFoodForm({ food, onSave, onCancel }: EditFoodFormProps) {
             id="fat"
             type="number"
             step="0.1"
-            value={editedFood.fat}
-            onChange={(e) => setEditedFood({ ...editedFood, fat: parseFloat(e.target.value) || 0 })}
+            value={editedFood.totalNutrition.fat}
+            onChange={(e) => setEditedFood({ 
+              ...editedFood, 
+              totalNutrition: { ...editedFood.totalNutrition, fat: parseFloat(e.target.value) || 0 }
+            })}
             className="h-8"
           />
         </div>
