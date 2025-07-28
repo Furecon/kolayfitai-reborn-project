@@ -311,7 +311,7 @@ export default function AIVerification({
                 className="w-full bg-green-500 hover:bg-green-600 text-white"
               >
                 <CheckCircle className="mr-2 h-4 w-4" />
-                Doğru, Devam Et
+                Öğünü Kaydet
               </Button>
               
               <div className="grid grid-cols-2 gap-3">

@@ -12,7 +12,7 @@ import MealSelectionAfterAnalysis from './MealSelectionAfterAnalysis'
 import NativeCameraCapture from './NativeCameraCapture'
 import { Capacitor } from '@capacitor/core'
 
-type AnalysisStep = 'camera' | 'analysis-type' | 'meal-type' | 'quick-result' | 'detailed-form' | 'manual-entry' | 'meal-selection' | 'ai-verification'
+type AnalysisStep = 'camera' | 'analysis-type' | 'quick-result' | 'detailed-form' | 'manual-entry' | 'meal-selection' | 'ai-verification'
 
 interface FoodAnalysisProps {
   onMealAdded: () => void
@@ -43,19 +43,15 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       setCurrentStep('manual-entry')
     } else {
       setAnalysisType(type)
-      setCurrentStep('meal-type')
+      if (type === 'quick') {
+        setCurrentStep('quick-result')
+      } else {
+        setCurrentStep('detailed-form')
+      }
     }
   }
 
-  const handleMealTypeSelected = (mealType: string) => {
-    console.log('Meal type selected:', mealType)
-    setSelectedMealType(mealType)
-    if (analysisType === 'quick') {
-      setCurrentStep('quick-result')
-    } else {
-      setCurrentStep('detailed-form')
-    }
-  }
+  // Remove this function as we no longer select meal type before analysis
 
   const handleQuickAnalysisComplete = (foods: any[]) => {
     console.log('Quick analysis completed with foods:', foods)
@@ -92,9 +88,64 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
     setCurrentStep('ai-verification')
   }
 
-  const handleVerificationComplete = () => {
-    console.log('Verification completed')
-    onMealAdded()
+  const handleVerificationComplete = async (foods: any[]) => {
+    console.log('Verification completed, saving meal with foods:', foods)
+    
+    try {
+      // Save the meal to database
+      const { supabase } = await import('@/integrations/supabase/client')
+      
+      const totalNutrition = foods.reduce((total, food) => ({
+        totalCalories: total.totalCalories + (food.totalNutrition?.calories || 0),
+        totalProtein: total.totalProtein + (food.totalNutrition?.protein || 0),
+        totalCarbs: total.totalCarbs + (food.totalNutrition?.carbs || 0),
+        totalFat: total.totalFat + (food.totalNutrition?.fat || 0),
+        totalFiber: total.totalFiber + (food.totalNutrition?.fiber || 0),
+        totalSugar: total.totalSugar + (food.totalNutrition?.sugar || 0),
+        totalSodium: total.totalSodium + (food.totalNutrition?.sodium || 0)
+      }), { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0, totalFiber: 0, totalSugar: 0, totalSodium: 0 })
+
+      const { data: user } = await supabase.auth.getUser()
+      if (!user?.user?.id) {
+        throw new Error('User not authenticated')
+      }
+
+      const mealData = {
+        user_id: user.user.id,
+        meal_type: finalMealType.toLowerCase(),
+        food_items: foods.map(food => ({
+          name: food.name,
+          nameEn: food.nameEn || food.name,
+          estimatedAmount: food.estimatedAmount || '100g',
+          nutritionPer100g: food.nutritionPer100g,
+          totalNutrition: food.totalNutrition
+        })),
+        total_calories: totalNutrition.totalCalories,
+        total_protein: totalNutrition.totalProtein,
+        total_carbs: totalNutrition.totalCarbs,
+        total_fat: totalNutrition.totalFat,
+        total_fiber: totalNutrition.totalFiber,
+        total_sugar: totalNutrition.totalSugar,
+        total_sodium: totalNutrition.totalSodium,
+        photo_url: capturedImage,
+        date: new Date().toISOString().split('T')[0]
+      }
+
+      const { error } = await supabase
+        .from('meal_logs')
+        .insert([mealData])
+
+      if (error) {
+        console.error('Error saving meal:', error)
+        throw error
+      }
+
+      console.log('Meal saved successfully')
+      onMealAdded()
+    } catch (error) {
+      console.error('Failed to save meal:', error)
+      // You might want to show an error toast here
+    }
   }
 
   const handleBack = () => {
@@ -105,12 +156,9 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       case 'analysis-type':
         setCurrentStep('camera')
         break
-      case 'meal-type':
-        setCurrentStep('analysis-type')
-        break
       case 'quick-result':
       case 'detailed-form':
-        setCurrentStep('meal-type')
+        setCurrentStep('analysis-type')
         break
       case 'manual-entry':
         setCurrentStep('analysis-type')
@@ -138,8 +186,6 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
         return 'Yemek Fotoğrafı'
       case 'analysis-type':
         return 'Analiz Türü'
-      case 'meal-type':
-        return 'Öğün Türü'
       case 'quick-result':
         return 'AI Analiz Sonucu'
       case 'detailed-form':
@@ -190,17 +236,11 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
           />
         )}
 
-        {currentStep === 'meal-type' && (
-          <MealTypeSelection
-            onSubmit={handleMealTypeSelected}
-            onBack={handleBack}
-          />
-        )}
 
         {currentStep === 'quick-result' && capturedImage && (
           <QuickAnalysisResult
             capturedImage={capturedImage}
-            mealType={selectedMealType}
+            mealType=""
             onSave={handleQuickAnalysisComplete}
             onRetry={() => setCurrentStep('camera')}
           />
@@ -215,7 +255,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
 
         {currentStep === 'manual-entry' && (
           <ManualFoodEntry
-            mealType={selectedMealType}
+            mealType=""
             onSave={handleManualEntryComplete}
             onBack={handleBack}
             loading={false}

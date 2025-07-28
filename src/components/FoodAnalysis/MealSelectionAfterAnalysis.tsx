@@ -106,7 +106,7 @@ export default function MealSelectionAfterAnalysis({
             disabled={!selectedMealType || loading}
             className="w-full bg-green-500 hover:bg-green-600 text-white py-3 text-lg font-semibold"
           >
-            {loading ? 'Kaydediliyor...' : '✅ Öğüne Kaydet'}
+            {loading ? 'Kaydediliyor...' : 'Devam Et'}
           </Button>
         </CardContent>
       </Card>
