@@ -6,24 +6,20 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import Index from './pages/Index'
 import NotFound from './pages/NotFound'
 import './App.css'
-import { DemoDataProvider } from '@/components/Demo/DemoDataProvider'
-
 const queryClient = new QueryClient()
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <DemoDataProvider>
-        <Router>
-          <TooltipProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
-          </TooltipProvider>
-        </Router>
-      </DemoDataProvider>
+      <Router>
+        <TooltipProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+        </TooltipProvider>
+      </Router>
     </QueryClientProvider>
   )
 }
