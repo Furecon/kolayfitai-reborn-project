@@ -134,7 +134,7 @@ export function AIInsights({ dailyStats }: AIInsightsProps) {
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-center">
               <RefreshCw className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-green-500" />
-              <span className="ml-2 text-sm sm:text-base text-gray-600">AI analiz yapılıyor...</span>
+              <span className="ml-2 text-sm sm:text-base text-gray-600">Ai analiz yapılıyor...</span>
             </div>
           </CardContent>
         </Card>
@@ -148,7 +148,7 @@ export function AIInsights({ dailyStats }: AIInsightsProps) {
         <CardHeader className="pb-3 sm:pb-4">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-semibold text-gray-900">
             <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-            AI Analiz ve Öneriler
+            Ai Analiz ve Öneriler
           </CardTitle>
         </CardHeader>
         
@@ -222,7 +222,7 @@ export function AIInsights({ dailyStats }: AIInsightsProps) {
           <div className="bg-white rounded-lg p-3 sm:p-4 border border-green-100">
             <div className="flex items-center gap-2 mb-2 sm:mb-3">
               <Lightbulb className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
-              <h3 className="text-sm sm:text-base font-medium text-gray-900">AI Önerisi</h3>
+              <h3 className="text-sm sm:text-base font-medium text-gray-900">Ai Önerisi</h3>
             </div>
             <p className="text-gray-700 text-xs sm:text-sm leading-relaxed">
               {insights?.aiSuggestion}

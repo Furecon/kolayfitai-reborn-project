@@ -187,7 +187,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       case 'analysis-type':
         return 'Analiz Türü'
       case 'quick-result':
-        return 'AI Analiz Sonucu'
+        return 'Ai Analiz Sonucu'
       case 'detailed-form':
         return 'Detaylı Analiz'
       case 'manual-entry':

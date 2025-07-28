@@ -47,7 +47,7 @@ export default function AnalysisTypeSelection({ onSelectType, onBack, capturedIm
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 mb-4">
-                AI fotoğraftaki besini hemen değerlendirir. Hızlı sonuç alırsınız.
+                Ai fotoğraftaki besini hemen değerlendirir. Hızlı sonuç alırsınız.
               </p>
               <ul className="text-sm text-gray-500 space-y-1">
                 <li>• Anında sonuç</li>
@@ -102,7 +102,7 @@ export default function AnalysisTypeSelection({ onSelectType, onBack, capturedIm
                 <li>• Yemek arama ve seçimi</li>
                 <li>• Porsiyon kontrolü</li>
                 <li>• Hassas besin değerleri</li>
-                <li>• AI hatalarından bağımsız</li>
+                <li>• Ai hatalarından bağımsız</li>
               </ul>
               <Button className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white">
                 Manuel Giriş Yap

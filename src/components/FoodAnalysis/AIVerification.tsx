@@ -72,7 +72,7 @@ export default function AIVerification({
               <ArrowLeft className="h-4 w-4 mr-2" />
               Geri
             </Button>
-            <h1 className="text-xl font-semibold text-black">AI Analiz Doğrulaması</h1>
+            <h1 className="text-xl font-semibold text-black">Ai Analiz Doğrulaması</h1>
           </div>
 
           <Card>
@@ -80,7 +80,7 @@ export default function AIVerification({
               <div className="space-y-4">
                 <XCircle className="h-12 w-12 text-red-500 mx-auto" />
                 <h3 className="text-lg font-medium text-gray-900">Analiz Sonucu Bulunamadı</h3>
-                <p className="text-gray-600">AI analizi tamamlanamadı veya sonuç alınamadı.</p>
+                <p className="text-gray-600">Ai analizi tamamlanamadı veya sonuç alınamadı.</p>
                 <div className="space-y-2">
                   <Button onClick={onManualEntry} className="w-full">
                     Manuel Giriş Yap
@@ -162,7 +162,7 @@ export default function AIVerification({
             <ArrowLeft className="h-4 w-4 mr-2" />
             Geri
           </Button>
-          <h1 className="text-xl font-semibold text-black">AI Analiz Doğrulaması</h1>
+          <h1 className="text-xl font-semibold text-black">Ai Analiz Doğrulaması</h1>
         </div>
 
         {capturedImage && (
@@ -178,7 +178,7 @@ export default function AIVerification({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-black">
-              <span>AI Analiz Sonuçları</span>
+              <span>Ai Analiz Sonuçları</span>
               <div className="flex items-center gap-3">
                 <div className="text-right">
                   <div className="text-2xl font-bold text-primary">
@@ -199,7 +199,7 @@ export default function AIVerification({
                 Bu sonuçlar doğru mu?
               </h3>
               <p className="text-sm text-blue-700">
-                AI %{Math.round(overallConfidence * 100)} doğruluk oranıyla bu yemekleri tespit etti. 
+                Ai %{Math.round(overallConfidence * 100)} doğruluk oranıyla bu yemekleri tespit etti. 
                 Yanlış olanları düzenleyebilirsiniz.
               </p>
             </div>
@@ -219,7 +219,7 @@ export default function AIVerification({
 
             {analysisResult.suggestions && (
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <h4 className="font-medium text-green-800 mb-2">AI Önerileri:</h4>
+                <h4 className="font-medium text-green-800 mb-2">Ai Önerileri:</h4>
                 <p className="text-sm text-green-700">{analysisResult.suggestions}</p>
               </div>
             )}

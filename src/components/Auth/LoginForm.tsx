@@ -35,7 +35,7 @@ export function LoginForm({ onToggleMode }: LoginFormProps) {
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold text-black">KolayfitAI</CardTitle>
+        <CardTitle className="text-2xl font-bold text-black">KolayfitAi</CardTitle>
         <p className="text-gray-600">Hesabınıza giriş yapın</p>
       </CardHeader>
       <CardContent className="space-y-6">

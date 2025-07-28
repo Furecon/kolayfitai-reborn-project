@@ -190,7 +190,7 @@ export default function QuickAnalysisResult({
           <Loader2 className="h-8 w-8 animate-spin text-green-500" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">AI Analiz Ediyor...</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Ai Analiz Ediyor...</h3>
           <p className="text-gray-600">Fotoğrafınızdaki yemekler tanınıyor</p>
         </div>
       </div>
@@ -299,7 +299,7 @@ export default function QuickAnalysisResult({
       {/* Confidence Score */}
       <div className="bg-gray-50 rounded-lg p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700">AI Doğruluk Oranı:</span>
+          <span className="text-sm font-medium text-gray-700">Ai Doğruluk Oranı:</span>
           <div className="flex items-center gap-2">
             <span className={`text-lg font-bold ${getConfidenceColor(confidence)}`}>
               %{Math.round(confidence * 100)}
@@ -323,7 +323,7 @@ export default function QuickAnalysisResult({
       {/* AI Suggestions */}
       {suggestions && (
         <div className="bg-blue-50 rounded-lg p-4">
-          <h4 className="font-medium text-blue-800 mb-2">💡 AI Önerileri:</h4>
+          <h4 className="font-medium text-blue-800 mb-2">💡 Ai Önerileri:</h4>
           <p className="text-sm text-blue-700">{suggestions}</p>
         </div>
       )}
@@ -336,7 +336,7 @@ export default function QuickAnalysisResult({
             <span className="font-medium text-yellow-800">Dikkat!</span>
           </div>
           <p className="text-sm text-yellow-700">
-            AI doğruluk oranı %70'in altında. Sonuçları kontrol etmenizi öneriyoruz.
+            Ai doğruluk oranı %70'in altında. Sonuçları kontrol etmenizi öneriyoruz.
           </p>
         </div>
       )}

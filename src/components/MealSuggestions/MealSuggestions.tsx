@@ -128,7 +128,7 @@ export function MealSuggestions({ onBack, onMealAdded, dailyStats }: MealSuggest
           total_protein: suggestion.protein,
           total_carbs: suggestion.carbs,
           total_fat: suggestion.fat,
-          notes: `AI önerisi: ${suggestion.description}`
+          notes: `Ai önerisi: ${suggestion.description}`
         })
 
       if (error) throw error
@@ -205,47 +205,56 @@ export function MealSuggestions({ onBack, onMealAdded, dailyStats }: MealSuggest
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="border-b border-gray-200 px-4 py-4 bg-white">
-        <div className="flex items-center gap-4">
+      {/* Header - Responsive */}
+      <div className="border-b border-gray-200 px-3 sm:px-4 py-3 sm:py-4 bg-white">
+        <div className="flex items-center gap-3 sm:gap-4">
           <Button
             variant="ghost"
             onClick={onBack}
-            className="text-gray-600"
+            className="text-gray-600 h-8 w-8 sm:h-10 sm:w-auto p-0 sm:px-4"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Geri
+            <ArrowLeft className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Geri</span>
           </Button>
-          <h1 className="text-xl font-semibold text-black">AI Öğün Önerileri</h1>
+          <h1 className="text-lg sm:text-xl font-semibold text-black truncate">Ai Öğün Önerileri</h1>
         </div>
       </div>
 
-      <div className="p-4">
+      {/* Content Container - Responsive padding */}
+      <div className="p-3 sm:p-4 max-w-4xl mx-auto">
         <Tabs value={selectedMealType} onValueChange={setSelectedMealType}>
-          <TabsList className="grid grid-cols-4 mb-6">
+          {/* Tabs List - Responsive */}
+          <TabsList className="grid grid-cols-4 mb-4 sm:mb-6 w-full h-auto">
             {mealTypes.map((type) => (
-              <TabsTrigger key={type.key} value={type.key} className="text-xs">
-                <span className="mr-1">{type.icon}</span>
-                {type.label}
+              <TabsTrigger 
+                key={type.key} 
+                value={type.key} 
+                className="text-xs sm:text-sm p-2 sm:p-3 flex flex-col sm:flex-row items-center gap-1 sm:gap-2 h-auto min-h-[3rem] sm:min-h-[2.5rem]"
+              >
+                <span className="text-base sm:text-lg">{type.icon}</span>
+                <span className="truncate">{type.label}</span>
               </TabsTrigger>
             ))}
           </TabsList>
 
           {mealTypes.map((type) => (
             <TabsContent key={type.key} value={type.key}>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
+                {/* Info Card - Responsive */}
                 <Card>
-                  <CardContent className="p-4">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="text-center">
-                      <h2 className="text-lg font-semibold mb-2">
-                        {type.icon} {type.label} Önerileri
+                      <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">
+                        <span className="text-xl sm:text-2xl mr-2">{type.icon}</span>
+                        {type.label} Önerileri
                       </h2>
-                      <p className="text-gray-600 text-sm mb-4">
-                        Günlük hedeflerinize uygun AI destekli öğün önerileri
+                      <p className="text-gray-600 text-sm sm:text-base mb-3 sm:mb-4 px-2">
+                        Günlük hedeflerinize uygun Ai destekli öğün önerileri
                       </p>
                       <Button
                         onClick={() => getSuggestions(type.key)}
                         disabled={loading}
-                        className="bg-green-500 hover:bg-green-600 text-white"
+                        className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
                       >
                         {loading ? 'Öneriler Hazırlanıyor...' : 'Öneriler Getir'}
                       </Button>
@@ -253,77 +262,94 @@ export function MealSuggestions({ onBack, onMealAdded, dailyStats }: MealSuggest
                   </CardContent>
                 </Card>
 
+                {/* Suggestions Grid - Responsive */}
                 {suggestions.length > 0 && (
-                  <div className="grid gap-4">
+                  <div className="grid gap-3 sm:gap-4">
                     {suggestions.map((suggestion, index) => (
                       <Card key={index} className="hover:shadow-md transition-shadow">
-                        <CardHeader className="pb-3">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle className="text-lg">{suggestion.name}</CardTitle>
-                              <p className="text-gray-600 text-sm mt-1">{suggestion.description}</p>
+                        <CardHeader className="pb-2 sm:pb-3">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                            <div className="min-w-0 flex-1">
+                              <CardTitle className="text-base sm:text-lg leading-tight break-words">
+                                {suggestion.name}
+                              </CardTitle>
+                              <p className="text-gray-600 text-xs sm:text-sm mt-1 leading-relaxed break-words">
+                                {suggestion.description}
+                              </p>
                             </div>
-                            <Badge className={getDifficultyColor(suggestion.difficulty)}>
+                            <Badge className={`${getDifficultyColor(suggestion.difficulty)} flex-shrink-0 text-xs`}>
                               {suggestion.difficulty}
                             </Badge>
                           </div>
                         </CardHeader>
                         
-                        <CardContent className="pt-0">
-                          <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Clock className="h-4 w-4" />
-                              {suggestion.prepTime} dk
+                        <CardContent className="pt-0 space-y-3 sm:space-y-4">
+                          {/* Time and Servings - Responsive */}
+                          <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600">
+                              <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                              <span className="truncate">{suggestion.prepTime} dk</span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Users className="h-4 w-4" />
-                              {suggestion.servings} porsiyon
+                            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600">
+                              <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                              <span className="truncate">{suggestion.servings} porsiyon</span>
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-4 gap-2 mb-4">
-                            <div className="text-center">
-                              <div className="font-semibold text-green-600">{suggestion.calories}</div>
+                          {/* Nutrition Grid - Responsive */}
+                          <div className="grid grid-cols-4 gap-1 sm:gap-2">
+                            <div className="text-center p-2 sm:p-3 bg-green-50 rounded">
+                              <div className="font-semibold text-green-600 text-sm sm:text-base">
+                                {suggestion.calories}
+                              </div>
                               <div className="text-xs text-gray-500">kcal</div>
                             </div>
-                            <div className="text-center">
-                              <div className="font-semibold text-blue-600">{suggestion.protein}g</div>
+                            <div className="text-center p-2 sm:p-3 bg-blue-50 rounded">
+                              <div className="font-semibold text-blue-600 text-sm sm:text-base">
+                                {suggestion.protein}g
+                              </div>
                               <div className="text-xs text-gray-500">Protein</div>
                             </div>
-                            <div className="text-center">
-                              <div className="font-semibold text-orange-600">{suggestion.carbs}g</div>
+                            <div className="text-center p-2 sm:p-3 bg-orange-50 rounded">
+                              <div className="font-semibold text-orange-600 text-sm sm:text-base">
+                                {suggestion.carbs}g
+                              </div>
                               <div className="text-xs text-gray-500">Karb.</div>
                             </div>
-                            <div className="text-center">
-                              <div className="font-semibold text-purple-600">{suggestion.fat}g</div>
+                            <div className="text-center p-2 sm:p-3 bg-purple-50 rounded">
+                              <div className="font-semibold text-purple-600 text-sm sm:text-base">
+                                {suggestion.fat}g
+                              </div>
                               <div className="text-xs text-gray-500">Yağ</div>
                             </div>
                           </div>
 
-                          <div className="flex gap-2">
+                          {/* Action Buttons - Responsive */}
+                          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                             <Button
                               onClick={() => setSelectedRecipe(suggestion)}
                               variant="outline"
                               size="sm"
-                              className="flex-1"
+                              className="flex-1 text-xs sm:text-sm h-9 sm:h-10"
                             >
-                              <ChefHat className="h-4 w-4 mr-2" />
-                              Tarifi Gör
+                              <ChefHat className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                              <span className="truncate">Tarifi Gör</span>
                             </Button>
                             <Button
                               onClick={() => saveFavoriteMeal(suggestion)}
                               variant="outline"
                               size="sm"
+                              className="w-full sm:w-auto px-3 text-xs sm:text-sm h-9 sm:h-10"
                             >
-                              <Heart className="h-4 w-4" />
+                              <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
                             </Button>
                             <Button
                               onClick={() => addMealToLog(suggestion)}
                               size="sm"
-                              className="bg-green-500 hover:bg-green-600 text-white flex-1"
+                              className="bg-green-500 hover:bg-green-600 text-white flex-1 text-xs sm:text-sm h-9 sm:h-10"
                             >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Öğünü Ekle
+                              <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                              <span className="truncate">Öğünü Ekle</span>
                             </Button>
                           </div>
                         </CardContent>

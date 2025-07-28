@@ -45,7 +45,7 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
       // For now, we'll just show a welcome message since the chat history table may not be available yet
       const welcomeMessage: Message = {
         id: 'welcome',
-        message: 'Merhaba! Ben KolayfitAI diyet asistanınızım. Size nasıl yardımcı olabilirim? Beslenme hedefleriniz, yemek önerileri veya kalori hesaplamaları hakkında sorularınızı sorabilirsiniz.',
+        message: 'Merhaba! Ben KolayfitAi diyet asistanınızım. Size nasıl yardımcı olabilirim? Beslenme hedefleriniz, yemek önerileri veya kalori hesaplamaları hakkında sorularınızı sorabilirsiniz.',
         is_user: false,
         created_at: new Date().toISOString()
       }
@@ -145,7 +145,7 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <Bot className="h-5 w-5 text-green-500" />
-            KolayfitAI Asistan
+            KolayfitAi Asistan
           </CardTitle>
           <Button
             variant="ghost"

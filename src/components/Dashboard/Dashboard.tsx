@@ -214,7 +214,7 @@ export function Dashboard() {
           >
             <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
             <div className="text-left min-w-0">
-              <div className="font-semibold text-sm sm:text-base">AI Önerileri</div>
+              <div className="font-semibold text-sm sm:text-base">Ai Önerileri</div>
               <div className="text-xs opacity-90 truncate">Kişisel öğün önerileri</div>
             </div>
           </Button>
