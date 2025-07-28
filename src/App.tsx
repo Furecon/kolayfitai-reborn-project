@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import Index from './pages/Index'
 import NotFound from './pages/NotFound'
+import { ScreenshotMode } from '@/components/Demo/ScreenshotMode'
 import './App.css'
 const queryClient = new QueryClient()
 
@@ -15,6 +16,7 @@ function App() {
         <TooltipProvider>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/screenshots" element={<ScreenshotMode />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />
