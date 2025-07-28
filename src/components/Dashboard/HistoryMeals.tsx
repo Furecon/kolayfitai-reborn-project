@@ -70,7 +70,7 @@ export function HistoryMeals() {
         .select('*')
         .eq('user_id', user.id)
         .gte('date', startDate.toISOString().split('T')[0])
-        .lt('date', new Date().toISOString().split('T')[0])
+        .lte('date', new Date().toISOString().split('T')[0])
         .order('date', { ascending: false })
         .order('created_at', { ascending: false })
 
@@ -96,12 +96,12 @@ export function HistoryMeals() {
           ? meal.food_items.map((item: any) => ({
               id: item.id,
               name: item.name || 'Bilinmeyen yemek',
-              amount: item.amount || 0,
-              unit: item.unit || 'g',
-              calories: item.calories || 0,
-              protein: item.protein || 0,
-              carbs: item.carbs || 0,
-              fat: item.fat || 0
+              amount: parseFloat(item.estimatedAmount) || 100,
+              unit: item.estimatedAmount?.includes('g') ? 'g' : 'porsiyon',
+              calories: item.totalNutrition?.calories || 0,
+              protein: item.totalNutrition?.protein || 0,
+              carbs: item.totalNutrition?.carbs || 0,
+              fat: item.totalNutrition?.fat || 0
             }))
           : []
       })) || []
