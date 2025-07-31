@@ -79,10 +79,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // For native platforms, open the OAuth URL in browser
       if (isNative && data.url) {
         console.log('Opening OAuth URL in native browser:', data.url)
+        console.log('Platform:', platform, 'isNative:', isNative)
         await Browser.open({ 
           url: data.url,
-          presentationStyle: 'popover'
+          presentationStyle: 'fullscreen' // Changed to fullscreen for better mobile UX
         })
+        console.log('Browser opened successfully')
       }
 
       console.log(`OAuth flow initiated successfully for ${provider}`)
