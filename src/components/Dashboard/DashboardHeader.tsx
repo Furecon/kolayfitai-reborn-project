@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Camera, User, Lightbulb, Phone, BookOpen, LogOut, FileText, HelpCircle } from 'lucide-react'
+import { Camera, User, Lightbulb, Phone, BookOpen, LogOut, FileText, HelpCircle, Crown } from 'lucide-react'
 import { useAuth } from '@/components/Auth/AuthProvider'
 
 interface DashboardHeaderProps {
@@ -11,6 +11,7 @@ interface DashboardHeaderProps {
   onResourcesClick: () => void
   onPoliciesClick: () => void
   onFAQClick: () => void
+  onSubscriptionClick: () => void
 }
 
 export function DashboardHeader({ 
@@ -19,7 +20,8 @@ export function DashboardHeader({
   onContactClick, 
   onResourcesClick,
   onPoliciesClick,
-  onFAQClick
+  onFAQClick,
+  onSubscriptionClick
 }: DashboardHeaderProps) {
   const { signOut, user } = useAuth()
 
@@ -100,6 +102,14 @@ export function DashboardHeader({
                 >
                   <HelpCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                   Sık Sorulan Sorular
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-sm text-primary"
+                  onClick={onSubscriptionClick}
+                >
+                  <Crown className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                  Premium Abonelik
                 </Button>
               </div>
             </PopoverContent>

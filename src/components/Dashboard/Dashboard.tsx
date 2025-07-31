@@ -13,12 +13,13 @@ import { FAQPage } from '../Support/FAQPage'
 import { AIAssistant } from '../AI/AIAssistant'
 import { MealSuggestions } from '../MealSuggestions/MealSuggestions'
 import { FavoriteMeals } from '../MealSuggestions/FavoriteMeals'
+import { SubscriptionManager } from '../Subscription/SubscriptionManager'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, X, Sparkles, Heart } from 'lucide-react'
 
-type View = 'dashboard' | 'camera' | 'profile' | 'assistant' | 'suggestions' | 'favorites' | 'contact' | 'resources' | 'policies' | 'faq'
+type View = 'dashboard' | 'camera' | 'profile' | 'assistant' | 'suggestions' | 'favorites' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -189,6 +190,26 @@ export function Dashboard() {
     )
   }
 
+  if (currentView === 'subscription') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="border-b border-gray-200 bg-white px-3 sm:px-4 py-3 sm:py-4">
+          <Button
+            variant="ghost"
+            onClick={() => setCurrentView('dashboard')}
+            className="text-gray-600 h-10"
+          >
+            ← Geri
+          </Button>
+          <h1 className="text-xl font-semibold mt-2">Abonelik Yönetimi</h1>
+        </div>
+        <div className="p-4">
+          <SubscriptionManager />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader
@@ -198,6 +219,7 @@ export function Dashboard() {
         onResourcesClick={() => setCurrentView('resources')}
         onPoliciesClick={() => setCurrentView('policies')}
         onFAQClick={() => setCurrentView('faq')}
+        onSubscriptionClick={() => setCurrentView('subscription')}
       />
       
       <CalorieCards 
