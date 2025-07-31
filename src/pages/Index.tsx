@@ -5,9 +5,13 @@ import { OnboardingFlow } from '@/components/Onboarding/OnboardingFlow'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
+import { useOAuthRedirect } from '@/hooks/useOAuthRedirect'
 
 function AppContent() {
   const { user, loading } = useAuth()
+  
+  // Initialize OAuth redirect handler for mobile deep links
+  useOAuthRedirect()
 
   // Fetch user profile to check onboarding status
   const { data: profile, isLoading: profileLoading } = useQuery({
