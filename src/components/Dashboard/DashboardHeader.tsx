@@ -109,7 +109,7 @@ export function DashboardHeader({
                   onClick={onSubscriptionClick}
                 >
                   <Crown className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                  Premium Abonelik
+                  Abonelik Yönetimi
                 </Button>
               </div>
             </PopoverContent>
