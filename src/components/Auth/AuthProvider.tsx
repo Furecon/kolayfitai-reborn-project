@@ -1,12 +1,14 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { User } from '@supabase/supabase-js'
+import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
 import { Capacitor } from '@capacitor/core'
 import { usePlatform } from '@/hooks/usePlatform'
+import GoogleAuth from '@/plugins/GoogleAuthPlugin'
 
 interface AuthContextType {
   user: User | null
+  session: Session | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, fullName: string) => Promise<void>
@@ -18,6 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const { platform, isNative, isAndroid } = usePlatform()
@@ -27,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
       console.log('Initial session loaded:', session ? 'authenticated' : 'not authenticated')
@@ -36,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session ? 'authenticated' : 'not authenticated')
+        setSession(session)
         setUser(session?.user ?? null)
         setLoading(false)
       }
@@ -47,6 +52,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithOAuth = async (provider: 'google' | 'facebook' | 'apple') => {
     try {
       console.log(`Starting OAuth flow for ${provider} on platform: ${platform}`)
+      
+      // Use native Google Sign-In for Android when available
+      if (provider === 'google' && isNative && isAndroid) {
+        try {
+          console.log('Attempting native Google Sign-In...')
+          const result = await GoogleAuth.signIn()
+          
+          if (result.idToken) {
+            console.log('Google ID Token received, signing in with Supabase...')
+            const { data, error } = await supabase.auth.signInWithIdToken({
+              provider: 'google',
+              token: result.idToken,
+            })
+            
+            if (error) {
+              console.error('Supabase signInWithIdToken error:', error)
+              throw error
+            }
+            
+            console.log('Successfully signed in with Google ID Token')
+            return
+          }
+        } catch (nativeError) {
+          console.warn('Native Google Sign-In failed, falling back to web OAuth:', nativeError)
+          // Fall through to web OAuth implementation
+        }
+      }
       
       // Configure redirect URL based on platform
       let redirectTo: string
@@ -170,6 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = {
     user,
+    session,
     loading,
     signIn,
     signUp,
