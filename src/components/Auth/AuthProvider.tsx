@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
 import { Capacitor } from '@capacitor/core'
 import { usePlatform } from '@/hooks/usePlatform'
+import { useNativeGoogleAuth } from '@/hooks/useNativeGoogleAuth'
 
 interface AuthContextType {
   user: User | null
@@ -23,6 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const { platform, isNative, isAndroid } = usePlatform()
+  const { signInWithGoogle: nativeGoogleSignIn } = useNativeGoogleAuth()
 
   useEffect(() => {
     console.log('AuthProvider initialized for platform:', platform)
@@ -52,7 +54,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log(`Starting OAuth flow for ${provider} on platform: ${platform}`)
       
-      // Platform-specific redirect URL
+      // Use native Google Auth for mobile Google sign-in
+      if (provider === 'google' && isNative) {
+        console.log('Using native Google Auth for mobile')
+        await nativeGoogleSignIn()
+        return
+      }
+      
+      // Web OAuth flow
       const redirectTo = isNative 
         ? 'com.kolayfit.app://oauth-callback'
         : `${window.location.origin}/`
