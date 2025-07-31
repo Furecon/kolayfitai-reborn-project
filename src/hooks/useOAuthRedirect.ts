@@ -9,24 +9,19 @@ export function useOAuthRedirect() {
     if (!Capacitor.isNativePlatform()) return
 
     const handleAppUrlOpen = async (data: { url: string }) => {
-      console.log('App URL opened:', data.url)
+      console.log('Deep link received:', data.url)
       
       // Check if this is an OAuth callback
       if (data.url.includes('oauth-callback')) {
+        console.log('Processing OAuth callback...')
         try {
-          // Extract the URL fragments/query parameters
-          const url = new URL(data.url)
-          const fragment = url.hash || url.search
+          // Use exchangeCodeForSession to handle the OAuth callback
+          const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(data.url)
           
-          if (fragment) {
-            // Use exchangeCodeForSession instead of getSessionFromUrl
-            const { error } = await supabase.auth.exchangeCodeForSession(data.url)
-            
-            if (error) {
-              console.error('OAuth callback error:', error)
-            } else {
-              console.log('OAuth callback successful')
-            }
+          if (error) {
+            console.error('OAuth callback error:', error)
+          } else {
+            console.log('OAuth callback successful, session created:', sessionData.session ? 'yes' : 'no')
           }
         } catch (error) {
           console.error('Error processing OAuth callback:', error)
