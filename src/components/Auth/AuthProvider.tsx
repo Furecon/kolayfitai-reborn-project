@@ -53,11 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (isNative && isAndroid) {
         // Android deep link for OAuth redirect
-        redirectTo = 'com.kolayfitai.app://oauth-callback'
+        redirectTo = 'com.kolayfit.app://oauth-callback'
         console.log('Using Android deep link redirect:', redirectTo)
       } else if (isNative) {
         // iOS deep link for OAuth redirect
-        redirectTo = 'com.kolayfitai.app://oauth-callback'
+        redirectTo = 'com.kolayfit.app://oauth-callback'
         console.log('Using iOS deep link redirect:', redirectTo)
       } else {
         // Web redirect
@@ -123,9 +123,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let redirectTo: string
     
     if (isNative && isAndroid) {
-      redirectTo = 'com.kolayfitai.app://oauth-callback'
+      redirectTo = 'com.kolayfit.app://oauth-callback'
     } else if (isNative) {
-      redirectTo = 'com.kolayfitai.app://oauth-callback'
+      redirectTo = 'com.kolayfit.app://oauth-callback'
     } else {
       redirectTo = `${window.location.origin}/`
     }
