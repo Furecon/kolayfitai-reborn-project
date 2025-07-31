@@ -16,20 +16,41 @@ serve(async (req) => {
   try {
     console.log('Analyze-food function called')
     
-    const { imageUrl, mealType, analysisType, detailsData } = await req.json()
+    const requestData = await req.json()
+    const { imageUrl, mealType, analysisType, detailsData } = requestData
     
-    console.log('Request data:', { 
-      imageUrlLength: imageUrl?.length,
+    // Input validation
+    if (!imageUrl || typeof imageUrl !== 'string') {
+      throw new Error('Valid image URL is required')
+    }
+    
+    // Validate image URL format
+    if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('data:')) {
+      throw new Error('Invalid image URL format')
+    }
+    
+    // Validate mealType if provided
+    if (mealType && !['breakfast', 'lunch', 'dinner', 'snack'].includes(mealType)) {
+      throw new Error('Invalid meal type')
+    }
+    
+    // Validate analysisType if provided
+    if (analysisType && !['quick', 'detailed'].includes(analysisType)) {
+      throw new Error('Invalid analysis type')
+    }
+    
+    // Validate detailsData structure if provided
+    if (detailsData && typeof detailsData !== 'object') {
+      throw new Error('Invalid details data format')
+    }
+    
+    console.log('Request data validated:', { 
+      imageUrlLength: imageUrl.length,
       mealType,
       analysisType,
-      detailsData,
-      imageUrlPrefix: imageUrl?.substring(0, 50)
+      hasDetailsData: !!detailsData,
+      imageUrlPrefix: imageUrl.substring(0, 50)
     })
-    
-    if (!imageUrl) {
-      console.error('Image URL is required')
-      throw new Error('Image URL is required')
-    }
 
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiApiKey) {
@@ -264,9 +285,14 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
   } catch (error) {
     console.error('Error in analyze-food function:', error)
     
+    // Sanitize error message to avoid exposing sensitive information
+    const sanitizedError = error instanceof Error ? 
+      (error.message.includes('API') ? 'Service temporarily unavailable' : 'Analysis failed') :
+      'Unexpected error occurred'
+    
     // Return a structured error response that the frontend can handle
     const errorResponse = {
-      error: error.message,
+      error: sanitizedError,
       detectedFoods: [],
       confidence: 0,
       suggestions: "Görüntü analizi sırasında hata oluştu. Lütfen manuel olarak yemek bilgilerini girin veya tekrar deneyin."

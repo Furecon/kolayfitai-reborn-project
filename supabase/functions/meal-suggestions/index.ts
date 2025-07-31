@@ -14,8 +14,42 @@ serve(async (req) => {
   }
 
   try {
-    const { mealType, userGoals, todayIntake } = await req.json();
-    console.log('Meal suggestion request:', { mealType, userGoals, todayIntake });
+    const requestData = await req.json();
+    const { mealType, userGoals, todayIntake } = requestData;
+    
+    // Input validation
+    if (!mealType || typeof mealType !== 'string') {
+      throw new Error('Valid meal type is required');
+    }
+    
+    if (!['breakfast', 'lunch', 'dinner', 'snack'].includes(mealType)) {
+      throw new Error('Invalid meal type');
+    }
+    
+    if (!userGoals || typeof userGoals !== 'object') {
+      throw new Error('User goals are required');
+    }
+    
+    if (!todayIntake || typeof todayIntake !== 'object') {
+      throw new Error('Today intake data is required');
+    }
+    
+    // Validate numeric values
+    const requiredGoalFields = ['goalCalories', 'proteinGoal', 'carbsGoal', 'fatGoal'];
+    for (const field of requiredGoalFields) {
+      if (typeof userGoals[field] !== 'number' || userGoals[field] < 0) {
+        throw new Error(`Invalid ${field} value`);
+      }
+    }
+    
+    const requiredIntakeFields = ['totalCalories', 'totalProtein', 'totalCarbs', 'totalFat'];
+    for (const field of requiredIntakeFields) {
+      if (typeof todayIntake[field] !== 'number' || todayIntake[field] < 0) {
+        throw new Error(`Invalid ${field} value`);
+      }
+    }
+    
+    console.log('Meal suggestion request validated:', { mealType, userGoals, todayIntake });
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
@@ -142,8 +176,14 @@ Türk mutfağından seçenekler öner. Kalan besin değerlerini tamamlayacak şe
 
   } catch (error) {
     console.error('Error in meal-suggestions function:', error);
+    
+    // Sanitize error message
+    const sanitizedError = error instanceof Error ? 
+      (error.message.includes('API') ? 'Service temporarily unavailable' : 'Processing failed') :
+      'Internal server error'
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: sanitizedError }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

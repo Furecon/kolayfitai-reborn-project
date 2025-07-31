@@ -13,11 +13,36 @@ serve(async (req) => {
   }
 
   try {
-    const { message, userId } = await req.json()
+    const requestData = await req.json()
+    const { message, userId } = requestData
 
-    if (!message || !userId) {
+    // Input validation
+    if (!message || typeof message !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'Message and userId are required' }),
+        JSON.stringify({ error: 'Valid message is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    if (!userId || typeof userId !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Valid userId is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Sanitize message input
+    const sanitizedMessage = message.trim().substring(0, 1000) // Limit message length
+    
+    if (sanitizedMessage.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Message cannot be empty' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -86,7 +111,7 @@ Yardımcı ve kişiselleştirilmiş tavsiyeler ver. Türk mutfağı ve yerel yem
           },
           {
             role: 'user',
-            content: message
+            content: sanitizedMessage
           }
         ],
         max_tokens: 500,
@@ -111,9 +136,15 @@ Yardımcı ve kişiselleştirilmiş tavsiyeler ver. Türk mutfağı ve yerel yem
 
   } catch (error) {
     console.error('Diet assistant error:', error)
+    
+    // Sanitize error message
+    const sanitizedError = error instanceof Error ? 
+      (error.message.includes('API') ? 'Service temporarily unavailable' : 'Processing failed') :
+      'Internal server error'
+    
     return new Response(
       JSON.stringify({ 
-        error: 'Internal server error',
+        error: sanitizedError,
         response: 'Üzgünüm, şu anda bir hata oluştu. Lütfen tekrar deneyin.'
       }),
       { 

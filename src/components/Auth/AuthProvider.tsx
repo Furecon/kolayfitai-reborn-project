@@ -119,10 +119,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
+    // Configure redirect URL based on platform
+    let redirectTo: string
+    
+    if (isNative && isAndroid) {
+      redirectTo = 'com.kolayfitai.app://oauth-callback'
+    } else if (isNative) {
+      redirectTo = 'com.kolayfitai.app://oauth-callback'
+    } else {
+      redirectTo = `${window.location.origin}/`
+    }
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: redirectTo,
         data: {
           full_name: fullName,
         },

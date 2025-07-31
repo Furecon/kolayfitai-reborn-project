@@ -31,8 +31,55 @@ serve(async (req) => {
       case 'validate_purchase': {
         console.log('Validating purchase for user:', userId, 'product:', productId)
         
-        // Google Play purchase validation yapacağız
-        // Şimdilik basit validation (gerçek uygulamada Google Play API'sini kullanın)
+        // Input validation
+        if (!userId || typeof userId !== 'string') {
+          return new Response(JSON.stringify({ error: 'Invalid user ID' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+        
+        if (!productId || typeof productId !== 'string') {
+          return new Response(JSON.stringify({ error: 'Invalid product ID' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+        
+        if (!receiptData || typeof receiptData !== 'object') {
+          return new Response(JSON.stringify({ error: 'Invalid receipt data' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+        
+        // Validate receipt data has required fields
+        if (!receiptData.purchaseToken || !receiptData.orderId) {
+          return new Response(JSON.stringify({ error: 'Missing required receipt fields' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+        
+        // Check for duplicate purchases
+        const { data: existingPurchase } = await supabase
+          .from('subscriptions')
+          .select('id')
+          .eq('order_id', receiptData.orderId)
+          .eq('purchase_token', receiptData.purchaseToken)
+          .single()
+          
+        if (existingPurchase) {
+          return new Response(JSON.stringify({ error: 'Purchase already processed' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+        
+        // TODO: Replace with real Google Play Billing validation
+        // This should verify the purchase with Google's servers
+        // For now, we validate the structure and basic requirements
+        console.log('WARNING: Using mock validation - implement real Google Play validation for production')
         
         const now = new Date()
         let endDate: Date
@@ -108,6 +155,14 @@ serve(async (req) => {
       }
 
       case 'check_subscription': {
+        // Input validation for userId
+        if (!userId || typeof userId !== 'string') {
+          return new Response(JSON.stringify({ error: 'Invalid user ID' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+        
         const { data: profile } = await supabase
           .from('profiles')
           .select('subscription_status, trial_end_date')
