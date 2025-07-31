@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
+import { Browser } from '@capacitor/browser'
 import { supabase } from '@/integrations/supabase/client'
 
 export function useOAuthRedirect() {
@@ -15,6 +16,9 @@ export function useOAuthRedirect() {
       if (data.url.includes('oauth-callback')) {
         console.log('Processing OAuth callback...')
         try {
+          // Close the browser first
+          await Browser.close()
+          
           // Use exchangeCodeForSession to handle the OAuth callback
           const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(data.url)
           

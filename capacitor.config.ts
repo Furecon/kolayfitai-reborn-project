@@ -21,10 +21,8 @@ const config: CapacitorConfig = {
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert']
     },
-    GoogleAuth: {
-      scopes: ['profile', 'email'],
-      serverClientId: '680638175809-io601sibqsp2dnoeonuaki31cp93mgik.apps.googleusercontent.com',
-      forceCodeForRefreshToken: true
+    Browser: {
+      presentationStyle: 'popover'
     }
   },
   android: {
