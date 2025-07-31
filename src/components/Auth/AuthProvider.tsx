@@ -53,68 +53,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log(`Starting OAuth flow for ${provider} on platform: ${platform}`)
       
-      // Use native Google Sign-In for Android when available
-      if (provider === 'google' && isNative && isAndroid) {
-        try {
-          console.log('Attempting native Google Sign-In...')
-          const result = await GoogleAuth.signIn()
-          console.log('Native Google Sign-In result:', result)
-          
-          if (result.idToken) {
-            console.log('Google ID Token received, signing in with Supabase...')
-            const { data, error } = await supabase.auth.signInWithIdToken({
-              provider: 'google',
-              token: result.idToken,
-            })
-            
-            if (error) {
-              console.error('Supabase signInWithIdToken error:', error)
-              throw error
-            }
-            
-            console.log('Successfully signed in with Google ID Token')
-            toast({
-              title: "Başarılı!",
-              description: "Google ile giriş yapıldı",
-            })
-            return
-          } else {
-            throw new Error('Google\'dan ID token alınamadı')
-          }
-        } catch (nativeError: any) {
-          console.error('Native Google Sign-In failed:', nativeError)
-          toast({
-            title: "Google Giriş Hatası",
-            description: nativeError.message || "Native Google giriş başarısız",
-            variant: "destructive"
-          })
-          throw nativeError
-        }
-      }
-      
       // Configure redirect URL based on platform
       let redirectTo: string
       
-      if (isNative && isAndroid) {
-        // Android deep link for OAuth redirect
+      if (isNative) {
+        // Native apps için deep link
         redirectTo = 'com.kolayfit.app://oauth-callback'
-        console.log('Using Android deep link redirect:', redirectTo)
-      } else if (isNative) {
-        // iOS deep link for OAuth redirect
-        redirectTo = 'com.kolayfit.app://oauth-callback'
-        console.log('Using iOS deep link redirect:', redirectTo)
+        console.log('Using native deep link redirect:', redirectTo)
       } else {
         // Web redirect
         redirectTo = `${window.location.origin}/`
         console.log('Using web redirect:', redirectTo)
       }
 
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log('Starting Supabase OAuth flow...')
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo,
           ...(isNative && {
-            skipBrowserRedirect: true
+            skipBrowserRedirect: false, // Native'de browser açılsın ama sonra geri dönsün
           })
         }
       })
@@ -140,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error
     }
   }
+
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
