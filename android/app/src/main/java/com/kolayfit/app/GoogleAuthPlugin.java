@@ -22,21 +22,33 @@ public class GoogleAuthPlugin extends Plugin {
 
     @Override
     public void load() {
+        Log.d(TAG, "GoogleAuth Plugin loading...");
+        
         // Google Sign-In yapılandırması
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken("YOUR_WEB_CLIENT_ID") // Buraya Google Web Client ID'nizi koyun
+                .requestIdToken("YOUR_WEB_CLIENT_ID") // TODO: Buraya Google Web Client ID'nizi koyun
                 .requestEmail()
                 .build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(getActivity(), gso);
+        Log.d(TAG, "GoogleAuth Plugin loaded successfully");
     }
 
     @PluginMethod
     public void signIn(PluginCall call) {
+        Log.d(TAG, "signIn method called");
         this.pendingCall = call;
         
-        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-        startActivityForResult(call, signInIntent, RC_SIGN_IN);
+        try {
+            Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+            startActivityForResult(call, signInIntent, RC_SIGN_IN);
+            Log.d(TAG, "Google Sign-In intent started");
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting Google Sign-In: " + e.getMessage());
+            JSObject error = new JSObject();
+            error.put("error", "Failed to start Google Sign-In: " + e.getMessage());
+            call.reject("GOOGLE_SIGNIN_ERROR", error);
+        }
     }
 
     @PluginMethod
@@ -62,20 +74,26 @@ public class GoogleAuthPlugin extends Plugin {
         super.handleOnActivityResult(requestCode, resultCode, data);
         
         if (requestCode == RC_SIGN_IN && pendingCall != null) {
+            Log.d(TAG, "Activity result received for Google Sign-In");
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
+                Log.d(TAG, "Google Sign-In successful for: " + account.getEmail());
                 
                 JSObject result = new JSObject();
                 result.put("idToken", account.getIdToken());
-                result.put("accessToken", account.getServerAuthCode());
+                result.put("displayName", account.getDisplayName());
+                result.put("email", account.getEmail());
+                result.put("photoUrl", account.getPhotoUrl() != null ? account.getPhotoUrl().toString() : "");
                 
                 pendingCall.resolve(result);
-                Log.d(TAG, "Google sign-in successful");
                 
             } catch (ApiException e) {
-                Log.w(TAG, "Google sign-in failed", e);
-                pendingCall.reject("Google sign-in failed: " + e.getStatusCode());
+                Log.e(TAG, "Google Sign-In failed with code: " + e.getStatusCode() + ", message: " + e.getMessage());
+                JSObject error = new JSObject();
+                error.put("error", "Google Sign-In failed: " + e.getMessage());
+                error.put("statusCode", e.getStatusCode());
+                pendingCall.reject("GOOGLE_SIGNIN_FAILED", error);
             }
             
             pendingCall = null;

@@ -58,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           console.log('Attempting native Google Sign-In...')
           const result = await GoogleAuth.signIn()
+          console.log('Native Google Sign-In result:', result)
           
           if (result.idToken) {
             console.log('Google ID Token received, signing in with Supabase...')
@@ -72,11 +73,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
             
             console.log('Successfully signed in with Google ID Token')
+            toast({
+              title: "Başarılı!",
+              description: "Google ile giriş yapıldı",
+            })
             return
+          } else {
+            throw new Error('Google\'dan ID token alınamadı')
           }
-        } catch (nativeError) {
-          console.warn('Native Google Sign-In failed, falling back to web OAuth:', nativeError)
-          // Fall through to web OAuth implementation
+        } catch (nativeError: any) {
+          console.error('Native Google Sign-In failed:', nativeError)
+          toast({
+            title: "Google Giriş Hatası",
+            description: nativeError.message || "Native Google giriş başarısız",
+            variant: "destructive"
+          })
+          throw nativeError
         }
       }
       
