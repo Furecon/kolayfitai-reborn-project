@@ -8,6 +8,6 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         
         // Google Auth Plugin'ini kaydet
-        registerPlugin(GoogleAuthPlugin.class);
+        registerPlugin(com.kolayfit.app.GoogleAuthPlugin.class);
     }
 }
