@@ -2,8 +2,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.kolayfitai.app',
-  appName: 'KolayfitAI',
+  appId: 'com.kolayfit.app',
+  appName: 'KolayFit',
   webDir: 'dist',
   plugins: {
     Camera: {
@@ -29,16 +29,16 @@ const config: CapacitorConfig = {
     deepLinks: [
       {
         host: 'oauth-callback',
-        scheme: 'com.kolayfitai.app'
+        scheme: 'com.kolayfit.app'
       }
     ]
   },
   ios: {
-    scheme: 'com.kolayfitai.app',
+    scheme: 'com.kolayfit.app',
     deepLinks: [
       {
         host: 'oauth-callback',
-        scheme: 'com.kolayfitai.app'
+        scheme: 'com.kolayfit.app'
       }
     ]
   }
