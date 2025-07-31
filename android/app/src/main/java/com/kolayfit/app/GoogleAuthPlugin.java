@@ -26,7 +26,7 @@ public class GoogleAuthPlugin extends Plugin {
         
         // Google Sign-In yapılandırması
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken("YOUR_WEB_CLIENT_ID") // TODO: Buraya Google Web Client ID'nizi koyun
+                .requestIdToken("680638175809-ud31fspsid283q4tt7s9etok0nrb9e2g.apps.googleusercontent.com")
                 .requestEmail()
                 .build();
 
