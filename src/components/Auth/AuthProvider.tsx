@@ -53,38 +53,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log(`Starting OAuth flow for ${provider} on platform: ${platform}`)
       
-      // Configure redirect URL based on platform
-      let redirectTo: string
-      
-      if (isNative) {
-        // Native apps için deep link
-        redirectTo = 'com.kolayfit.app://oauth-callback'
-        console.log('Using native deep link redirect:', redirectTo)
-      } else {
-        // Web redirect
-        redirectTo = `${window.location.origin}/`
-        console.log('Using web redirect:', redirectTo)
-      }
-
-      console.log('Starting Supabase OAuth flow...')
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo,
-          ...(isNative && {
-            skipBrowserRedirect: false, // Native'de browser açılsın ama sonra geri dönsün
+      // Native Google Sign-In for mobile platforms
+      if (provider === 'google' && isNative) {
+        try {
+          console.log('Attempting native Google Sign-In...')
+          const result = await GoogleAuth.signIn()
+          console.log('Native Google Sign-In result:', result)
+          
+          if (result.idToken) {
+            console.log('Google ID Token received, signing in with Supabase...')
+            const { data, error } = await supabase.auth.signInWithIdToken({
+              provider: 'google',
+              token: result.idToken,
+            })
+            
+            if (error) {
+              console.error('Supabase signInWithIdToken error:', error)
+              throw error
+            }
+            
+            console.log('Successfully signed in with Google ID Token')
+            toast({
+              title: "Başarılı!",
+              description: "Google ile giriş yapıldı",
+            })
+            return
+          } else {
+            throw new Error('Google\'dan ID token alınamadı')
+          }
+        } catch (nativeError: any) {
+          console.error('Native Google Sign-In failed:', nativeError)
+          toast({
+            title: "Google Giriş Hatası",
+            description: nativeError.message || "Native Google giriş başarısız",
+            variant: "destructive"
           })
+          throw nativeError
         }
-      })
-
-      if (error) {
-        console.error('OAuth error:', error)
-        toast({
-          title: "Giriş Hatası",
-          description: `${provider} girişi başarısız: ${error.message}`,
-          variant: "destructive"
+      }
+      
+      // Web fallback - sadece web için browser açılır
+      if (!isNative) {
+        console.log('Starting web OAuth flow...')
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: {
+            redirectTo: `${window.location.origin}/`
+          }
         })
-        throw error
+
+        if (error) {
+          console.error('OAuth error:', error)
+          toast({
+            title: "Giriş Hatası",
+            description: `${provider} girişi başarısız: ${error.message}`,
+            variant: "destructive"
+          })
+          throw error
+        }
       }
 
       console.log(`OAuth flow initiated successfully for ${provider}`)
