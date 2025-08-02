@@ -22,7 +22,7 @@ const config: CapacitorConfig = {
       presentationOptions: ['badge', 'sound', 'alert']
     },
     Browser: {
-      presentationStyle: 'fullscreen'
+      presentationStyle: 'popover'
     }
   },
   android: {

@@ -16,15 +16,23 @@ export function useOAuthRedirect() {
       if (data.url.includes('oauth-callback')) {
         console.log('Processing OAuth callback...')
         
-        // Close the browser first with a small delay
+        // Immediate browser close attempt
+        try {
+          await Browser.close()
+          console.log('Browser closed immediately')
+        } catch (closeError) {
+          console.log('Initial browser close failed:', closeError)
+        }
+        
+        // Backup browser close with delay
         setTimeout(async () => {
           try {
             await Browser.close()
-            console.log('Browser closed successfully')
+            console.log('Browser closed with delay')
           } catch (closeError) {
-            console.log('Browser close error (might already be closed):', closeError)
+            console.log('Delayed browser close also failed:', closeError)
           }
-        }, 100)
+        }, 500)
 
         try {
           // Parse URL to check for tokens or authorization code
@@ -32,16 +40,40 @@ export function useOAuthRedirect() {
           const fragment = url.hash.substring(1) // Remove the #
           const searchParams = new URLSearchParams(url.search)
           
+          console.log('=== OAuth Deep Link Debug ===')
+          console.log('Full URL:', data.url)
           console.log('URL search params:', url.search)
           console.log('URL hash fragment:', url.hash)
+          console.log('Search params keys:', Array.from(searchParams.keys()))
+          console.log('Fragment length:', fragment.length)
           
-          // Check if we have an access token in the fragment (implicit flow)
-          if (fragment && fragment.includes('access_token')) {
-            console.log('Found access token in fragment, using setSession')
+          // Priority 1: Check for authorization code (PKCE flow - recommended)
+          if (searchParams.has('code')) {
+            console.log('🔑 Found authorization code, using exchangeCodeForSession')
+            const code = searchParams.get('code')
+            console.log('Code length:', code?.length)
+            
+            const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(data.url)
+            
+            if (error) {
+              console.error('❌ Exchange code error:', error)
+              console.error('Full error object:', JSON.stringify(error, null, 2))
+            } else {
+              console.log('✅ Session created successfully via code exchange!')
+              console.log('Session exists:', !!sessionData.session)
+              console.log('User exists:', !!sessionData.user)
+              console.log('User email:', sessionData.user?.email)
+            }
+          }
+          // Priority 2: Check for access token in fragment (implicit flow)
+          else if (fragment && fragment.includes('access_token')) {
+            console.log('🎫 Found access token in fragment, using setSession')
             const fragmentParams = new URLSearchParams(fragment)
             const accessToken = fragmentParams.get('access_token')
             const refreshToken = fragmentParams.get('refresh_token')
-            const tokenType = fragmentParams.get('token_type') || 'bearer'
+            
+            console.log('Access token length:', accessToken?.length)
+            console.log('Refresh token exists:', !!refreshToken)
             
             if (accessToken) {
               const { data: sessionData, error } = await supabase.auth.setSession({
@@ -50,44 +82,41 @@ export function useOAuthRedirect() {
               })
               
               if (error) {
-                console.error('Set session error:', error)
+                console.error('❌ Set session error:', error)
               } else {
-                console.log('Session set successfully via access token!')
-                console.log('Session created:', !!sessionData.session)
-                console.log('User data:', !!sessionData.user)
+                console.log('✅ Session set successfully via access token!')
+                console.log('Session exists:', !!sessionData.session)
+                console.log('User exists:', !!sessionData.user)
+                console.log('User email:', sessionData.user?.email)
               }
             }
           }
-          // Check if we have an authorization code (PKCE flow)
-          else if (searchParams.has('code')) {
-            console.log('Found authorization code, using exchangeCodeForSession')
-            const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(data.url)
-            
-            if (error) {
-              console.error('Exchange code error:', error)
-              console.error('Full error object:', JSON.stringify(error, null, 2))
-            } else {
-              console.log('Session created successfully via code exchange!')
-              console.log('Session created:', !!sessionData.session)
-              console.log('User data:', !!sessionData.user)
-            }
+          // Priority 3: Check for error in URL
+          else if (searchParams.has('error')) {
+            const error = searchParams.get('error')
+            const errorDescription = searchParams.get('error_description')
+            console.error('🚫 OAuth error in URL:', error)
+            console.error('Error description:', errorDescription)
           }
-          // Fallback: try to extract session from URL manually
+          // Priority 4: Fallback - check existing session
           else {
-            console.log('No access token or code found, trying manual URL parsing')
-            console.log('Full URL for manual parsing:', data.url)
+            console.log('⚠️ No code or token found, checking existing session')
+            console.log('URL might be malformed or incomplete')
             
-            // Try using Supabase's getSessionFromUrl method
             const { data: sessionData, error } = await supabase.auth.getSession()
             if (sessionData.session) {
-              console.log('Existing session found!')
+              console.log('✅ Existing session found!')
+              console.log('User email:', sessionData.session.user?.email)
             } else {
-              console.log('No existing session, OAuth might have failed')
+              console.log('❌ No existing session, OAuth flow failed')
+              if (error) console.error('Session error:', error)
             }
           }
           
         } catch (error) {
-          console.error('Error processing OAuth callback:', error)
+          console.error('💥 Critical error processing OAuth callback:', error)
+          console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error)
+          console.error('Error message:', error instanceof Error ? error.message : String(error))
           console.error('Full error object:', JSON.stringify(error, null, 2))
         }
       } else {
