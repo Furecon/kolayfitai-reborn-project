@@ -90,6 +90,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
 
   const handleVerificationComplete = async (foods: any[]) => {
     console.log('Verification completed, saving meal with foods:', foods)
+    console.log('Final meal type:', finalMealType)
     
     try {
       // Save the meal to database
@@ -141,10 +142,22 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       }
 
       console.log('Meal saved successfully')
+      // Add toast notification
+      const { toast } = await import('@/hooks/use-toast')
+      toast({
+        title: "Başarılı!",
+        description: "Öğün kaydedildi."
+      })
       onMealAdded()
     } catch (error) {
       console.error('Failed to save meal:', error)
-      // You might want to show an error toast here
+      // Show error toast
+      const { toast } = await import('@/hooks/use-toast')
+      toast({
+        title: "Hata",
+        description: "Öğün kaydedilirken hata oluştu.",
+        variant: "destructive"
+      })
     }
   }
 

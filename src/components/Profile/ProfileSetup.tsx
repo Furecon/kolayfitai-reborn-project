@@ -110,6 +110,8 @@ export function ProfileSetup() {
     e.preventDefault()
     if (!user) return
 
+    console.log('Starting profile update for user:', user.id)
+    console.log('Profile data:', profile)
     setLoading(true)
 
     try {
@@ -148,10 +150,13 @@ export function ProfileSetup() {
         updateData.diet_goal = profile.diet_goal
       }
 
+      console.log('Updating profile with data:', updateData)
+      
       const { error } = await supabase
         .from('profiles')
         .upsert(updateData)
 
+      console.log('Profile update result:', { error })
       if (error) throw error
 
       toast({
