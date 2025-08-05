@@ -64,7 +64,7 @@ export class NotificationManager {
       await LocalNotifications.schedule({
         notifications: [
           {
-            id: id.toString(),
+            id: id,
             title,
             body,
             schedule: { at },
@@ -85,7 +85,7 @@ export class NotificationManager {
 
     try {
       await LocalNotifications.cancel({
-        notifications: [{ id: id.toString() }]
+        notifications: [{ id: id }]
       })
     } catch (error) {
       console.error('Error canceling notification:', error)
@@ -277,7 +277,7 @@ export class NotificationManager {
       const pending = await LocalNotifications.getPending()
       const toCancel = pending.notifications
         .filter(n => {
-          const id = parseInt(n.id)
+          const id = typeof n.id === 'string' ? parseInt(n.id) : n.id
           return id >= startId && id <= endId
         })
         .map(n => ({ id: n.id }))

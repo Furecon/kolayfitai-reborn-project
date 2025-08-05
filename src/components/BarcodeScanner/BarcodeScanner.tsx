@@ -52,7 +52,7 @@ export function BarcodeScanner({ onProductFound, onBack }: BarcodeScannerProps) 
       // For now, assume it's supported on native platforms
       setIsSupported(true)
       
-      if (supported.supported) {
+      if (isSupported) {
         checkPermission()
       }
     } catch (error) {
