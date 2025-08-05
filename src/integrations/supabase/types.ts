@@ -220,6 +220,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          scheduled_for: string
+          status: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          scheduled_for: string
+          status?: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          scheduled_for?: string
+          status?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           activity_level: string | null
@@ -323,6 +356,66 @@ export type Database = {
           purchase_token?: string | null
           start_date?: string
           status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sync_queue: {
+        Row: {
+          action_type: string
+          created_at: string
+          data: Json
+          id: string
+          status: string
+          synced_at: string | null
+          table_name: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          data: Json
+          id?: string
+          status?: string
+          synced_at?: string | null
+          table_name: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          status?: string
+          synced_at?: string | null
+          table_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          notification_settings: Json
+          reminder_times: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notification_settings?: Json
+          reminder_times?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notification_settings?: Json
+          reminder_times?: Json
           updated_at?: string
           user_id?: string
         }

@@ -101,7 +101,18 @@ Bu bilgileri kullanarak daha doğru besin değeri hesaplama yap. Pişirme yönte
 - Şeker (g)
 - Sodyum (mg)
 
-Pişirme yöntemi belirsizse fotoğraftan tahmin et ve açıkla.`
+Pişirme yöntemi belirsizse fotoğraftan tahmin et ve açıkla.
+
+FOTOĞRAF KALİTESİ DEĞERLENDİRMESİ:
+Fotoğraf kalitesini değerlendir ve gerekirse analysisErrors alanına şu hata mesajlarından uygun olanları ekle:
+- "Fotoğraf çok karanlık - daha iyi ışıkta tekrar çekin"
+- "Fotoğraf bulanık - daha net bir fotoğraf çekin"
+- "Fotoğrafta yemek görünmüyor - yemeği net gösterecek şekilde çekin"
+- "Tabak veya kap net görünmüyor - tüm yemeği gösteren açı seçin"
+- "Yemekler net olarak tanımlanamıyor - daha yakından çekin"
+- "Porsiyon miktarı belirlenemiyor - standart tabak/kap kullanın"
+- "Paketli ürün net görünmüyor - barkod okuyucu kullanın"
+- "Renk algısı yetersiz - doğal ışıkta çekin"`
           },
           {
             role: 'user',
@@ -142,7 +153,8 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
   ],
   "mealType": "${mealType || 'öğün'}",
   "confidence": 0_ile_1_arası_sayı,
-  "suggestions": "Türkçe kısa öneriler (maksimum 2 cümle)"
+  "suggestions": "Türkçe kısa öneriler (maksimum 2 cümle)",
+  "analysisErrors": ["fotoğraf kalitesi sorunları varsa buraya ekle"]
 }
 
 ÖNEMLI KURALLAR:
