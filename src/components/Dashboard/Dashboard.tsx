@@ -5,7 +5,7 @@ import { MealsList } from './MealsList'
 import { AIInsights } from './AIInsights'
 import { HistoryMeals } from './HistoryMeals'
 import FoodAnalysis from '../FoodAnalysis'
-import { ProfileSetup } from '../Profile/ProfileSetup'
+import ProfileSetup from '../Profile/ProfileSetup'
 import { ContactPage } from '../Support/ContactPage'
 import { ResourcesPage } from '../Support/ResourcesPage'
 import { PoliciesPage } from '../Support/PoliciesPage'
@@ -133,16 +133,7 @@ export function Dashboard() {
   if (currentView === 'profile') {
     return (
       <div className="min-h-screen bg-white">
-        <div className="border-b border-gray-200 px-3 sm:px-4 py-3 sm:py-4">
-          <Button
-            variant="ghost"
-            onClick={() => setCurrentView('dashboard')}
-            className="text-gray-600 h-10"
-          >
-            ← Geri
-          </Button>
-        </div>
-        <ProfileSetup />
+        <ProfileSetup onBack={() => setCurrentView('dashboard')} />
       </div>
     )
   }

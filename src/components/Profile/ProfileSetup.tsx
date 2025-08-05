@@ -1,13 +1,13 @@
-
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/integrations/supabase/client'
+import { ArrowLeft } from 'lucide-react'
 
 interface ProfileData {
   name: string
@@ -22,7 +22,11 @@ interface ProfileData {
   daily_fat_goal: number | null
 }
 
-export function ProfileSetup() {
+interface ProfileSetupProps {
+  onBack?: () => void
+}
+
+export default function ProfileSetup({ onBack }: ProfileSetupProps) {
   const { user } = useAuth()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
@@ -178,6 +182,18 @@ export function ProfileSetup() {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
+      {onBack && (
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="text-gray-600 h-10"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Geri
+          </Button>
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl text-black">Profil Bilgileri</CardTitle>
