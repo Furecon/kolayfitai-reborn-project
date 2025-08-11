@@ -183,10 +183,48 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
       console.log('Profile update result:', { error })
       if (error) throw error
 
-      toast({
-        title: "Başarılı!",
-        description: "Profil bilgileriniz ve makro hedefleriniz kaydedildi."
-      })
+      // Get previous assessment for comparison
+      const { data: previousAssessment } = await supabase
+        .from('ai_assessments')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      // Trigger AI assessment
+      try {
+        console.log('Triggering AI assessment...')
+        const assessmentResponse = await fetch('/functions/v1/profile-assessment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          },
+          body: JSON.stringify({
+            profileData: updateData,
+            previousAssessment: previousAssessment
+          })
+        })
+
+        const assessmentResult = await assessmentResponse.json()
+        console.log('AI assessment result:', assessmentResult)
+
+        if (assessmentResult.success) {
+          toast({
+            title: "Başarılı!",
+            description: "Profil güncellendi ve AI değerlendirmeniz hazırlandı."
+          })
+        } else {
+          throw new Error('AI assessment failed')
+        }
+      } catch (assessmentError) {
+        console.error('AI assessment error:', assessmentError)
+        toast({
+          title: "Profil Güncellendi",
+          description: "Profil bilgileriniz kaydedildi, ancak AI değerlendirme sırasında bir sorun oluştu."
+        })
+      }
 
     } catch (error) {
       console.error('Profile update error:', error)

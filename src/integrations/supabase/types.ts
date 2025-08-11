@@ -67,6 +67,45 @@ export type Database = {
           },
         ]
       }
+      ai_assessments: {
+        Row: {
+          assessment_data: Json
+          assessment_type: string
+          created_at: string
+          health_insights: string | null
+          id: string
+          motivational_message: string | null
+          progress_score: number | null
+          recommendations: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assessment_data?: Json
+          assessment_type?: string
+          created_at?: string
+          health_insights?: string | null
+          id?: string
+          motivational_message?: string | null
+          progress_score?: number | null
+          recommendations?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assessment_data?: Json
+          assessment_type?: string
+          created_at?: string
+          health_insights?: string | null
+          id?: string
+          motivational_message?: string | null
+          progress_score?: number | null
+          recommendations?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       favorite_meals: {
         Row: {
           created_at: string

@@ -6,6 +6,7 @@ import { AIInsights } from './AIInsights'
 import { HistoryMeals } from './HistoryMeals'
 import FoodAnalysis from '../FoodAnalysis'
 import ProfileSetup from '../Profile/ProfileSetup'
+import ProgressTracker from '../Profile/ProgressTracker'
 import { ContactPage } from '../Support/ContactPage'
 import { ResourcesPage } from '../Support/ResourcesPage'
 import { PoliciesPage } from '../Support/PoliciesPage'
@@ -17,9 +18,9 @@ import { SubscriptionManager } from '../Subscription/SubscriptionManager'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { Button } from '@/components/ui/button'
-import { MessageCircle, X, Sparkles, Heart } from 'lucide-react'
+import { MessageCircle, X, Sparkles, Heart, TrendingUp } from 'lucide-react'
 
-type View = 'dashboard' | 'camera' | 'profile' | 'assistant' | 'suggestions' | 'favorites' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
+type View = 'dashboard' | 'camera' | 'profile' | 'progress' | 'assistant' | 'suggestions' | 'favorites' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -138,6 +139,26 @@ export function Dashboard() {
     )
   }
 
+  if (currentView === 'progress') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="border-b border-gray-200 bg-white px-3 sm:px-4 py-3 sm:py-4">
+          <Button
+            variant="ghost"
+            onClick={() => setCurrentView('dashboard')}
+            className="text-gray-600 h-10"
+          >
+            ← Geri
+          </Button>
+          <h1 className="text-xl font-semibold mt-2">Gelişim Takibi</h1>
+        </div>
+        <div className="p-4">
+          <ProgressTracker />
+        </div>
+      </div>
+    )
+  }
+
   if (currentView === 'contact') {
     return (
       <ContactPage onBack={() => setCurrentView('dashboard')} />
@@ -220,7 +241,7 @@ export function Dashboard() {
       
       {/* Quick Action Buttons - Responsive Grid */}
       <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <Button
             onClick={() => setCurrentView('suggestions')}
             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-3 h-auto min-h-[4rem] sm:min-h-[3.5rem]"
@@ -241,6 +262,18 @@ export function Dashboard() {
             <div className="text-left min-w-0">
               <div className="font-semibold text-sm sm:text-base">Favorilerim</div>
               <div className="text-xs text-gray-500 truncate">Sevdiğim tarifler</div>
+            </div>
+          </Button>
+
+          <Button
+            onClick={() => setCurrentView('progress')}
+            variant="outline"
+            className="py-3 h-auto min-h-[4rem] sm:min-h-[3.5rem] border-blue-200 hover:bg-blue-50 sm:col-span-2 lg:col-span-1"
+          >
+            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-500 flex-shrink-0" />
+            <div className="text-left min-w-0">
+              <div className="font-semibold text-sm sm:text-base">Gelişim Takibi</div>
+              <div className="text-xs text-gray-500 truncate">AI değerlendirmeleri</div>
             </div>
           </Button>
         </div>
