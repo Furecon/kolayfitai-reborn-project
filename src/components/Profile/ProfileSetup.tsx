@@ -56,7 +56,7 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
 
     if (data) {
       setProfile({
@@ -66,7 +66,7 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
         height: data.height,
         weight: data.weight,
         activity_level: data.activity_level,
-        diet_goal: (data as any).diet_goal || null,
+        diet_goal: data.diet_goal || null,
         daily_protein_goal: data.daily_protein_goal,
         daily_carbs_goal: data.daily_carbs_goal,
         daily_fat_goal: data.daily_fat_goal
