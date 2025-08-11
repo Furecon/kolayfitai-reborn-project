@@ -56,6 +56,8 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
       .maybeSingle()
 
     if (data) {
@@ -178,7 +180,8 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
       
       const { error } = await supabase
         .from('profiles')
-        .upsert(updateData)
+        .update(updateData)
+        .eq('user_id', user.id)
 
       console.log('Profile update result:', { error })
       if (error) throw error
