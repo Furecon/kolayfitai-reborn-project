@@ -77,7 +77,9 @@ export function Dashboard() {
         daily_fat_goal
       `)
       .eq('user_id', user.id)
-      .single()
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
     if (meals) {
       const totals = meals.reduce(
