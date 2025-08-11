@@ -23,7 +23,9 @@ function AppContent() {
         .from('profiles')
         .select('onboarding_completed')
         .eq('user_id', user.id)
-        .maybeSingle()
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
       
       if (error) throw error
       return data
