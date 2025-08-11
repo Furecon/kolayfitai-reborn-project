@@ -195,22 +195,19 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
       // Trigger AI assessment
       try {
         console.log('Triggering AI assessment...')
-        const assessmentResponse = await fetch('/functions/v1/profile-assessment', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-          },
-          body: JSON.stringify({
+        const { data: assessmentData, error: assessmentError } = await supabase.functions.invoke('profile-assessment', {
+          body: { 
             profileData: updateData,
             previousAssessment: previousAssessment
-          })
+          }
         })
 
-        const assessmentResult = await assessmentResponse.json()
-        console.log('AI assessment result:', assessmentResult)
+        if (assessmentError) {
+          throw assessmentError
+        }
 
-        if (assessmentResult.success) {
+        if (assessmentData?.success) {
+          console.log('AI assessment completed successfully')
           toast({
             title: "Başarılı!",
             description: "Profil güncellendi ve AI değerlendirmeniz hazırlandı."
