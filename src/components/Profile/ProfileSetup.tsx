@@ -134,14 +134,34 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
       // Calculate macro goals
       const macroGoals = calculateMacroGoals(dailyCalorieGoal)
 
+      // Convert values to Turkish format for database
+      const genderMap: { [key: string]: string } = {
+        'male': 'erkek',
+        'female': 'kadın'
+      }
+
+      const activityMap: { [key: string]: string } = {
+        'sedentary': 'hareketsiz',
+        'lightly_active': 'az_aktif',
+        'moderately_active': 'orta_aktif',
+        'very_active': 'cok_aktif',
+        'extremely_active': 'asiri_aktif'
+      }
+
+      const dietGoalMap: { [key: string]: string } = {
+        'lose': 'kilo_ver',
+        'maintain': 'koru',
+        'gain': 'kilo_al'
+      }
+
       const updateData: any = {
         user_id: user.id,
         name: profile.name,
         age: profile.age,
-        gender: profile.gender,
+        gender: genderMap[profile.gender!] || profile.gender,
         height: profile.height,
         weight: profile.weight,
-        activity_level: profile.activity_level,
+        activity_level: activityMap[profile.activity_level!] || profile.activity_level,
         daily_calorie_goal: dailyCalorieGoal,
         daily_protein_goal: macroGoals.protein,
         daily_carbs_goal: macroGoals.carbs,
@@ -151,7 +171,7 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
 
       // Add diet_goal if it exists
       if (profile.diet_goal) {
-        updateData.diet_goal = profile.diet_goal
+        updateData.diet_goal = dietGoalMap[profile.diet_goal] || profile.diet_goal
       }
 
       console.log('Updating profile with data:', updateData)
