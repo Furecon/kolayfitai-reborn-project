@@ -21,21 +21,33 @@ export function OnboardingComplete() {
     
     setLoading(true)
     try {
-      // Update user profile with onboarding data
+      console.log('Starting onboarding completion for user:', user.id)
+      console.log('Onboarding data:', onboardingData)
+      console.log('Daily calories calculated:', dailyCalories)
+
+      // Use UPSERT to handle cases where profile doesn't exist or needs update
       const { error } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          user_id: user.id,
           age: onboardingData.age,
           gender: onboardingData.gender,
           height: onboardingData.height,
           weight: onboardingData.weight,
           activity_level: onboardingData.activityLevel,
           daily_calorie_goal: dailyCalories,
-          onboarding_completed: true
+          onboarding_completed: true,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
         })
-        .eq('user_id', user.id)
 
-      if (error) throw error
+      if (error) {
+        console.error('Profile upsert error:', error)
+        throw error
+      }
+
+      console.log('Profile successfully saved/updated')
 
       // Invalidate the profile query to trigger immediate refetch
       await queryClient.invalidateQueries({
