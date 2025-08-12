@@ -7,7 +7,7 @@ import MealTypeSelection from './MealTypeSelection'
 import QuickAnalysisResult from './QuickAnalysisResult'
 import DetailedAnalysisForm from './DetailedAnalysisForm'
 import ManualFoodEntry from './ManualFoodEntry'
-import AIVerification from './AIVerification'
+import { EnhancedAIVerification } from './EnhancedAIVerification'
 import MealSelectionAfterAnalysis from './MealSelectionAfterAnalysis'
 import NativeCameraCapture from './NativeCameraCapture'
 import { Capacitor } from '@capacitor/core'
@@ -97,13 +97,13 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
       const { supabase } = await import('@/integrations/supabase/client')
       
       const totalNutrition = foods.reduce((total, food) => ({
-        totalCalories: total.totalCalories + (food.totalNutrition?.calories || 0),
-        totalProtein: total.totalProtein + (food.totalNutrition?.protein || 0),
-        totalCarbs: total.totalCarbs + (food.totalNutrition?.carbs || 0),
-        totalFat: total.totalFat + (food.totalNutrition?.fat || 0),
-        totalFiber: total.totalFiber + (food.totalNutrition?.fiber || 0),
-        totalSugar: total.totalSugar + (food.totalNutrition?.sugar || 0),
-        totalSodium: total.totalSodium + (food.totalNutrition?.sodium || 0)
+        totalCalories: total.totalCalories + (food.total_nutrition?.calories || 0),
+        totalProtein: total.totalProtein + (food.total_nutrition?.protein || 0),
+        totalCarbs: total.totalCarbs + (food.total_nutrition?.carbs || 0),
+        totalFat: total.totalFat + (food.total_nutrition?.fat || 0),
+        totalFiber: total.totalFiber + (food.total_nutrition?.fiber || 0),
+        totalSugar: total.totalSugar + (food.total_nutrition?.sugar || 0),
+        totalSodium: total.totalSodium + (food.total_nutrition?.sodium || 0)
       }), { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0, totalFiber: 0, totalSugar: 0, totalSodium: 0 })
 
       const { data: user } = await supabase.auth.getUser()
@@ -117,9 +117,9 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
         food_items: foods.map(food => ({
           name: food.name,
           nameEn: food.nameEn || food.name,
-          estimatedAmount: food.estimatedAmount || '100g',
-          nutritionPer100g: food.nutritionPer100g,
-          totalNutrition: food.totalNutrition
+          estimatedAmount: `${food.estimated_amount || 100} ${food.portion_type || 'gram'}`,
+          nutritionPer100g: food.nutrition_per_100g,
+          totalNutrition: food.total_nutrition
         })),
         total_calories: totalNutrition.totalCalories,
         total_protein: totalNutrition.totalProtein,
@@ -284,9 +284,36 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
         )}
 
         {currentStep === 'ai-verification' && (
-          <AIVerification
-            analysisResult={analysisResult}
-            capturedImage={capturedImage}
+          <EnhancedAIVerification
+            analysisResult={{
+              foods: analysisResult?.detectedFoods?.map((food: any) => ({
+                name: food.name,
+                estimated_amount: food.estimatedAmount || 100,
+                portion_type: 'gram',
+                nutrition_per_100g: food.nutritionPer100g || {
+                  calories: food.totalNutrition?.calories || 0,
+                  protein: food.totalNutrition?.protein || 0,
+                  carbs: food.totalNutrition?.carbs || 0,
+                  fat: food.totalNutrition?.fat || 0,
+                  fiber: food.totalNutrition?.fiber || 0,
+                  sugar: food.totalNutrition?.sugar || 0,
+                  sodium: food.totalNutrition?.sodium || 0
+                },
+                total_nutrition: food.totalNutrition || {
+                  calories: 0,
+                  protein: 0,
+                  carbs: 0,
+                  fat: 0,
+                  fiber: 0,
+                  sugar: 0,
+                  sodium: 0
+                }
+              })) || [],
+              confidence: analysisResult?.confidence || 0.85,
+              suggestions: analysisResult?.suggestions,
+              meal_type: analysisResult?.mealType || finalMealType
+            }}
+            image={capturedImage || ''}
             onConfirm={handleVerificationComplete}
             onEdit={() => setCurrentStep('manual-entry')}
             onManualEntry={() => setCurrentStep('manual-entry')}
