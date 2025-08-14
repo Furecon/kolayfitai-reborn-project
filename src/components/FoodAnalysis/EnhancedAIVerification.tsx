@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface FoodItem {
   name: string;
   estimated_amount: number;
-  portion_type: 'gram' | 'adet' | 'porsiyon' | 'bardak' | 'kaşık';
+  portion_type: 'gram' | 'adet' | 'porsiyon' | 'bardak' | 'ml' | 'cl' | 'şişe' | 'kutu' | 'kaşık';
   nutrition_per_100g: {
     calories: number;
     protein: number;
@@ -104,19 +104,67 @@ export const EnhancedAIVerification: React.FC<EnhancedAIVerificationProps> = ({
     }
   }, [toast]);
 
-  // Calculate nutrition based on portion
-  const calculateNutrition = (nutritionPer100g: any, amount: number, portionType: string) => {
-    // Convert portion to grams (simplified conversion)
-    const gramConversion = {
-      gram: 1,
-      adet: 100, // Average item weight
-      porsiyon: 150, // Average portion size
-      bardak: 240, // Cup volume
-      kaşık: 15 // Tablespoon
-    };
-
-    const gramsAmount = amount * (gramConversion[portionType as keyof typeof gramConversion] || 1);
-    const multiplier = gramsAmount / 100;
+  // Calculate nutrition based on portion with enhanced beverage support
+  const calculateNutrition = (nutritionPer100g: any, amount: number, portionType: string, foodCategory?: string) => {
+    let multiplier = amount / 100; // Default: per 100g
+    
+    // Enhanced portion conversions with beverage-specific logic
+    switch (portionType) {
+      case 'gram':
+        multiplier = amount / 100;
+        break;
+      case 'adet':
+        multiplier = amount * 1; // 100g per piece (default)
+        break;
+      case 'porsiyon':
+        multiplier = amount * 1.5; // 150g per portion
+        break;
+      case 'bardak':
+        // Check if it's a beverage - use ml/g density
+        if (foodCategory === 'İçecekler') {
+          multiplier = amount * 2.5; // 250ml per cup, beverages have ~1g/ml density
+        } else {
+          multiplier = amount * 2; // 200g per cup for solid foods
+        }
+        break;
+      case 'ml':
+        // Direct ml measurement for beverages (1ml ≈ 1g for most beverages)
+        multiplier = amount / 100;
+        break;
+      case 'cl':
+        // Centiliters to grams (1cl = 10ml ≈ 10g for beverages)
+        multiplier = (amount * 10) / 100;
+        break;
+      case 'şişe':
+        // Standard bottle sizes for beverages
+        if (foodCategory === 'İçecekler') {
+          multiplier = amount * 5; // 500ml per bottle
+        } else {
+          multiplier = amount * 0.5; // 50g for other bottled items
+        }
+        break;
+      case 'kutu':
+        // Standard can sizes for beverages
+        if (foodCategory === 'İçecekler') {
+          multiplier = amount * 3.3; // 330ml per can
+        } else {
+          multiplier = amount * 0.4; // 40g for other canned items
+        }
+        break;
+      case 'kaşık':
+        // Tea/coffee spoons for beverages vs food spoons
+        if (foodCategory === 'İçecekler') {
+          multiplier = amount * 0.05; // 5ml per teaspoon for liquids
+        } else {
+          multiplier = amount * 0.15; // 15g per spoon for solids
+        }
+        break;
+      case 'dilim':
+        multiplier = amount * 0.3; // 30g per slice
+        break;
+      default:
+        multiplier = amount / 100;
+    }
 
     return {
       calories: Math.round(nutritionPer100g.calories * multiplier),
@@ -146,7 +194,7 @@ export const EnhancedAIVerification: React.FC<EnhancedAIVerificationProps> = ({
       estimated_amount: amount,
       portion_type: portionType as any,
       nutrition_per_100g: nutritionPer100g,
-      total_nutrition: calculateNutrition(nutritionPer100g, amount, portionType)
+      total_nutrition: calculateNutrition(nutritionPer100g, amount, portionType, searchResult.category)
     };
 
     setFoods(prev => [...prev, newFood]);
@@ -177,7 +225,8 @@ export const EnhancedAIVerification: React.FC<EnhancedAIVerificationProps> = ({
         total_nutrition: calculateNutrition(
           updatedFood.nutrition_per_100g,
           updatedFood.estimated_amount,
-          updatedFood.portion_type
+          updatedFood.portion_type,
+          'İçecekler' // Will be enhanced later with actual category detection
         )
       } : food
     ));
@@ -531,6 +580,10 @@ const EditFoodForm: React.FC<EditFoodFormProps> = ({ food, onSave, onCancel }) =
                 <SelectItem value="adet">Adet</SelectItem>
                 <SelectItem value="porsiyon">Porsiyon</SelectItem>
                 <SelectItem value="bardak">Bardak</SelectItem>
+                <SelectItem value="ml">ml</SelectItem>
+                <SelectItem value="cl">cl</SelectItem>
+                <SelectItem value="şişe">Şişe</SelectItem>
+                <SelectItem value="kutu">Kutu</SelectItem>
                 <SelectItem value="kaşık">Kaşık</SelectItem>
               </SelectContent>
             </Select>

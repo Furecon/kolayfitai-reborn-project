@@ -121,6 +121,15 @@ Fotoğraf kalitesini değerlendir ve gerekirse analysisErrors alanına şu hata 
                 type: 'text',
                 text: `Bu yemek fotoğrafını analiz et ve besin değerlerini hesapla. Mümkün olduğunca Türkçe yemek adları kullan ve gerçekçi porsiyon tahminleri yap.
 
+İÇECEKLER İÇİN ÖZEL TALİMATLAR:
+- İçecekler için kap boyutuna dikkat et (çay bardağı ~100ml, su bardağı ~200-250ml)
+- Şişe boyutları: 330ml (küçük), 500ml (orta), 1L (büyük)
+- Kutular: genellikle 330ml
+- Şekerli vs şekersiz içecekleri ayırt et (özellikle çay/kahve)
+- Alkollü içecekler için bira (~330-500ml), şarap (~150ml), rakı vb. belirt
+- Sıvı hacmine odaklan, ağırlık değil (1ml ≈ 1g çoğu içecek için)
+- İçecek kalorilerinin gerçekçi olmasına dikkat et (su=0, diyet içecek≈0-5, normal gazlı içecek≈40-50 per 100ml)
+
 ${detailsPrompt}
 
 Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
@@ -130,8 +139,9 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
     {
       "name": "Yemek adı (Türkçe)",
       "nameEn": "Food name (English)", 
-      "estimatedAmount": "Miktar ve birim (örn: 1 porsiyon, 100g, 1 adet)",
-      "nutritionPer100g": {
+              "estimatedAmount": "Miktar ve birim (örn: 1 porsiyon, 100g, 1 adet, 250ml, 1 bardak)",
+              "portionType": "gram|ml|cl|bardak|şişe|kutu|adet|porsiyon|kaşık",
+              "nutritionPer100g": {
         "calories": sayı,
         "protein": sayı,
         "carbs": sayı,
