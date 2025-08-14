@@ -2,7 +2,45 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Check } from 'lucide-react'
+import { ArrowLeft, Check, Search, Loader2, Sparkles } from 'lucide-react'
+import ManualFoodEntry from './ManualFoodEntry';
+import { AITextFoodEntry } from './AITextFoodEntry';
+
+interface AIFoodItem {
+  name: string;
+  amount: number;
+  unit: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber?: number;
+  sugar?: number;
+}
+
+interface ManualFoodItem {
+  name: string
+  nameEn: string
+  estimatedAmount: string
+  nutritionPer100g: {
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+    fiber: number
+    sugar: number
+    sodium: number
+  }
+  totalNutrition: {
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+    fiber: number
+    sugar: number
+    sodium: number
+  }
+}
 
 interface MealSelectionAfterAnalysisProps {
   detectedFoods: any[]
@@ -26,6 +64,9 @@ export default function MealSelectionAfterAnalysis({
   loading 
 }: MealSelectionAfterAnalysisProps) {
   const [selectedMealType, setSelectedMealType] = useState<string>('')
+  const [showManualEntry, setShowManualEntry] = useState(false)
+  const [showAITextEntry, setShowAITextEntry] = useState(false)
+  const [savingMeal, setSavingMeal] = useState(false)
 
   const handleSubmit = () => {
     if (selectedMealType) {
@@ -33,8 +74,65 @@ export default function MealSelectionAfterAnalysis({
     }
   }
 
+  const handleAnalysisConfirm = () => {
+    if (selectedMealType) {
+      setSavingMeal(true)
+      onSubmit(selectedMealType, detectedFoods)
+    }
+  }
+
+  const saveAIMealLog = async (foods: AIFoodItem[]) => {
+    if (selectedMealType) {
+      setSavingMeal(true)
+      // Convert AIFoodItem format to the expected format
+      const convertedFoods = foods.map(food => ({
+        name: food.name,
+        totalNutrition: {
+          calories: food.calories,
+          protein: food.protein,
+          carbs: food.carbs,
+          fat: food.fat,
+          fiber: food.fiber || 0,
+          sugar: food.sugar || 0
+        },
+        amount: food.amount,
+        unit: food.unit
+      }))
+      onSubmit(selectedMealType, convertedFoods)
+    }
+  }
+
+  const saveManualMealLog = async (foods: ManualFoodItem[]) => {
+    if (selectedMealType) {
+      setSavingMeal(true)
+      onSubmit(selectedMealType, foods)
+    }
+  }
+
   const getTotalCalories = () => {
     return detectedFoods.reduce((total, food) => total + (food.totalNutrition?.calories || 0), 0)
+  }
+
+  if (showAITextEntry) {
+    return (
+      <AITextFoodEntry
+        mealType={selectedMealType}
+        onSave={saveAIMealLog}
+        onBack={() => setShowAITextEntry(false)}
+        loading={savingMeal}
+      />
+    )
+  }
+
+  if (showManualEntry) {
+    return (
+      <ManualFoodEntry
+        mealType={selectedMealType}
+        onSave={saveManualMealLog}
+        onBack={() => setShowManualEntry(false)}
+        loading={savingMeal}
+      />
+    )
   }
 
   return (
@@ -101,13 +199,59 @@ export default function MealSelectionAfterAnalysis({
             </div>
           </div>
 
-          <Button
-            onClick={handleSubmit}
-            disabled={!selectedMealType || loading}
-            className="w-full bg-green-500 hover:bg-green-600 text-white py-3 text-lg font-semibold"
-          >
-            {loading ? 'Kaydediliyor...' : 'Devam Et'}
-          </Button>
+          <div className="space-y-4">
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-4">
+                AI analizini onaylayın veya farklı yemek girişi yapın
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!selectedMealType) {
+                    alert('Lütfen önce bir öğün seçin')
+                    return
+                  }
+                  setShowAITextEntry(true)
+                }}
+                className="h-20 flex-col gap-2 border-primary/30 hover:bg-primary/5"
+              >
+                <Sparkles className="h-6 w-6 text-primary" />
+                <span className="font-medium">AI Yemek Girişi</span>
+                <span className="text-xs text-muted-foreground">Yemek adını yaz</span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!selectedMealType) {
+                    alert('Lütfen önce bir öğün seçin')
+                    return
+                  }
+                  setShowManualEntry(true)
+                }}
+                className="h-20 flex-col gap-2"
+              >
+                <Search className="h-6 w-6" />
+                <span>Yemek Ara</span>
+                <span className="text-xs text-muted-foreground">Veritabanından bul</span>
+              </Button>
+              <Button
+                onClick={handleAnalysisConfirm}
+                disabled={!selectedMealType || savingMeal}
+                className="h-20 flex-col gap-2"
+              >
+                {savingMeal ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  <Check className="h-6 w-6" />
+                )}
+                <span>AI Analizini Onayla</span>
+                <span className="text-xs text-muted-foreground">Görüntü analizi</span>
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
