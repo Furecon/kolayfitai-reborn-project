@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
+import { useNavigation } from '@/hooks/useNavigation'
 import AnalysisTypeSelection from './AnalysisTypeSelection'
 import MealTypeSelection from './MealTypeSelection'
 import QuickAnalysisResult from './QuickAnalysisResult'
@@ -30,6 +31,14 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   const [detailedFormData, setDetailedFormData] = useState<any>(null)
 
   const isNative = Capacitor.isNativePlatform()
+
+  // Enhanced navigation with hardware back button support
+  const { goBack } = useNavigation({
+    enableHardwareBackButton: true,
+    customBackHandler: () => {
+      handleBack()
+    }
+  })
 
   const handleImageCaptured = (imageUrl: string) => {
     console.log('Image captured:', imageUrl.substring(0, 50) + '...')

@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Check, Search, Loader2, Sparkles } from 'lucide-react'
+import { Check, Search, Loader2, Sparkles } from 'lucide-react'
 import ManualFoodEntry from './ManualFoodEntry';
 import { AITextFoodEntry } from './AITextFoodEntry';
 
@@ -137,15 +137,7 @@ export default function MealSelectionAfterAnalysis({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="text-gray-600 h-10 px-2"
-        >
-          <ArrowLeft className="h-5 w-5 mr-1" />
-          Geri
-        </Button>
+      <div>
         <h2 className="text-xl font-semibold text-gray-900">Öğün Seçimi</h2>
       </div>
 

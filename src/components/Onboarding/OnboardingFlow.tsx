@@ -1,4 +1,5 @@
 
+import { useNavigation } from '@/hooks/useNavigation'
 import { OnboardingProvider, useOnboarding } from './OnboardingProvider'
 import { OnboardingWelcome } from './OnboardingWelcome'
 import { OnboardingAge } from './OnboardingAge'
@@ -11,7 +12,19 @@ import { OnboardingEducation } from './OnboardingEducation'
 import { OnboardingComplete } from './OnboardingComplete'
 
 function OnboardingSteps() {
-  const { currentStep } = useOnboarding()
+  const { currentStep, setCurrentStep } = useOnboarding()
+  
+  // Enhanced navigation with hardware back button support
+  useNavigation({
+    enableHardwareBackButton: true,
+    customBackHandler: () => {
+      // Go back to previous onboarding step if possible
+      if (currentStep > 1) {
+        setCurrentStep(currentStep - 1)
+      }
+      // Otherwise prevent app exit during onboarding
+    }
+  })
 
   switch (currentStep) {
     case 1:

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigation } from '@/hooks/useNavigation'
 import { DashboardHeader } from './DashboardHeader'
 import { CalorieCards } from './CalorieCards'
 import { MealsList } from './MealsList'
@@ -25,6 +26,18 @@ type View = 'dashboard' | 'camera' | 'profile' | 'progress' | 'assistant' | 'sug
 export function Dashboard() {
   const { user } = useAuth()
   const [currentView, setCurrentView] = useState<View>('dashboard')
+  
+  // Enhanced navigation with hardware back button support
+  const { goBack } = useNavigation({
+    enableHardwareBackButton: true,
+    customBackHandler: () => {
+      // If we're in a sub-view, go back to dashboard
+      if (currentView !== 'dashboard') {
+        setCurrentView('dashboard')
+      }
+      // Otherwise let the system handle it (app exit or previous route)
+    }
+  })
   const [dailyStats, setDailyStats] = useState({
     totalCalories: 0,
     goalCalories: 2000,
