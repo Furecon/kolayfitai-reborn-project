@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, Search, Plus, Trash2 } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ArrowLeft, Search, Plus, Trash2, Brain, Database } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
 
@@ -59,6 +60,26 @@ interface SelectedFood {
   proteinPer100g: number
   carbsPer100g: number
   fatPer100g: number
+  source?: 'ai' | 'database'
+}
+
+interface AnalysisResult {
+  recognized_name: string
+  foods: {
+    name: string
+    amount: number
+    unit: string
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+    fiber: number
+    sugar: number
+    sodium: number
+  }[]
+  confidence: number
+  suggestions: string[]
+  notes: string
 }
 
 export default function ManualFoodEntry({ mealType, onSave, onBack, loading }: ManualFoodEntryProps) {
@@ -66,6 +87,13 @@ export default function ManualFoodEntry({ mealType, onSave, onBack, loading }: M
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [selectedFoods, setSelectedFoods] = useState<SelectedFood[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [activeTab, setActiveTab] = useState('ai')
+  
+  // AI-related state
+  const [foodInput, setFoodInput] = useState('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
+  
   const { toast } = useToast()
 
   const searchFoods = async (term: string) => {
@@ -99,6 +127,41 @@ export default function ManualFoodEntry({ mealType, onSave, onBack, loading }: M
     return () => clearTimeout(timeoutId)
   }, [searchTerm])
 
+  // AI Analysis Function
+  const analyzeFoodByName = async (foodName: string) => {
+    if (!foodName.trim()) return
+
+    setIsAnalyzing(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-food-by-name', {
+        body: { foodName: foodName.trim(), mealType }
+      })
+
+      if (error) throw error
+
+      setAnalysisResult(data)
+      toast({
+        title: "Analiz Tamamlandı",
+        description: `${data.foods.length} yemek tanımlandı`,
+      })
+    } catch (error) {
+      console.error('AI analiz hatası:', error)
+      toast({
+        title: "Analiz Hatası",
+        description: "AI analizi sırasında hata oluştu. Lütfen tekrar deneyin.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !isAnalyzing) {
+      analyzeFoodByName(foodInput)
+    }
+  }
+
   const addFoodToSelection = (searchResult: SearchResult) => {
     const newFood: SelectedFood = {
       name: searchResult.name,
@@ -108,12 +171,29 @@ export default function ManualFoodEntry({ mealType, onSave, onBack, loading }: M
       caloriesPer100g: searchResult.calories_per_100g,
       proteinPer100g: searchResult.protein_per_100g,
       carbsPer100g: searchResult.carbs_per_100g,
-      fatPer100g: searchResult.fat_per_100g
+      fatPer100g: searchResult.fat_per_100g,
+      source: 'database'
     }
 
     setSelectedFoods([...selectedFoods, newFood])
     setSearchTerm('')
     setSearchResults([])
+  }
+
+  const addAIFoodToSelection = (food: AnalysisResult['foods'][0]) => {
+    const newFood: SelectedFood = {
+      name: food.name,
+      nameEn: '',
+      category: 'AI Tanımlı',
+      portionSize: food.amount,
+      caloriesPer100g: Math.round((food.calories / food.amount) * 100),
+      proteinPer100g: Math.round((food.protein / food.amount) * 100 * 10) / 10,
+      carbsPer100g: Math.round((food.carbs / food.amount) * 100 * 10) / 10,
+      fatPer100g: Math.round((food.fat / food.amount) * 100 * 10) / 10,
+      source: 'ai'
+    }
+
+    setSelectedFoods([...selectedFoods, newFood])
   }
 
   const updateFoodPortion = (index: number, portionSize: number) => {
@@ -207,55 +287,170 @@ export default function ManualFoodEntry({ mealType, onSave, onBack, loading }: M
           <span className="text-sm text-gray-500">({mealType})</span>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-black">
-              <Search className="h-5 w-5 text-green-500" />
-              Yemek Arayın
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="relative">
-              <Input
-                placeholder="Yemek adı yazın (örn: tavuk döner, mercimek çorbası)"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-              />
-              {isSearching && (
-                <div className="absolute right-3 top-3">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
-                </div>
-              )}
-            </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="ai" className="flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              AI ile Hızlı Giriş
+            </TabsTrigger>
+            <TabsTrigger value="database" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Veritabanından Ara
+            </TabsTrigger>
+          </TabsList>
 
-            {searchResults.length > 0 && (
-              <div className="border rounded-lg max-h-60 overflow-y-auto">
-                {searchResults.map((food) => (
-                  <div
-                    key={food.id}
-                    className="p-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50"
-                    onClick={() => addFoodToSelection(food)}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="font-medium">{food.name}</h4>
-                        <p className="text-sm text-gray-500">{food.category}</p>
-                      </div>
-                      <div className="text-right text-sm">
-                        <p className="font-medium">{Math.round(food.calories_per_100g)} kcal/100g</p>
-                        <Button size="sm" className="mt-1">
-                          <Plus className="h-3 w-3 mr-1" />
-                          Ekle
-                        </Button>
-                      </div>
+          <TabsContent value="ai" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-black">
+                  <Brain className="h-5 w-5 text-green-500" />
+                  AI ile Yemek Girişi
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative">
+                  <Input
+                    placeholder="Yemek adınızı yazın (örn: döner, mercimek çorbası, tavuk şiş)"
+                    value={foodInput}
+                    onChange={(e) => setFoodInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="w-full"
+                    disabled={isAnalyzing}
+                  />
+                  {isAnalyzing && (
+                    <div className="absolute right-3 top-3">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
                     </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => analyzeFoodByName(foodInput)}
+                    disabled={!foodInput.trim() || isAnalyzing}
+                    className="bg-green-500 hover:bg-green-600 text-white"
+                  >
+                    {isAnalyzing ? "Analiz Ediliyor..." : "Analiz Et"}
+                  </Button>
+                </div>
+
+                {/* Quick suggestions */}
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">Hızlı öneriler:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['döner', 'mercimek çorbası', 'tavuk şiş', 'adana kebap', 'kuru fasulye', 'pilav'].map((suggestion) => (
+                      <Button
+                        key={suggestion}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setFoodInput(suggestion)
+                          analyzeFoodByName(suggestion)
+                        }}
+                        disabled={isAnalyzing}
+                      >
+                        {suggestion}
+                      </Button>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+
+                {analysisResult && (
+                  <div className="border rounded-lg p-4 bg-green-50">
+                    <h4 className="font-medium mb-3">AI Analiz Sonucu</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Tanımlanan: <span className="font-medium">{analysisResult.recognized_name}</span>
+                      {analysisResult.confidence && (
+                        <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                          %{Math.round(analysisResult.confidence * 100)} güven
+                        </span>
+                      )}
+                    </p>
+                    
+                    <div className="space-y-2">
+                      {analysisResult.foods.map((food, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-white rounded border">
+                          <div>
+                            <p className="font-medium">{food.name}</p>
+                            <p className="text-sm text-gray-500">
+                              {food.amount} {food.unit} • {food.calories} kcal
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => addAIFoodToSelection(food)}
+                            className="bg-green-500 hover:bg-green-600 text-white"
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Ekle
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {analysisResult.notes && (
+                      <p className="text-xs text-gray-500 mt-2 italic">
+                        {analysisResult.notes}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="database" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-black">
+                  <Search className="h-5 w-5 text-green-500" />
+                  Veritabanından Yemek Arayın
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative">
+                  <Input
+                    placeholder="Yemek adı yazın (örn: tavuk döner, mercimek çorbası)"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full"
+                  />
+                  {isSearching && (
+                    <div className="absolute right-3 top-3">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
+                    </div>
+                  )}
+                </div>
+
+                {searchResults.length > 0 && (
+                  <div className="border rounded-lg max-h-60 overflow-y-auto">
+                    {searchResults.map((food) => (
+                      <div
+                        key={food.id}
+                        className="p-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50"
+                        onClick={() => addFoodToSelection(food)}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="font-medium">{food.name}</h4>
+                            <p className="text-sm text-gray-500">{food.category}</p>
+                          </div>
+                          <div className="text-right text-sm">
+                            <p className="font-medium">{Math.round(food.calories_per_100g)} kcal/100g</p>
+                            <Button size="sm" className="mt-1">
+                              <Plus className="h-3 w-3 mr-1" />
+                              Ekle
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {selectedFoods.length > 0 && (
           <Card>
@@ -266,7 +461,16 @@ export default function ManualFoodEntry({ mealType, onSave, onBack, loading }: M
               {selectedFoods.map((food, index) => (
                 <div key={index} className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">{food.name}</h4>
+                    <div>
+                      <h4 className="font-medium">{food.name}</h4>
+                      {food.source && (
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          food.source === 'ai' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {food.source === 'ai' ? 'AI Tanımlı' : 'Veritabanı'}
+                        </span>
+                      )}
+                    </div>
                     <Button
                       variant="ghost"
                       size="sm"
