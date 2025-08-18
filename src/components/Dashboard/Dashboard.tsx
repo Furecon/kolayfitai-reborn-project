@@ -5,6 +5,7 @@ import { CalorieCards } from './CalorieCards'
 import { MealsList } from './MealsList'
 import { AIInsights } from './AIInsights'
 import { HistoryMeals } from './HistoryMeals'
+import { TutorialOverlay } from '../Tutorial/TutorialOverlay'
 import FoodAnalysis from '../FoodAnalysis'
 import ProfileSetup from '../Profile/ProfileSetup'
 import ProgressTracker from '../Profile/ProgressTracker'
@@ -53,12 +54,36 @@ export function Dashboard() {
   })
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [showAssistant, setShowAssistant] = useState(false)
+  const [showTutorial, setShowTutorial] = useState(false)
+  const [profile, setProfile] = useState<any>(null)
 
   useEffect(() => {
     if (user) {
       fetchDailyStats()
+      fetchProfile()
     }
   }, [user, refreshTrigger])
+
+  // Show tutorial for new users
+  useEffect(() => {
+    if (profile && !profile.tutorial_seen) {
+      setShowTutorial(true)
+    }
+  }, [profile])
+
+  const fetchProfile = async () => {
+    if (!user) return
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('tutorial_seen')
+      .eq('user_id', user.id)
+      .single()
+
+    if (data) {
+      setProfile(data)
+    }
+  }
 
   const fetchDailyStats = async () => {
     if (!user) return
@@ -135,6 +160,29 @@ export function Dashboard() {
   const handleMealAdded = () => {
     setRefreshTrigger(prev => prev + 1)
     setCurrentView('dashboard')
+  }
+
+  const handleTutorialComplete = async () => {
+    setShowTutorial(false)
+    if (user) {
+      try {
+        await supabase
+          .from('profiles')
+          .update({ tutorial_seen: true })
+          .eq('user_id', user.id)
+        setProfile({ ...profile, tutorial_seen: true })
+      } catch (error) {
+        console.error('Error updating tutorial status:', error)
+      }
+    }
+  }
+
+  const handleTutorialClose = () => {
+    setShowTutorial(false)
+  }
+
+  const handleShowTutorial = () => {
+    setShowTutorial(true)
   }
 
   if (currentView === 'camera') {
@@ -247,12 +295,15 @@ export function Dashboard() {
         onPoliciesClick={() => setCurrentView('policies')}
         onFAQClick={() => setCurrentView('faq')}
         onSubscriptionClick={() => setCurrentView('subscription')}
+        onTutorialClick={handleShowTutorial}
       />
       
-      <CalorieCards 
-        {...dailyStats} 
-        onCameraClick={() => setCurrentView('camera')}
-      />
+      <div data-tutorial="calorie-cards">
+        <CalorieCards 
+          {...dailyStats} 
+          onCameraClick={() => setCurrentView('camera')}
+        />
+      </div>
       
       {/* Quick Action Buttons - Responsive Grid */}
       <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4">
@@ -294,12 +345,16 @@ export function Dashboard() {
         </div>
       </div>
       
-      <MealsList
-        onAddMeal={() => setCurrentView('camera')}
-        refreshTrigger={refreshTrigger}
-      />
+      <div data-tutorial="meal-history">
+        <MealsList
+          onAddMeal={() => setCurrentView('camera')}
+          refreshTrigger={refreshTrigger}
+        />
+      </div>
 
-      <AIInsights dailyStats={dailyStats} />
+      <div data-tutorial="macro-charts">
+        <AIInsights dailyStats={dailyStats} />
+      </div>
       
       <HistoryMeals />
 
@@ -319,6 +374,12 @@ export function Dashboard() {
           <AIAssistant onClose={() => setShowAssistant(false)} />
         </div>
       )}
+
+      <TutorialOverlay
+        isVisible={showTutorial}
+        onComplete={handleTutorialComplete}
+        onClose={handleTutorialClose}
+      />
     </div>
   )
 }

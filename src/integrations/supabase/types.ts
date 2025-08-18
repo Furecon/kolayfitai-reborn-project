@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -309,6 +309,7 @@ export type Database = {
           onboarding_completed: boolean | null
           subscription_status: string | null
           trial_end_date: string | null
+          tutorial_seen: boolean | null
           updated_at: string
           user_id: string
           weight: number | null
@@ -329,6 +330,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           subscription_status?: string | null
           trial_end_date?: string | null
+          tutorial_seen?: boolean | null
           updated_at?: string
           user_id: string
           weight?: number | null
@@ -349,6 +351,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           subscription_status?: string | null
           trial_end_date?: string | null
+          tutorial_seen?: boolean | null
           updated_at?: string
           user_id?: string
           weight?: number | null
@@ -471,14 +474,14 @@ export type Database = {
       search_foods: {
         Args: { search_term: string }
         Returns: {
+          calories_per_100g: number
+          carbs_per_100g: number
+          category: string
+          fat_per_100g: number
           id: string
           name: string
           name_en: string
-          calories_per_100g: number
           protein_per_100g: number
-          carbs_per_100g: number
-          fat_per_100g: number
-          category: string
           similarity: number
         }[]
       }
