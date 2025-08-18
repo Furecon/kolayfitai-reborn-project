@@ -1,56 +1,21 @@
 import { useState } from 'react'
 import { X, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-
-interface TutorialStep {
-  id: string
-  title: string
-  description: string
-  targetSelector: string
-  position: 'top' | 'bottom' | 'left' | 'right'
-}
+import { tutorials, TutorialScreen, TutorialStep } from './tutorials'
 
 interface TutorialOverlayProps {
   isVisible: boolean
+  screen: TutorialScreen | null
   onComplete: () => void
   onClose: () => void
 }
 
-const tutorialSteps: TutorialStep[] = [
-  {
-    id: 'camera-button',
-    title: 'Fotoğraf ile Yemek Tanıma',
-    description: 'Buradan fotoğraf çekerek yemeklerinizi kolayca tanıyabilir ve kalorilerini hesaplayabilirsiniz.',
-    targetSelector: '[data-tutorial="camera-button"]',
-    position: 'bottom'
-  },
-  {
-    id: 'macro-charts',
-    title: 'Makro Takibi',
-    description: 'Makro değerlerinizi (protein, karbonhidrat, yağ) çember grafiklerle takip edebilirsiniz.',
-    targetSelector: '[data-tutorial="macro-charts"]',
-    position: 'top'
-  },
-  {
-    id: 'meal-history',
-    title: 'Öğün Geçmişi',
-    description: 'Bugün eklediğiniz tüm öğünleri burada görebilir ve düzenleyebilirsiniz.',
-    targetSelector: '[data-tutorial="meal-history"]',
-    position: 'top'
-  },
-  {
-    id: 'calorie-cards',
-    title: 'Kalori Takibi',
-    description: 'Günlük kalori hedefinize ne kadar yakın olduğunuzu burada görebilirsiniz.',
-    targetSelector: '[data-tutorial="calorie-cards"]',
-    position: 'bottom'
-  }
-]
-
-export function TutorialOverlay({ isVisible, onComplete, onClose }: TutorialOverlayProps) {
+export function TutorialOverlay({ isVisible, screen, onComplete, onClose }: TutorialOverlayProps) {
   const [currentStep, setCurrentStep] = useState(0)
 
-  if (!isVisible) return null
+  if (!isVisible || !screen) return null
+
+  const tutorialSteps = tutorials[screen] || []
 
   const currentTutorialStep = tutorialSteps[currentStep]
   const isLastStep = currentStep === tutorialSteps.length - 1

@@ -6,6 +6,7 @@ import { MealsList } from './MealsList'
 import { AIInsights } from './AIInsights'
 import { HistoryMeals } from './HistoryMeals'
 import { TutorialOverlay } from '../Tutorial/TutorialOverlay'
+import { useTutorial, useTutorialAutoShow } from '@/context/TutorialContext'
 import FoodAnalysis from '../FoodAnalysis'
 import ProfileSetup from '../Profile/ProfileSetup'
 import ProgressTracker from '../Profile/ProgressTracker'
@@ -54,8 +55,11 @@ export function Dashboard() {
   })
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [showAssistant, setShowAssistant] = useState(false)
-  const [showTutorial, setShowTutorial] = useState(false)
   const [profile, setProfile] = useState<any>(null)
+  
+  // Tutorial context
+  const { isVisible: tutorialVisible, currentScreen, completeTutorial, hideTutorial } = useTutorial()
+  const { autoShowTutorial } = useTutorialAutoShow()
 
   useEffect(() => {
     if (user) {
@@ -64,19 +68,19 @@ export function Dashboard() {
     }
   }, [user, refreshTrigger])
 
-  // Show tutorial for new users
+  // Auto-show tutorial for new users
   useEffect(() => {
-    if (profile && !profile.tutorial_seen) {
-      setShowTutorial(true)
+    if (profile) {
+      autoShowTutorial('dashboard')
     }
-  }, [profile])
+  }, [profile, autoShowTutorial])
 
   const fetchProfile = async () => {
     if (!user) return
 
     const { data } = await supabase
       .from('profiles')
-      .select('tutorial_seen')
+      .select('tutorials_completed')
       .eq('user_id', user.id)
       .single()
 
@@ -162,27 +166,19 @@ export function Dashboard() {
     setCurrentView('dashboard')
   }
 
-  const handleTutorialComplete = async () => {
-    setShowTutorial(false)
-    if (user) {
-      try {
-        await supabase
-          .from('profiles')
-          .update({ tutorial_seen: true })
-          .eq('user_id', user.id)
-        setProfile({ ...profile, tutorial_seen: true })
-      } catch (error) {
-        console.error('Error updating tutorial status:', error)
-      }
+  const handleTutorialComplete = () => {
+    if (currentScreen) {
+      completeTutorial(currentScreen)
     }
   }
 
   const handleTutorialClose = () => {
-    setShowTutorial(false)
+    hideTutorial()
   }
 
   const handleShowTutorial = () => {
-    setShowTutorial(true)
+    const tutorial = useTutorial()
+    tutorial.showTutorial('dashboard')
   }
 
   if (currentView === 'camera') {
@@ -376,7 +372,8 @@ export function Dashboard() {
       )}
 
       <TutorialOverlay
-        isVisible={showTutorial}
+        isVisible={tutorialVisible}
+        screen={currentScreen}
         onComplete={handleTutorialComplete}
         onClose={handleTutorialClose}
       />

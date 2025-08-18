@@ -1,0 +1,156 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/components/Auth/AuthProvider'
+import { TutorialScreen } from '@/components/Tutorial/tutorials'
+
+interface TutorialContextType {
+  isVisible: boolean
+  currentScreen: TutorialScreen | null
+  showTutorial: (screen: TutorialScreen) => void
+  hideTutorial: () => void
+  completeTutorial: (screen: TutorialScreen) => void
+  isTutorialCompleted: (screen: TutorialScreen) => boolean
+  tutorialsCompleted: Record<TutorialScreen, boolean>
+}
+
+const TutorialContext = createContext<TutorialContextType | undefined>(undefined)
+
+interface TutorialProviderProps {
+  children: ReactNode
+}
+
+export function TutorialProvider({ children }: TutorialProviderProps) {
+  const { user } = useAuth()
+  const [isVisible, setIsVisible] = useState(false)
+  const [currentScreen, setCurrentScreen] = useState<TutorialScreen | null>(null)
+  const [tutorialsCompleted, setTutorialsCompleted] = useState<Record<TutorialScreen, boolean>>({
+    dashboard: false,
+    food_analysis: false,
+    photo_recognition: false,
+    detailed_analysis: false,
+    profile_setup: false
+  })
+
+  // Fetch user's tutorial completion status
+  useEffect(() => {
+    if (user) {
+      fetchTutorialStatus()
+    }
+  }, [user])
+
+  const fetchTutorialStatus = async () => {
+    if (!user) return
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('tutorials_completed')
+        .eq('user_id', user.id)
+        .single()
+
+      if (error) throw error
+
+      if (data?.tutorials_completed && typeof data.tutorials_completed === 'object' && !Array.isArray(data.tutorials_completed)) {
+        const tutorials = data.tutorials_completed as Record<string, any>
+        setTutorialsCompleted({
+          dashboard: tutorials.dashboard || false,
+          food_analysis: tutorials.food_analysis || false,
+          photo_recognition: tutorials.photo_recognition || false,
+          detailed_analysis: tutorials.detailed_analysis || false,
+          profile_setup: tutorials.profile_setup || false
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching tutorial status:', error)
+    }
+  }
+
+  const showTutorial = (screen: TutorialScreen) => {
+    setCurrentScreen(screen)
+    setIsVisible(true)
+  }
+
+  const hideTutorial = () => {
+    setIsVisible(false)
+    setCurrentScreen(null)
+  }
+
+  const completeTutorial = async (screen: TutorialScreen) => {
+    if (!user) return
+
+    const updatedTutorials = {
+      ...tutorialsCompleted,
+      [screen]: true
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ tutorials_completed: updatedTutorials })
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      setTutorialsCompleted(updatedTutorials)
+      hideTutorial()
+    } catch (error) {
+      console.error('Error updating tutorial status:', error)
+    }
+  }
+
+  const isTutorialCompleted = (screen: TutorialScreen) => {
+    return tutorialsCompleted[screen] || false
+  }
+
+  // Auto-show tutorial for new users on specific screens
+  const autoShowTutorial = (screen: TutorialScreen) => {
+    if (!isTutorialCompleted(screen) && user) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        showTutorial(screen)
+      }, 500)
+    }
+  }
+
+  const value: TutorialContextType = {
+    isVisible,
+    currentScreen,
+    showTutorial,
+    hideTutorial,
+    completeTutorial,
+    isTutorialCompleted,
+    tutorialsCompleted
+  }
+
+  // Expose autoShowTutorial to the context
+  const contextWithAutoShow = {
+    ...value,
+    autoShowTutorial
+  }
+
+  return (
+    <TutorialContext.Provider value={contextWithAutoShow as TutorialContextType}>
+      {children}
+    </TutorialContext.Provider>
+  )
+}
+
+export const useTutorial = () => {
+  const context = useContext(TutorialContext)
+  if (!context) {
+    throw new Error('useTutorial must be used within a TutorialProvider')
+  }
+  return context
+}
+
+// Extended hook for auto-showing tutorials
+export const useTutorialAutoShow = () => {
+  const context = useContext(TutorialContext) as any
+  if (!context) {
+    throw new Error('useTutorialAutoShow must be used within a TutorialProvider')
+  }
+  return {
+    ...context,
+    autoShowTutorial: context.autoShowTutorial
+  }
+}

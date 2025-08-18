@@ -309,7 +309,7 @@ export type Database = {
           onboarding_completed: boolean | null
           subscription_status: string | null
           trial_end_date: string | null
-          tutorial_seen: boolean | null
+          tutorials_completed: Json | null
           updated_at: string
           user_id: string
           weight: number | null
@@ -330,7 +330,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           subscription_status?: string | null
           trial_end_date?: string | null
-          tutorial_seen?: boolean | null
+          tutorials_completed?: Json | null
           updated_at?: string
           user_id: string
           weight?: number | null
@@ -351,7 +351,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           subscription_status?: string | null
           trial_end_date?: string | null
-          tutorial_seen?: boolean | null
+          tutorials_completed?: Json | null
           updated_at?: string
           user_id?: string
           weight?: number | null
