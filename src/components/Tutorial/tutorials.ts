@@ -11,55 +11,55 @@ export type TutorialScreen = 'dashboard' | 'food_analysis' | 'photo_recognition'
 export const tutorials: Record<TutorialScreen, TutorialStep[]> = {
   dashboard: [
     {
-      id: 'camera-button',
-      title: 'Fotoğraf ile Yemek Tanıma',
-      description: 'Buradan fotoğraf çekerek yemeklerinizi kolayca tanıyabilir ve kalorilerini hesaplayabilirsiniz.',
-      targetSelector: '[data-tutorial="camera-button"]',
+      id: 'add-meal-button',
+      title: 'Öğün Ekle',
+      description: 'Bu butona tıklayarak yeni bir öğün ekleyebilirsiniz. Fotoğraf çekebilir veya manuel olarak yemek girebilirsiniz.',
+      targetSelector: '[data-tutorial="add-meal-button"]',
       position: 'bottom'
     },
     {
       id: 'macro-charts',
-      title: 'Makro Takibi',
-      description: 'Günlük makro değerlerinizi (protein, karbonhidrat, yağ) çember grafiklerle takip edebilirsiniz.',
+      title: 'Makro Çember Grafikleri',
+      description: 'Günlük protein, karbonhidrat ve yağ hedeflerinizi bu çember grafiklerle takip edebilirsiniz.',
       targetSelector: '[data-tutorial="macro-charts"]',
-      position: 'top'
-    },
-    {
-      id: 'meal-history',
-      title: 'Öğün Geçmişi',
-      description: 'Bugün eklediğiniz tüm öğünleri burada görebilir ve düzenleyebilirsiniz.',
-      targetSelector: '[data-tutorial="meal-history"]',
       position: 'top'
     },
     {
       id: 'calorie-cards',
       title: 'Kalori Takibi',
-      description: 'Günlük kalori hedefinize ne kadar yakın olduğunuzu burada görebilirsiniz.',
+      description: 'Günlük kalori hedefinizi ve ne kadar tükettiğinizi burada görebilirsiniz.',
       targetSelector: '[data-tutorial="calorie-cards"]',
       position: 'bottom'
+    },
+    {
+      id: 'meal-history',
+      title: 'Öğün Listesi',
+      description: 'Bugün eklediğiniz tüm öğünleri burada görebilir ve düzenleyebilirsiniz.',
+      targetSelector: '[data-tutorial="meal-history"]',
+      position: 'top'
     }
   ],
 
   food_analysis: [
     {
-      id: 'analysis-options',
-      title: 'Analiz Seçenekleri',
-      description: 'Fotoğraf çekerek otomatik analiz yapabilir veya manuel olarak yemek ekleyebilirsiniz.',
-      targetSelector: '[data-tutorial="analysis-options"]',
-      position: 'bottom'
-    },
-    {
-      id: 'camera-capture',
-      title: 'Fotoğraf Çekme',
-      description: 'Bu butona tıklayarak yemeğinizin fotoğrafını çekin. AI otomatik olarak analiz edecek.',
-      targetSelector: '[data-tutorial="camera-capture"]',
+      id: 'manual-entry',
+      title: 'Manuel Giriş',
+      description: 'Buraya yemek adını yazarak manuel olarak da yemek ekleyebilirsiniz.',
+      targetSelector: '[data-tutorial="manual-entry"]',
       position: 'top'
     },
     {
-      id: 'manual-entry',
-      title: 'Manuel Giriş',
-      description: 'Yemek adını yazarak veya veritabanından arayarak manuel olarak da yemek ekleyebilirsiniz.',
-      targetSelector: '[data-tutorial="manual-entry"]',
+      id: 'photo-upload',
+      title: 'Fotoğraf Yükle',
+      description: 'Bu butona tıklayarak yemek fotoğrafı yükleyebilir ve AI tarafından analiz ettirebilirsiniz.',
+      targetSelector: '[data-tutorial="photo-upload"]',
+      position: 'bottom'
+    },
+    {
+      id: 'save-button',
+      title: 'Kaydet',
+      description: 'Tüm bilgileri girdikten sonra bu butonla yemeğinizi kaydedin.',
+      targetSelector: '[data-tutorial="save-button"]',
       position: 'top'
     }
   ],
@@ -68,21 +68,21 @@ export const tutorials: Record<TutorialScreen, TutorialStep[]> = {
     {
       id: 'camera-button',
       title: 'Fotoğraf Çek',
-      description: 'Bu butona tıklayarak yemeğinizin fotoğrafını çekin.',
+      description: 'Bu butona tıklayarak yemeğinizin fotoğrafını çekin. AI otomatik olarak analiz edecek.',
       targetSelector: '[data-tutorial="camera-button"]',
       position: 'bottom'
     },
     {
       id: 'analysis-quick',
-      title: 'Hızlı Analiz',
-      description: 'AI tarafından otomatik analiz edilecek ve kalori tahmininde bulunulacak.',
+      title: 'Normal Analiz',
+      description: 'Hızlı analiz için bu seçeneği kullanın.',
       targetSelector: '[data-tutorial="analysis-quick"]',
       position: 'top'
     },
     {
       id: 'analysis-detailed',
       title: 'Detaylı Analiz',
-      description: 'Porsiyon ve pişirme yöntemi gibi ek bilgiler ekleyerek daha hassas analiz yapabilirsiniz.',
+      description: 'Daha hassas sonuçlar için detaylı analiz seçeneğini kullanın.',
       targetSelector: '[data-tutorial="analysis-detailed"]',
       position: 'top'
     }
@@ -116,22 +116,22 @@ export const tutorials: Record<TutorialScreen, TutorialStep[]> = {
     {
       id: 'body-info',
       title: 'Vücut Bilgileri',
-      description: 'Yaş, kilo, boy bilgilerinizi güncelleyerek daha doğru kalori hesabı alabilirsiniz.',
+      description: 'Yaş, kilo, boy ve cinsiyet bilgilerinizi buradan güncelleyebilirsiniz.',
       targetSelector: '[data-tutorial="body-info"]',
       position: 'bottom'
     },
     {
       id: 'goal-settings',
       title: 'Hedef Ayarları',
-      description: 'Kilo verme, koruma veya alma hedefinizi seçerek kalori hedefiniz otomatik hesaplanır.',
+      description: 'Kilo verme, koruma veya alma hedefinizi seçerek kalori hedefinizi belirleyin.',
       targetSelector: '[data-tutorial="goal-settings"]',
       position: 'top'
     },
     {
-      id: 'subscription-info',
-      title: 'Abonelik Bilgileri',
-      description: 'Premium özelliklerinizi ve abonelik durumunuzu buradan takip edebilirsiniz.',
-      targetSelector: '[data-tutorial="subscription-info"]',
+      id: 'save-profile',
+      title: 'Profili Kaydet',
+      description: 'Tüm bilgileri girdikten sonra bu butonla profilinizi kaydedin.',
+      targetSelector: '[data-tutorial="save-profile"]',
       position: 'top'
     }
   ]

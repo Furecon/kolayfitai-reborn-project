@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
-import { TutorialScreen } from '@/components/Tutorial/tutorials'
+import { tutorials, TutorialScreen } from '@/components/Tutorial/tutorials'
 
 interface TutorialContextType {
   isVisible: boolean
@@ -105,10 +105,19 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   // Auto-show tutorial for new users on specific screens
   const autoShowTutorial = (screen: TutorialScreen) => {
     if (!isTutorialCompleted(screen) && user) {
-      // Small delay to ensure DOM is ready
+      // Small delay to ensure DOM is ready and components are rendered
       setTimeout(() => {
-        showTutorial(screen)
-      }, 500)
+        // Check if target elements exist before showing tutorial
+        const tutorialSteps = tutorials[screen] || []
+        const hasValidTargets = tutorialSteps.some(step => {
+          const target = document.querySelector(step.targetSelector)
+          return target !== null
+        })
+        
+        if (hasValidTargets) {
+          showTutorial(screen)
+        }
+      }, 1000)
     }
   }
 

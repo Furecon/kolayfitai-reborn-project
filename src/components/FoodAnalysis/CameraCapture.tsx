@@ -166,6 +166,7 @@ export default function CameraCapture({ onImageCaptured, onFileUploaded }: Camer
             onClick={capture}
             disabled={isCapturing}
             className="w-full bg-green-500 hover:bg-green-600 text-white"
+            data-tutorial="camera-button"
           >
             <Camera className="h-4 w-4 mr-2" />
             {isCapturing ? 'Çekiliyor...' : 'Fotoğraf Çek'}

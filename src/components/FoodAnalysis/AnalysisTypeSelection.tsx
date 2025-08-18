@@ -28,7 +28,7 @@ export default function AnalysisTypeSelection({ onSelectType, onBack, capturedIm
         )}
 
         <div className="space-y-4">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onSelectType('quick')}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onSelectType('quick')} data-tutorial="analysis-quick">
             <CardHeader>
               <CardTitle className="flex items-center gap-3 text-black">
                 <div className="p-2 bg-green-100 rounded-lg">
@@ -52,7 +52,7 @@ export default function AnalysisTypeSelection({ onSelectType, onBack, capturedIm
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onSelectType('detailed')}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onSelectType('detailed')} data-tutorial="analysis-detailed">
             <CardHeader>
               <CardTitle className="flex items-center gap-3 text-black">
                 <div className="p-2 bg-blue-100 rounded-lg">

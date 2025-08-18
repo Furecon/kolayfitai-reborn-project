@@ -316,6 +316,7 @@ export default function ManualFoodEntry({ mealType, onSave, onBack, loading }: M
                     onKeyPress={handleKeyPress}
                     className="w-full"
                     disabled={isAnalyzing}
+                    data-tutorial="manual-entry"
                   />
                   {isAnalyzing && (
                     <div className="absolute right-3 top-3">
