@@ -360,7 +360,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
 
       <TutorialOverlay
         isVisible={tutorialVisible}
-        screen={currentScreen}
+        currentScreen={currentScreen}
         onComplete={handleTutorialComplete}
         onClose={handleTutorialClose}
       />

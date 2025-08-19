@@ -291,7 +291,7 @@ export function Dashboard() {
         onPoliciesClick={() => setCurrentView('policies')}
         onFAQClick={() => setCurrentView('faq')}
         onSubscriptionClick={() => setCurrentView('subscription')}
-        onTutorialClick={handleShowTutorial}
+        
       />
       
       <div data-tutorial="calorie-cards">
@@ -373,7 +373,7 @@ export function Dashboard() {
 
       <TutorialOverlay
         isVisible={tutorialVisible}
-        screen={currentScreen}
+        currentScreen={currentScreen}
         onComplete={handleTutorialComplete}
         onClose={handleTutorialClose}
       />

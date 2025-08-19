@@ -11,6 +11,9 @@ interface TutorialContextType {
   completeTutorial: (screen: TutorialScreen) => void
   isTutorialCompleted: (screen: TutorialScreen) => boolean
   tutorialsCompleted: Record<TutorialScreen, boolean>
+  isTutorialSeen: boolean
+  markTutorialAsSeen: () => void
+  showTutorialManually: (screen: TutorialScreen) => void
 }
 
 const TutorialContext = createContext<TutorialContextType | undefined>(undefined)
@@ -30,6 +33,7 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     detailed_analysis: false,
     profile_setup: false
   })
+  const [isTutorialSeen, setIsTutorialSeen] = useState(false)
 
   // Fetch user's tutorial completion status
   useEffect(() => {
@@ -44,11 +48,14 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('tutorials_completed')
+        .select('tutorials_completed, tutorial_seen')
         .eq('user_id', user.id)
         .single()
 
       if (error) throw error
+
+      // Set tutorial seen status
+      setIsTutorialSeen(data?.tutorial_seen || false)
 
       if (data?.tutorials_completed && typeof data.tutorials_completed === 'object' && !Array.isArray(data.tutorials_completed)) {
         const tutorials = data.tutorials_completed as Record<string, any>
@@ -75,6 +82,23 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     setCurrentScreen(null)
   }
 
+  const markTutorialAsSeen = async () => {
+    if (!user) return
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ tutorial_seen: true })
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      setIsTutorialSeen(true)
+    } catch (error) {
+      console.error('Error marking tutorial as seen:', error)
+    }
+  }
+
   const completeTutorial = async (screen: TutorialScreen) => {
     if (!user) return
 
@@ -86,12 +110,16 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ tutorials_completed: updatedTutorials })
+        .update({ 
+          tutorials_completed: updatedTutorials,
+          tutorial_seen: true 
+        })
         .eq('user_id', user.id)
 
       if (error) throw error
 
       setTutorialsCompleted(updatedTutorials)
+      setIsTutorialSeen(true)
       hideTutorial()
     } catch (error) {
       console.error('Error updating tutorial status:', error)
@@ -102,9 +130,14 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     return tutorialsCompleted[screen] || false
   }
 
-  // Auto-show tutorial for new users on specific screens
+  const showTutorialManually = (screen: TutorialScreen) => {
+    setCurrentScreen(screen)
+    setIsVisible(true)
+  }
+
+  // Auto-show tutorial for new users on specific screens (only if not seen before)
   const autoShowTutorial = (screen: TutorialScreen) => {
-    if (!isTutorialCompleted(screen) && user) {
+    if (!isTutorialCompleted(screen) && user && !isTutorialSeen) {
       // Small delay to ensure DOM is ready and components are rendered
       setTimeout(() => {
         // Check if target elements exist before showing tutorial
@@ -128,7 +161,10 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     hideTutorial,
     completeTutorial,
     isTutorialCompleted,
-    tutorialsCompleted
+    tutorialsCompleted,
+    isTutorialSeen,
+    markTutorialAsSeen,
+    showTutorialManually
   }
 
   // Expose autoShowTutorial to the context

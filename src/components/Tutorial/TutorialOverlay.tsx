@@ -1,30 +1,36 @@
-import { useState } from 'react'
-import { X, ArrowRight } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { tutorials, TutorialScreen, TutorialStep } from './tutorials'
+import { X, ChevronRight, ScrollText } from 'lucide-react'
+import { tutorials, TutorialScreen } from './tutorials'
 
 interface TutorialOverlayProps {
   isVisible: boolean
-  screen: TutorialScreen | null
+  currentScreen: TutorialScreen | null
   onComplete: () => void
   onClose: () => void
 }
 
-export function TutorialOverlay({ isVisible, screen, onComplete, onClose }: TutorialOverlayProps) {
-  const [currentStep, setCurrentStep] = useState(0)
+export function TutorialOverlay({ isVisible, currentScreen, onComplete, onClose }: TutorialOverlayProps) {
+  const [stepIndex, setStepIndex] = useState(0)
 
-  if (!isVisible || !screen) return null
+  useEffect(() => {
+    if (isVisible && currentScreen) {
+      setStepIndex(0)
+    }
+  }, [isVisible, currentScreen])
 
-  const tutorialSteps = tutorials[screen] || []
+  if (!isVisible || !currentScreen) return null
 
-  const currentTutorialStep = tutorialSteps[currentStep]
-  const isLastStep = currentStep === tutorialSteps.length - 1
+  const steps = tutorials[currentScreen] || []
+  if (steps.length === 0) return null
+
+  const currentStep = steps[stepIndex]
 
   const handleNext = () => {
-    if (isLastStep) {
+    if (stepIndex === steps.length - 1) {
       onComplete()
     } else {
-      setCurrentStep(currentStep + 1)
+      setStepIndex(stepIndex + 1)
     }
   }
 
@@ -32,164 +38,181 @@ export function TutorialOverlay({ isVisible, screen, onComplete, onClose }: Tuto
     onClose()
   }
 
-  // Get target element position
   const getTargetPosition = () => {
-    const targetElement = document.querySelector(currentTutorialStep.targetSelector)
-    if (!targetElement) return { top: 0, left: 0, width: 0, height: 0 }
+    if (!currentStep) return null
     
-    const rect = targetElement.getBoundingClientRect()
+    const target = document.querySelector(currentStep.targetSelector)
+    if (!target) return null
+    
+    const rect = target.getBoundingClientRect()
+    const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight && 
+                     rect.left >= 0 && rect.right <= window.innerWidth
+    
     return {
-      top: rect.top + window.scrollY,
-      left: rect.left + window.scrollX,
+      top: rect.top,
+      left: rect.left,
       width: rect.width,
-      height: rect.height
+      height: rect.height,
+      bottom: rect.bottom,
+      right: rect.right,
+      isVisible
     }
   }
 
-  const targetPos = getTargetPosition()
-
-  // Calculate tooltip position with better mobile optimization
-  const getTooltipPosition = () => {
-    const tooltipOffset = 12
-    const tooltipWidth = 280
-    const tooltipHeight = 140
-    const screenPadding = 16
+  const getTooltipPosition = (targetPos: any) => {
+    if (!targetPos) return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
     
-    // If target is in bottom third of screen, show tooltip in center
-    const isTargetInBottomThird = targetPos.top > (window.innerHeight * 2) / 3
+    const tooltipWidth = 280  // Reduced width for mobile
+    const tooltipHeight = 160 // Reduced height
+    const padding = 12
+    const isMobile = window.innerWidth < 768
     
-    if (isTargetInBottomThird) {
+    let top = targetPos.top - tooltipHeight - padding
+    let left = targetPos.left + (targetPos.width / 2) - (tooltipWidth / 2)
+    
+    // If target is not visible or too low on screen, center the tooltip
+    if (!targetPos.isVisible || targetPos.top > window.innerHeight * 0.7) {
       return {
-        top: (window.innerHeight - tooltipHeight) / 2,
-        left: (window.innerWidth - tooltipWidth) / 2
+        top: '40%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        position: 'fixed' as const
       }
     }
     
-    let position = { top: 0, left: 0 }
-    
-    switch (currentTutorialStep.position) {
-      case 'top':
-        position = {
-          top: targetPos.top - tooltipHeight - tooltipOffset,
-          left: targetPos.left + targetPos.width / 2 - tooltipWidth / 2
+    // Adjust if tooltip goes off screen vertically
+    if (top < padding) {
+      top = targetPos.bottom + padding
+      // If still off screen, center it
+      if (top + tooltipHeight > window.innerHeight - padding) {
+        return {
+          top: '40%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          position: 'fixed' as const
         }
-        break
-      case 'bottom':
-        position = {
-          top: targetPos.top + targetPos.height + tooltipOffset,
-          left: targetPos.left + targetPos.width / 2 - tooltipWidth / 2
-        }
-        break
-      case 'left':
-        position = {
-          top: targetPos.top + targetPos.height / 2 - tooltipHeight / 2,
-          left: targetPos.left - tooltipWidth - tooltipOffset
-        }
-        break
-      case 'right':
-        position = {
-          top: targetPos.top + targetPos.height / 2 - tooltipHeight / 2,
-          left: targetPos.left + targetPos.width + tooltipOffset
-        }
-        break
-      default:
-        position = { top: 0, left: 0 }
+      }
     }
     
-    // Ensure tooltip stays within screen bounds
-    position.left = Math.max(screenPadding, Math.min(position.left, window.innerWidth - tooltipWidth - screenPadding))
-    position.top = Math.max(screenPadding, Math.min(position.top, window.innerHeight - tooltipHeight - screenPadding))
+    // Adjust horizontally
+    if (left < padding) {
+      left = padding
+    } else if (left + tooltipWidth > window.innerWidth - padding) {
+      left = window.innerWidth - tooltipWidth - padding
+    }
     
-    return position
+    return {
+      top: `${Math.max(padding, top)}px`,
+      left: `${Math.max(padding, left)}px`,
+      position: 'fixed' as const
+    }
   }
 
-  const tooltipPos = getTooltipPosition()
+  const scrollToTarget = () => {
+    if (!currentStep) return
+    
+    const target = document.querySelector(currentStep.targetSelector)
+    if (target) {
+      target.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center',
+        inline: 'nearest'
+      })
+    }
+  }
+
+  const targetPosition = getTargetPosition()
+  const tooltipPosition = getTooltipPosition(targetPosition)
+  const isTargetOffScreen = targetPosition && !targetPosition.isVisible
 
   return (
-    <div className="fixed inset-0 z-50">
-      {/* Dark overlay background */}
-      <div className="absolute inset-0 bg-black/70" />
+    <div className="fixed inset-0 z-50 pointer-events-none">
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black bg-opacity-50" />
       
-      {/* Highlight area with glowing effect */}
+      {/* Highlighted area */}
+      {targetPosition && targetPosition.isVisible && (
+        <div
+          className="absolute border-2 border-primary bg-transparent pointer-events-none"
+          style={{
+            top: `${targetPosition.top - 4}px`,
+            left: `${targetPosition.left - 4}px`,
+            width: `${targetPosition.width + 8}px`,
+            height: `${targetPosition.height + 8}px`,
+            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)',
+            borderRadius: '8px'
+          }}
+        />
+      )}
+      
+      {/* Tutorial tooltip */}
       <div
-        className="absolute rounded-lg bg-transparent animate-pulse"
+        className="absolute bg-white rounded-lg shadow-xl pointer-events-auto"
         style={{
-          top: targetPos.top - 6,
-          left: targetPos.left - 6,
-          width: targetPos.width + 12,
-          height: targetPos.height + 12,
-          boxShadow: `
-            0 0 0 4px rgba(59, 130, 246, 0.5),
-            0 0 0 8px rgba(59, 130, 246, 0.3),
-            0 0 0 9999px rgba(0, 0, 0, 0.7)
-          `,
-          border: '3px solid rgb(59, 130, 246)',
-        }}
-      />
-
-      {/* Compact tooltip with mobile-friendly styling */}
-      <div
-        className="absolute bg-white rounded-lg shadow-lg border border-gray-200 max-w-[90vw]"
-        style={{
-          top: tooltipPos.top,
-          left: tooltipPos.left,
-          width: '280px'
+          ...tooltipPosition,
+          padding: '10px',
+          maxWidth: '280px',
+          minHeight: 'auto'
         }}
       >
-        {/* Close button */}
-        <button
-          onClick={handleSkip}
-          className="absolute top-2 right-2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <X className="h-3 w-3" />
-        </button>
-
-        {/* Content with reduced padding */}
-        <div className="p-3 pr-6">
-          <div className="flex items-center gap-1.5 mb-2">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-            <span className="text-xs font-medium text-green-600 uppercase tracking-wide">
-              Adım {currentStep + 1} / {tutorialSteps.length}
-            </span>
-          </div>
-          <h3 className="text-base font-semibold text-gray-900 mb-2 leading-tight">
-            {currentTutorialStep.title}
+        <div className="flex justify-between items-start mb-2">
+          <h3 className="text-sm font-semibold text-gray-900 leading-tight">
+            {currentStep.title}
           </h3>
-          <p className="text-gray-700 text-sm leading-relaxed">
-            {currentTutorialStep.description}
-          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="p-1 h-6 w-6 -mt-1 -mr-1"
+          >
+            <X className="w-3 h-3" />
+          </Button>
         </div>
+        
+        <p className="text-xs text-gray-600 mb-3 leading-relaxed">
+          {currentStep.description}
+        </p>
 
-        {/* Progress indicator */}
-        <div className="px-3 mb-3">
-          <div className="flex space-x-1">
-            {tutorialSteps.map((_, index) => (
-              <div
-                key={index}
-                className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-                  index <= currentStep ? 'bg-green-500' : 'bg-gray-200'
-                }`}
-              />
-            ))}
+        {/* Show scroll message if target is off-screen */}
+        {isTargetOffScreen && (
+          <div className="flex items-center gap-1 mb-3 p-2 bg-blue-50 rounded text-xs text-blue-700">
+            <ScrollText className="w-3 h-3" />
+            <span>İlgili alanı görmek için kaydırın</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={scrollToTarget}
+              className="text-xs p-1 h-5 ml-1"
+            >
+              Git
+            </Button>
           </div>
-        </div>
-
-        {/* Navigation buttons - always accessible */}
-        <div className="flex items-center justify-between p-3 pt-0 border-t border-gray-100">
-          <button
-            onClick={handleSkip}
-            className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded transition-colors"
-          >
-            Kapat
-          </button>
+        )}
+        
+        <div className="flex justify-between items-center">
+          <div className="text-xs text-gray-500">
+            {stepIndex + 1} / {steps.length}
+          </div>
           
-          <button
-            onClick={handleNext}
-            className="bg-green-500 hover:bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md min-h-[40px] flex items-center gap-1.5 transition-colors"
-          >
-            {isLastStep ? 'Tamamla' : 'İleri'}
-            {!isLastStep && <ArrowRight className="h-3 w-3" />}
-          </button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSkip}
+              className="text-xs px-3 py-1 h-8 bg-gray-50 text-gray-700 border-gray-300"
+            >
+              Kapat
+            </Button>
+            
+            <Button
+              size="sm"
+              onClick={handleNext}
+              className="flex items-center gap-1 text-xs px-3 py-1 h-8 bg-green-600 hover:bg-green-700 text-white"
+            >
+              {stepIndex === steps.length - 1 ? 'Tamamla' : 'İleri'}
+              {stepIndex < steps.length - 1 && <ChevronRight className="w-3 h-3" />}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Camera, User, Lightbulb, Phone, BookOpen, LogOut, FileText, HelpCircle, Crown, PlayCircle } from 'lucide-react'
 import { useAuth } from '@/components/Auth/AuthProvider'
+import { useTutorial } from '@/context/TutorialContext'
 
 interface DashboardHeaderProps {
   onCameraClick: () => void
@@ -12,7 +13,6 @@ interface DashboardHeaderProps {
   onPoliciesClick: () => void
   onFAQClick: () => void
   onSubscriptionClick: () => void
-  onTutorialClick: () => void
 }
 
 export function DashboardHeader({ 
@@ -22,10 +22,14 @@ export function DashboardHeader({
   onResourcesClick,
   onPoliciesClick,
   onFAQClick,
-  onSubscriptionClick,
-  onTutorialClick
+  onSubscriptionClick
 }: DashboardHeaderProps) {
   const { signOut, user } = useAuth()
+  const { showTutorialManually } = useTutorial()
+
+  const handleTutorialClick = () => {
+    showTutorialManually('dashboard')
+  }
 
   return (
     <div className="bg-white border-b border-gray-200 px-3 sm:px-4 py-2 sm:py-4">
@@ -117,7 +121,7 @@ export function DashboardHeader({
                 <Button
                   variant="ghost"
                   className="w-full justify-start text-sm"
-                  onClick={onTutorialClick}
+                  onClick={handleTutorialClick}
                 >
                   <PlayCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                   Kullanım İpuçlarını Göster
