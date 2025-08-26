@@ -89,16 +89,32 @@ export function FAQPage({ onBack }: FAQPageProps) {
     ],
     subscription: [
       {
-        q: "Premium özellikler nelerdir?",
-        a: "Şu anda tüm özellikler ücretsizdir! Premium özellikler yakında eklenecek: Gelişmiş AI önerileri, beslenme koçluğu, detaylı raporlar ve daha fazlası."
+        q: "KolayfitAi'ye kayıt olmak ücretsiz mi?",
+        a: "Evet, uygulamaya ücretsiz kayıt olabilirsiniz. Tüm özellikleri 3 gün boyunca ücretsiz deneme hakkınız var."
       },
       {
-        q: "Ücretlendirme nasıl olacak?",
-        a: "Premium planımız henüz aktif değil. Kullanıcılarımızı bilgilendirmek için e-posta listesine kayıt olabilirsiniz."
+        q: "Ücretsiz deneme nasıl çalışıyor?",
+        a: "Kayıt olduktan sonra 3 gün boyunca tüm premium özelliklerden ücretsiz faydalanabilirsiniz. Süre bitince abonelik başlar."
       },
       {
-        q: "Abonelik iptali nasıl yapılır?",
-        a: "Premium plan aktifleştiğinde, hesap ayarlarınızdan aboneliğinizi istediğiniz zaman iptal edebileceksiniz."
+        q: "Üyelik ücretleri ne kadar?",
+        a: "Aylık 119,99₺ veya yıllık 1.199,99₺. Ödemeler Google Play veya App Store üzerinden güvenli şekilde yapılır."
+      },
+      {
+        q: "Aboneliğimi nasıl iptal edebilirim?",
+        a: "Aboneliğinizi dilediğiniz zaman Google Play veya App Store hesap ayarları üzerinden iptal edebilirsiniz. İptal etmeniz durumunda dönem sonuna kadar premium özellikleri kullanmaya devam edebilirsiniz."
+      },
+      {
+        q: "İptal ettiğimde param geri iade edilir mi?",
+        a: "Hayır. İptal etmeniz halinde mevcut fatura dönemi sonuna kadar kullanım hakkınız devam eder. İade yapılmaz."
+      },
+      {
+        q: "Aboneliğimi farklı cihazlarda kullanabilir miyim?",
+        a: "Evet. Aynı Google veya Apple hesabınızla giriş yaptığınızda aboneliğiniz tüm cihazlarda aktif olur."
+      },
+      {
+        q: "Hangi ödeme yöntemlerini kullanabilirim?",
+        a: "Google Pay (Android kullanıcıları) veya Apple Pay (iOS kullanıcıları)."
       }
     ],
     security: [
