@@ -189,6 +189,7 @@ export function Dashboard() {
         onBack={() => setCurrentView('dashboard')}
         onSelectPhoto={() => setCurrentView('camera')}
         onSelectManual={() => setCurrentView('manual-entry')}
+        onForceManual={() => setCurrentView('manual-entry')}
       />
     )
   }
@@ -199,6 +200,7 @@ export function Dashboard() {
         mealType=""
         onBack={() => setCurrentView('meal-selection')}
         onMealSaved={handleMealAdded}
+        cameraPermissionDenied={false} // We'll pass this from method selection if needed
       />
     )
   }

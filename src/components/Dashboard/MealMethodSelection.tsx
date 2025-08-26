@@ -1,25 +1,76 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Camera, Edit3, Zap, Clock } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ArrowLeft, Camera, Edit3, Zap, Clock, AlertCircle } from 'lucide-react'
 
 interface MealMethodSelectionProps {
   onBack: () => void
   onSelectPhoto: () => void
   onSelectManual: () => void
+  onForceManual?: () => void
 }
 
 export function MealMethodSelection({ 
   onBack, 
   onSelectPhoto, 
-  onSelectManual 
+  onSelectManual,
+  onForceManual
 }: MealMethodSelectionProps) {
   const [selectedMethod, setSelectedMethod] = useState<'photo' | 'manual'>('manual')
+  const [cameraPermissionDenied, setCameraPermissionDenied] = useState(false)
 
-  const handleContinue = () => {
+  // Check camera permission when photo method is selected
+  useEffect(() => {
     if (selectedMethod === 'photo') {
-      onSelectPhoto()
+      checkCameraPermission()
+    }
+  }, [selectedMethod])
+
+  const checkCameraPermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+      // If successful, stop the stream immediately
+      stream.getTracks().forEach(track => track.stop())
+      setCameraPermissionDenied(false)
+    } catch (error: any) {
+      console.log('Camera permission check:', error.name)
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        setCameraPermissionDenied(true)
+        // Auto-switch to manual and show info
+        setSelectedMethod('manual')
+        setTimeout(() => {
+          if (onForceManual) {
+            onForceManual()
+          } else {
+            onSelectManual()
+          }
+        }, 1000)
+      }
+    }
+  }
+
+  const handleContinue = async () => {
+    if (selectedMethod === 'photo') {
+      // Double-check camera permission before proceeding
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        stream.getTracks().forEach(track => track.stop())
+        onSelectPhoto()
+      } catch (error: any) {
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+          setCameraPermissionDenied(true)
+          setSelectedMethod('manual')
+          setTimeout(() => {
+            if (onForceManual) {
+              onForceManual()
+            } else {
+              onSelectManual()
+            }
+          }, 1000)
+        }
+      }
     } else {
       onSelectManual()
     }
@@ -46,6 +97,16 @@ export function MealMethodSelection({
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-6">
+        {/* Camera Permission Denied Alert */}
+        {cameraPermissionDenied && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Kamera iznini sonradan Ayarlar'dan açabilirsiniz. Bu arada manuel ekleme yapabilirsiniz.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Selection Cards */}
         <div className="space-y-4">
           {/* Manual Entry Option - Default Selected */}
@@ -111,8 +172,8 @@ export function MealMethodSelection({
               selectedMethod === 'photo' 
                 ? 'border-success bg-success-muted' 
                 : 'border-border hover:border-success/50'
-            }`}
-            onClick={() => setSelectedMethod('photo')}
+            } ${cameraPermissionDenied ? 'opacity-50' : ''}`}
+            onClick={() => !cameraPermissionDenied && setSelectedMethod('photo')}
           >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
@@ -125,7 +186,14 @@ export function MealMethodSelection({
                     <Camera className="h-5 w-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Fotoğrafla Ekle</CardTitle>
+                    <CardTitle className="text-lg">
+                      Fotoğrafla Ekle
+                      {cameraPermissionDenied && (
+                        <Badge variant="destructive" className="text-xs ml-2">
+                          İzin Gerekli
+                        </Badge>
+                      )}
+                    </CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">
                       AI ile otomatik analiz
                     </p>
@@ -162,6 +230,7 @@ export function MealMethodSelection({
           onClick={handleContinue}
           className="w-full bg-success hover:bg-success/90 text-success-foreground"
           size="lg"
+          disabled={selectedMethod === 'photo' && cameraPermissionDenied}
         >
           {selectedMethod === 'manual' ? (
             <>
@@ -176,12 +245,13 @@ export function MealMethodSelection({
           )}
         </Button>
 
-        {/* Help Text */}
         <div className="text-center text-sm text-muted-foreground">
           <p>
             {selectedMethod === 'manual' 
               ? 'Bilgileri kendiniz gireceksiniz. Fotoğraf eklemek opsiyoneldir.'
-              : 'AI fotoğrafınızı analiz edecek ve besin değerlerini hesaplayacak.'
+              : cameraPermissionDenied
+                ? 'Kamera izni gerekli. Lütfen tarayıcı ayarlarından izin verin.'
+                : 'AI fotoğrafınızı analiz edecek ve besin değerlerini hesaplayacak.'
             }
           </p>
         </div>

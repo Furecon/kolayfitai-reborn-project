@@ -133,6 +133,51 @@ export type Database = {
         }
         Relationships: []
       }
+      favorites: {
+        Row: {
+          created_at: string
+          default_amount_unit: string | null
+          default_amount_value: number | null
+          default_calories: number
+          default_carbs: number | null
+          default_cooking_method: string | null
+          default_fat: number | null
+          default_protein: number | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_amount_unit?: string | null
+          default_amount_value?: number | null
+          default_calories?: number
+          default_carbs?: number | null
+          default_cooking_method?: string | null
+          default_fat?: number | null
+          default_protein?: number | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          default_amount_unit?: string | null
+          default_amount_value?: number | null
+          default_calories?: number
+          default_carbs?: number | null
+          default_cooking_method?: string | null
+          default_fat?: number | null
+          default_protein?: number | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       foods: {
         Row: {
           calories_per_100g: number
@@ -183,10 +228,14 @@ export type Database = {
       }
       meal_logs: {
         Row: {
+          amount_unit: string | null
+          amount_value: number | null
+          cooking_method: string | null
           created_at: string
           date: string
           food_items: Json
           id: string
+          meal_name: string | null
           meal_type: string
           notes: string | null
           photo_url: string | null
@@ -200,10 +249,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          amount_unit?: string | null
+          amount_value?: number | null
+          cooking_method?: string | null
           created_at?: string
           date?: string
           food_items?: Json
           id?: string
+          meal_name?: string | null
           meal_type: string
           notes?: string | null
           photo_url?: string | null
@@ -217,10 +270,14 @@ export type Database = {
           user_id: string
         }
         Update: {
+          amount_unit?: string | null
+          amount_value?: number | null
+          cooking_method?: string | null
           created_at?: string
           date?: string
           food_items?: Json
           id?: string
+          meal_name?: string | null
           meal_type?: string
           notes?: string | null
           photo_url?: string | null

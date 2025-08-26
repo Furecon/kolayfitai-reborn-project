@@ -17,7 +17,9 @@ import {
   Copy, 
   Plus,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Search,
+  Heart
 } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
@@ -29,6 +31,7 @@ interface ManualFoodEntryProps {
   onBack: () => void
   loading?: boolean
   onMealSaved?: () => void
+  cameraPermissionDenied?: boolean
 }
 
 interface FavoriteMeal {
@@ -45,6 +48,18 @@ interface YesterdayMeal {
   food_items: any[]
   total_calories: number
   created_at: string
+}
+
+interface QuickSuggestion {
+  id: string
+  name: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  amount_value: number
+  amount_unit: string
+  source: 'favorite' | 'recent' | 'database'
 }
 
 const MEAL_TYPE_OPTIONS = [
@@ -70,7 +85,8 @@ export default function ManualFoodEntry({
   onSave, 
   onBack, 
   loading = false, 
-  onMealSaved 
+  onMealSaved,
+  cameraPermissionDenied = false
 }: ManualFoodEntryProps) {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -100,12 +116,32 @@ export default function ManualFoodEntry({
   const [loadingFavorites, setLoadingFavorites] = useState(false)
   const [loadingYesterday, setLoadingYesterday] = useState(false)
 
+  // Quick search state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [quickSuggestions, setQuickSuggestions] = useState<QuickSuggestion[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
+
   useEffect(() => {
     if (user) {
       loadFavoriteMeals()
       loadYesterdayMeals()
     }
   }, [user])
+
+  // Search suggestions when user types
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim().length > 0) {
+        searchSuggestions(searchQuery.trim())
+      } else {
+        setQuickSuggestions([])
+        setShowSuggestions(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery])
 
   const loadFavoriteMeals = async () => {
     if (!user) return
@@ -161,8 +197,130 @@ export default function ManualFoodEntry({
     }
   }
 
+  const searchSuggestions = async (query: string) => {
+    if (!user) return
+
+    setIsSearching(true)
+    try {
+      // Search in favorites
+      const { data: favorites, error: favError } = await supabase
+        .from('favorites')
+        .select('*')
+        .eq('user_id', user.id)
+        .ilike('name', `%${query}%`)
+        .limit(3)
+
+      // Search in recent meals
+      const { data: recentMeals, error: recentError } = await supabase
+        .from('meal_logs')
+        .select('meal_name, total_calories, total_protein, total_carbs, total_fat, amount_value, amount_unit')
+        .eq('user_id', user.id)
+        .not('meal_name', 'is', null)
+        .ilike('meal_name', `%${query}%`)
+        .order('created_at', { ascending: false })
+        .limit(3)
+
+      // Search in foods database
+      const { data: foodsData, error: foodsError } = await supabase.rpc('search_foods', { 
+        search_term: query 
+      })
+
+      if (favError) console.error('Favorites search error:', favError)
+      if (recentError) console.error('Recent meals search error:', recentError)
+      if (foodsError) console.error('Foods search error:', foodsError)
+
+      const suggestions: QuickSuggestion[] = []
+
+      // Add favorites
+      if (favorites) {
+        favorites.forEach(fav => {
+          suggestions.push({
+            id: fav.id,
+            name: fav.name,
+            calories: fav.default_calories,
+            protein: fav.default_protein || 0,
+            carbs: fav.default_carbs || 0,
+            fat: fav.default_fat || 0,
+            amount_value: fav.default_amount_value || 100,
+            amount_unit: fav.default_amount_unit || 'g',
+            source: 'favorite'
+          })
+        })
+      }
+
+      // Add recent meals
+      if (recentMeals) {
+        recentMeals.forEach(meal => {
+          if (meal.meal_name) {
+            suggestions.push({
+              id: `recent-${meal.meal_name}`,
+              name: meal.meal_name,
+              calories: meal.total_calories || 0,
+              protein: meal.total_protein || 0,
+              carbs: meal.total_carbs || 0,
+              fat: meal.total_fat || 0,
+              amount_value: meal.amount_value || 100,
+              amount_unit: meal.amount_unit || 'g',
+              source: 'recent'
+            })
+          }
+        })
+      }
+
+      // Add foods database results
+      if (foodsData) {
+        foodsData.slice(0, 2).forEach(food => {
+          suggestions.push({
+            id: `food-${food.id}`,
+            name: food.name,
+            calories: food.calories_per_100g,
+            protein: food.protein_per_100g || 0,
+            carbs: food.carbs_per_100g || 0,
+            fat: food.fat_per_100g || 0,
+            amount_value: 100,
+            amount_unit: 'g',
+            source: 'database'
+          })
+        })
+      }
+
+      setQuickSuggestions(suggestions.slice(0, 8)) // Limit to 8 suggestions
+      setShowSuggestions(suggestions.length > 0)
+    } catch (error) {
+      console.error('Error searching suggestions:', error)
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+    
+    // If updating meal name, trigger search
+    if (field === 'mealName') {
+      setSearchQuery(value)
+    }
+  }
+
+  const selectSuggestion = (suggestion: QuickSuggestion) => {
+    setFormData(prev => ({
+      ...prev,
+      mealName: suggestion.name,
+      calories: suggestion.calories.toString(),
+      protein: suggestion.protein.toString(),
+      carbs: suggestion.carbs.toString(),
+      fat: suggestion.fat.toString(),
+      portionAmount: suggestion.amount_value.toString(),
+      portionUnit: suggestion.amount_unit
+    }))
+    
+    setSearchQuery('')
+    setShowSuggestions(false)
+    
+    toast({
+      title: "Seçildi",
+      description: `${suggestion.name} bilgileri forma aktarıldı.`,
+    })
   }
 
   const handleQuickPortion = (portion: typeof QUICK_PORTIONS[0]) => {
@@ -387,6 +545,50 @@ export default function ManualFoodEntry({
     }
   }
 
+  const saveToFavorites = async () => {
+    if (!user || !formData.mealName || !formData.calories) {
+      toast({
+        title: "Eksik Bilgi",
+        description: "Favorilere kaydetmek için öğün adı ve kalori bilgisi gerekli.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('favorites')
+        .insert([{
+          user_id: user.id,
+          name: formData.mealName,
+          default_calories: Number(formData.calories),
+          default_protein: Number(formData.protein) || 0,
+          default_carbs: Number(formData.carbs) || 0,
+          default_fat: Number(formData.fat) || 0,
+          default_amount_value: Number(formData.portionAmount) || 100,
+          default_amount_unit: formData.portionUnit,
+          default_cooking_method: formData.cookingMethod
+        }])
+
+      if (error) throw error
+
+      toast({
+        title: "Favorilere Eklendi",
+        description: `${formData.mealName} favorilerinize eklendi.`,
+      })
+
+      // Refresh favorites
+      loadFavoriteMeals()
+    } catch (error) {
+      console.error('Save to favorites error:', error)
+      toast({
+        title: "Hata",
+        description: "Favorilere eklenirken hata oluştu.",
+        variant: "destructive"
+      })
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto space-y-6">
@@ -408,7 +610,10 @@ export default function ManualFoodEntry({
         <Alert>
           <Info className="h-4 w-4" />
           <AlertDescription>
-            Fotoğraf eklemek zorunlu değildir. İsterseniz direkt bilgileri kaydedebilirsiniz.
+            {cameraPermissionDenied 
+              ? "Kamera iznini sonradan Ayarlar'dan açabilirsiniz. Bu arada manuel ekleme yapabilirsiniz."
+              : "Fotoğraf eklemek zorunlu değildir. İsterseniz direkt bilgileri kaydedebilirsiniz."
+            }
           </AlertDescription>
         </Alert>
 
@@ -523,6 +728,64 @@ export default function ManualFoodEntry({
             <CardTitle>Öğün Bilgileri</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Quick Search */}
+            <div className="space-y-2">
+              <Label htmlFor="quickSearch">
+                <Search className="h-4 w-4 inline mr-1" />
+                Hızlı Arama
+              </Label>
+              <div className="relative">
+                <Input
+                  id="quickSearch"
+                  placeholder="Öğün ara ve hızlı doldur..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setShowSuggestions(quickSuggestions.length > 0)}
+                />
+                {isSearching && (
+                  <div className="absolute right-3 top-3">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-success"></div>
+                  </div>
+                )}
+                
+                {/* Suggestions Dropdown */}
+                {showSuggestions && (
+                  <div className="absolute z-10 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {quickSuggestions.map((suggestion) => (
+                      <div
+                        key={suggestion.id}
+                        className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                        onClick={() => selectSuggestion(suggestion)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-sm">{suggestion.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {suggestion.calories} kcal • {suggestion.amount_value}{suggestion.amount_unit}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {suggestion.source === 'favorite' && (
+                              <Star className="h-3 w-3 text-yellow-500" />
+                            )}
+                            {suggestion.source === 'recent' && (
+                              <Clock className="h-3 w-3 text-blue-500" />
+                            )}
+                            <Badge variant="outline" className="text-xs">
+                              {suggestion.source === 'favorite' ? 'Favori' : 
+                               suggestion.source === 'recent' ? 'Son' : 'DB'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
             {/* Meal Name - Required */}
             <div className="space-y-2">
               <Label htmlFor="mealName">
@@ -676,21 +939,34 @@ export default function ManualFoodEntry({
         </Card>
 
         {/* Save Button */}
-        <Button
-          onClick={handleSubmit}
-          disabled={isSaving || loading}
-          className="w-full bg-success hover:bg-success/90 text-success-foreground"
-          size="lg"
-        >
-          {isSaving ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-success-foreground mr-2"></div>
-              Kaydediliyor...
-            </>
-          ) : (
-            'Öğünü Kaydet'
+        <div className="flex gap-2">
+          <Button
+            onClick={handleSubmit}
+            disabled={isSaving || loading}
+            className="flex-1 bg-success hover:bg-success/90 text-success-foreground"
+            size="lg"
+          >
+            {isSaving ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-success-foreground mr-2"></div>
+                Kaydediliyor...
+              </>
+            ) : (
+              'Öğünü Kaydet'
+            )}
+          </Button>
+          
+          {formData.mealName && formData.calories && (
+            <Button
+              onClick={saveToFavorites}
+              variant="outline"
+              size="lg"
+              className="border-success text-success hover:bg-success-muted"
+            >
+              <Heart className="h-4 w-4" />
+            </Button>
           )}
-        </Button>
+        </div>
       </div>
     </div>
   )
