@@ -1,546 +1,696 @@
-
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Search, Plus, Trash2, Brain, Database } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { 
+  ArrowLeft, 
+  Camera, 
+  Upload, 
+  Info, 
+  Star, 
+  Copy, 
+  Plus,
+  Clock,
+  AlertCircle
+} from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
-import { useToast } from '@/components/ui/use-toast'
-
-interface FoodItem {
-  name: string
-  nameEn: string
-  estimatedAmount: string
-  nutritionPer100g: {
-    calories: number
-    protein: number
-    carbs: number
-    fat: number
-    fiber: number
-    sugar: number
-    sodium: number
-  }
-  totalNutrition: {
-    calories: number
-    protein: number
-    carbs: number
-    fat: number
-    fiber: number
-    sugar: number
-    sodium: number
-  }
-}
+import { useAuth } from '@/components/Auth/AuthProvider'
+import { useToast } from '@/hooks/use-toast'
 
 interface ManualFoodEntryProps {
   mealType: string
-  onSave: (foods: FoodItem[]) => Promise<void>
+  onSave?: (foods: any[]) => Promise<void>
   onBack: () => void
-  loading: boolean
+  loading?: boolean
+  onMealSaved?: () => void
 }
 
-interface SearchResult {
+interface FavoriteMeal {
   id: string
-  name: string
-  name_en: string
-  category: string
-  calories_per_100g: number
-  protein_per_100g: number
-  carbs_per_100g: number
-  fat_per_100g: number
+  meal_name: string
+  meal_type: string
+  recipe: any
+  created_at: string
 }
 
-interface SelectedFood {
-  name: string
-  nameEn: string
-  category: string
-  portionSize: number
-  caloriesPer100g: number
-  proteinPer100g: number
-  carbsPer100g: number
-  fatPer100g: number
-  source?: 'ai' | 'database'
+interface YesterdayMeal {
+  id: string
+  meal_type: string
+  food_items: any[]
+  total_calories: number
+  created_at: string
 }
 
-interface AnalysisResult {
-  recognized_name: string
-  foods: {
-    name: string
-    amount: number
-    unit: string
-    calories: number
-    protein: number
-    carbs: number
-    fat: number
-    fiber: number
-    sugar: number
-    sodium: number
-  }[]
-  confidence: number
-  suggestions: string[]
-  notes: string
-}
+const MEAL_TYPE_OPTIONS = [
+  { value: 'kahvaltı', label: 'Kahvaltı' },
+  { value: 'öğle', label: 'Öğle Yemeği' },
+  { value: 'akşam', label: 'Akşam Yemeği' },
+  { value: 'atıştırmalık', label: 'Atıştırmalık' }
+]
 
-export default function ManualFoodEntry({ mealType, onSave, onBack, loading }: ManualFoodEntryProps) {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
-  const [selectedFoods, setSelectedFoods] = useState<SelectedFood[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [activeTab, setActiveTab] = useState('ai')
-  
-  // AI-related state
-  const [foodInput, setFoodInput] = useState('')
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
-  
+const COOKING_METHODS = [
+  'Haşlama', 'Fırın', 'Izgara', 'Kızartma', 'Buharda', 'Çiğ'
+]
+
+const QUICK_PORTIONS = [
+  { label: '1 porsiyon', value: 150, unit: 'g' },
+  { label: '1/2 porsiyon', value: 75, unit: 'g' },
+  { label: '100 g', value: 100, unit: 'g' },
+  { label: '150 g', value: 150, unit: 'g' }
+]
+
+export default function ManualFoodEntry({ 
+  mealType, 
+  onSave, 
+  onBack, 
+  loading = false, 
+  onMealSaved 
+}: ManualFoodEntryProps) {
+  const { user } = useAuth()
   const { toast } = useToast()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const searchFoods = async (term: string) => {
-    if (!term || term.length < 2) {
-      setSearchResults([])
+  // Form state
+  const [formData, setFormData] = useState({
+    mealName: '',
+    category: mealType || '',
+    portionAmount: '',
+    portionUnit: 'g',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+    cookingMethod: '',
+    notes: ''
+  })
+
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // UX state
+  const [favoriteMeals, setFavoriteMeals] = useState<FavoriteMeal[]>([])
+  const [yesterdayMeals, setYesterdayMeals] = useState<YesterdayMeal[]>([])
+  const [loadingFavorites, setLoadingFavorites] = useState(false)
+  const [loadingYesterday, setLoadingYesterday] = useState(false)
+
+  useEffect(() => {
+    if (user) {
+      loadFavoriteMeals()
+      loadYesterdayMeals()
+    }
+  }, [user])
+
+  const loadFavoriteMeals = async () => {
+    if (!user) return
+    
+    setLoadingFavorites(true)
+    try {
+      const { data, error } = await supabase
+        .from('favorite_meals')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      if (error) throw error
+      setFavoriteMeals(data || [])
+    } catch (error) {
+      console.error('Error loading favorites:', error)
+    } finally {
+      setLoadingFavorites(false)
+    }
+  }
+
+  const loadYesterdayMeals = async () => {
+    if (!user) return
+
+    setLoadingYesterday(true)
+    try {
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      const yesterdayStr = yesterday.toISOString().split('T')[0]
+
+      const { data, error } = await supabase
+        .from('meal_logs')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('date', yesterdayStr)
+        .order('created_at', { ascending: false })
+        .limit(3)
+
+      if (error) throw error
+      
+      // Type cast and ensure food_items is an array
+      const processedData = data?.map(meal => ({
+        ...meal,
+        food_items: Array.isArray(meal.food_items) ? meal.food_items : []
+      })) || []
+      
+      setYesterdayMeals(processedData)
+    } catch (error) {
+      console.error('Error loading yesterday meals:', error)
+    } finally {
+      setLoadingYesterday(false)
+    }
+  }
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleQuickPortion = (portion: typeof QUICK_PORTIONS[0]) => {
+    setFormData(prev => ({
+      ...prev,
+      portionAmount: portion.value.toString(),
+      portionUnit: portion.unit
+    }))
+  }
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Geçersiz Dosya",
+        description: "Lütfen bir resim dosyası seçin.",
+        variant: "destructive"
+      })
       return
     }
 
-    setIsSearching(true)
+    setIsUploading(true)
     try {
-      const { data, error } = await supabase.rpc('search_foods', { search_term: term })
-      if (error) throw error
-      setSearchResults(data || [])
-    } catch (error) {
-      console.error('Food search error:', error)
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}.${fileExt}`
+      const filePath = `meal-photos/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('meal-photos')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('meal-photos')
+        .getPublicUrl(filePath)
+
+      setPhotoUrl(publicUrl)
       toast({
-        title: "Arama Hatası",
-        description: "Yemek arama sırasında hata oluştu.",
+        title: "Başarılı!",
+        description: "Fotoğraf yüklendi.",
+      })
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast({
+        title: "Hata",
+        description: "Fotoğraf yüklenirken hata oluştu.",
         variant: "destructive"
       })
     } finally {
-      setIsSearching(false)
+      setIsUploading(false)
     }
   }
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      searchFoods(searchTerm)
-    }, 300)
+  const copyFavoriteMeal = (meal: FavoriteMeal) => {
+    const recipe = meal.recipe
+    setFormData({
+      mealName: meal.meal_name,
+      category: meal.meal_type,
+      portionAmount: recipe.portion_amount?.toString() || '',
+      portionUnit: recipe.portion_unit || 'g',
+      calories: recipe.calories?.toString() || '',
+      protein: recipe.protein?.toString() || '',
+      carbs: recipe.carbs?.toString() || '',
+      fat: recipe.fat?.toString() || '',
+      cookingMethod: recipe.cooking_method || '',
+      notes: recipe.notes || ''
+    })
+    toast({
+      title: "Kopyalandı",
+      description: "Favori öğün bilgileri forma kopyalandı.",
+    })
+  }
 
-    return () => clearTimeout(timeoutId)
-  }, [searchTerm])
-
-  // AI Analysis Function
-  const analyzeFoodByName = async (foodName: string) => {
-    if (!foodName.trim()) return
-
-    setIsAnalyzing(true)
-    try {
-      const { data, error } = await supabase.functions.invoke('analyze-food-by-name', {
-        body: { foodName: foodName.trim(), mealType }
+  const copyYesterdayMeal = (meal: YesterdayMeal) => {
+    if (meal.food_items.length > 0) {
+      const firstItem = meal.food_items[0]
+      setFormData({
+        mealName: firstItem.name || 'Dünkü Öğün',
+        category: meal.meal_type,
+        portionAmount: firstItem.estimatedAmount?.replace(/[^\d]/g, '') || '',
+        portionUnit: 'g',
+        calories: Math.round(meal.total_calories).toString(),
+        protein: firstItem.totalNutrition?.protein?.toString() || '',
+        carbs: firstItem.totalNutrition?.carbs?.toString() || '',
+        fat: firstItem.totalNutrition?.fat?.toString() || '',
+        cookingMethod: '',
+        notes: 'Dünkü öğünden kopyalandı'
       })
-
-      if (error) throw error
-
-      setAnalysisResult(data)
       toast({
-        title: "Analiz Tamamlandı",
-        description: `${data.foods.length} yemek tanımlandı`,
+        title: "Kopyalandı",
+        description: "Dünkü öğün bilgileri forma kopyalandı.",
       })
-    } catch (error) {
-      console.error('AI analiz hatası:', error)
+    }
+  }
+
+  const validateForm = () => {
+    if (!formData.mealName.trim()) {
       toast({
-        title: "Analiz Hatası",
-        description: "AI analizi sırasında hata oluştu. Lütfen tekrar deneyin.",
+        title: "Eksik Bilgi",
+        description: "Öğün adı zorunludur.",
         variant: "destructive"
       })
-    } finally {
-      setIsAnalyzing(false)
-    }
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isAnalyzing) {
-      analyzeFoodByName(foodInput)
-    }
-  }
-
-  const addFoodToSelection = (searchResult: SearchResult) => {
-    const newFood: SelectedFood = {
-      name: searchResult.name,
-      nameEn: searchResult.name_en || '',
-      category: searchResult.category,
-      portionSize: 100, // Default portion size
-      caloriesPer100g: searchResult.calories_per_100g,
-      proteinPer100g: searchResult.protein_per_100g,
-      carbsPer100g: searchResult.carbs_per_100g,
-      fatPer100g: searchResult.fat_per_100g,
-      source: 'database'
+      return false
     }
 
-    setSelectedFoods([...selectedFoods, newFood])
-    setSearchTerm('')
-    setSearchResults([])
-  }
-
-  const addAIFoodToSelection = (food: AnalysisResult['foods'][0]) => {
-    const newFood: SelectedFood = {
-      name: food.name,
-      nameEn: '',
-      category: 'AI Tanımlı',
-      portionSize: food.amount,
-      caloriesPer100g: Math.round((food.calories / food.amount) * 100),
-      proteinPer100g: Math.round((food.protein / food.amount) * 100 * 10) / 10,
-      carbsPer100g: Math.round((food.carbs / food.amount) * 100 * 10) / 10,
-      fatPer100g: Math.round((food.fat / food.amount) * 100 * 10) / 10,
-      source: 'ai'
+    if (!formData.category) {
+      toast({
+        title: "Eksik Bilgi", 
+        description: "Kategori seçimi zorunludur.",
+        variant: "destructive"
+      })
+      return false
     }
 
-    setSelectedFoods([...selectedFoods, newFood])
+    if (!formData.calories || isNaN(Number(formData.calories))) {
+      toast({
+        title: "Eksik Bilgi",
+        description: "Geçerli bir kalori değeri giriniz.",
+        variant: "destructive"
+      })
+      return false
+    }
+
+    return true
   }
 
-  const updateFoodPortion = (index: number, portionSize: number) => {
-    const updated = [...selectedFoods]
-    updated[index] = { ...updated[index], portionSize }
-    setSelectedFoods(updated)
-  }
+  const handleSubmit = async () => {
+    if (!validateForm() || !user) return
 
-  const removeFoodFromSelection = (index: number) => {
-    setSelectedFoods(selectedFoods.filter((_, i) => i !== index))
-  }
-
-  const convertToFoodItems = (foods: SelectedFood[]): FoodItem[] => {
-    return foods.map(food => {
-      const multiplier = food.portionSize / 100
-      const totalCalories = Math.round(food.caloriesPer100g * multiplier)
-      const totalProtein = Math.round(food.proteinPer100g * multiplier * 10) / 10
-      const totalCarbs = Math.round(food.carbsPer100g * multiplier * 10) / 10
-      const totalFat = Math.round(food.fatPer100g * multiplier * 10) / 10
-
-      return {
-        name: food.name,
-        nameEn: food.nameEn,
-        estimatedAmount: `${food.portionSize}g`,
+    setIsSaving(true)
+    try {
+      const foodItem = {
+        name: formData.mealName,
+        nameEn: '',
+        estimatedAmount: `${formData.portionAmount} ${formData.portionUnit}`,
         nutritionPer100g: {
-          calories: food.caloriesPer100g,
-          protein: food.proteinPer100g,
-          carbs: food.carbsPer100g,
-          fat: food.fatPer100g,
+          calories: Math.round((Number(formData.calories) / Number(formData.portionAmount || 100)) * 100),
+          protein: Number(formData.protein) || 0,
+          carbs: Number(formData.carbs) || 0,
+          fat: Number(formData.fat) || 0,
           fiber: 0,
           sugar: 0,
           sodium: 0
         },
         totalNutrition: {
-          calories: totalCalories,
-          protein: totalProtein,
-          carbs: totalCarbs,
-          fat: totalFat,
+          calories: Number(formData.calories),
+          protein: Number(formData.protein) || 0,
+          carbs: Number(formData.carbs) || 0,
+          fat: Number(formData.fat) || 0,
           fiber: 0,
           sugar: 0,
           sodium: 0
-        }
+        },
+        cookingMethod: formData.cookingMethod,
+        notes: formData.notes
       }
-    })
-  }
 
-  const handleSubmit = () => {
-    if (selectedFoods.length === 0) {
+      const mealLogData = {
+        user_id: user.id,
+        date: new Date().toISOString().split('T')[0],
+        meal_type: formData.category,
+        food_items: [foodItem],
+        total_calories: Number(formData.calories),
+        total_protein: Number(formData.protein) || 0,
+        total_carbs: Number(formData.carbs) || 0,
+        total_fat: Number(formData.fat) || 0,
+        total_fiber: 0,
+        total_sugar: 0,
+        total_sodium: 0,
+        photo_url: photoUrl,
+        notes: formData.notes
+      }
+
+      const { error } = await supabase
+        .from('meal_logs')
+        .insert([mealLogData])
+
+      if (error) throw error
+
       toast({
-        title: "Yemek Seçin",
-        description: "En az bir yemek eklemelisiniz.",
+        title: "Başarılı!",
+        description: "Öğün başarıyla kaydedildi ve günlük toplamlar güncellendi.",
+      })
+
+      // Reset form
+      setFormData({
+        mealName: '',
+        category: mealType || '',
+        portionAmount: '',
+        portionUnit: 'g',
+        calories: '',
+        protein: '',
+        carbs: '',
+        fat: '',
+        cookingMethod: '',
+        notes: ''
+      })
+      setPhotoUrl(null)
+
+      // Trigger refresh if callback provided
+      if (onMealSaved) {
+        onMealSaved()
+      }
+
+      // Call onSave if provided (for compatibility)
+      if (onSave) {
+        await onSave([foodItem])
+      }
+
+    } catch (error) {
+      console.error('Save error:', error)
+      toast({
+        title: "Hata",
+        description: "Öğün kaydedilirken hata oluştu. Lütfen tekrar deneyin.",
         variant: "destructive"
       })
-      return
+    } finally {
+      setIsSaving(false)
     }
-
-    const foodItems = convertToFoodItems(selectedFoods)
-    onSave(foodItems)
   }
-
-  const getTotalNutrition = () => {
-    return selectedFoods.reduce(
-      (total, food) => {
-        const multiplier = food.portionSize / 100
-        return {
-          calories: total.calories + (food.caloriesPer100g * multiplier),
-          protein: total.protein + (food.proteinPer100g * multiplier),
-          carbs: total.carbs + (food.carbsPer100g * multiplier),
-          fat: total.fat + (food.fatPer100g * multiplier)
-        }
-      },
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
-    )
-  }
-
-  const totalNutrition = getTotalNutrition()
 
   return (
-    <div className="min-h-screen bg-white p-4">
+    <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto space-y-6">
+        {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Button
             variant="ghost"
             onClick={onBack}
-            className="text-gray-600"
+            className="text-muted-foreground"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Geri
           </Button>
-          <h1 className="text-xl font-semibold text-black">Manuel Yemek Girişi</h1>
-          <span className="text-sm text-gray-500">({mealType})</span>
+          <h1 className="text-xl font-semibold text-foreground">Manuel Öğün Girişi</h1>
+          <Badge variant="secondary">{mealType}</Badge>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="ai" className="flex items-center gap-2">
-              <Brain className="h-4 w-4" />
-              AI ile Hızlı Giriş
-            </TabsTrigger>
-            <TabsTrigger value="database" className="flex items-center gap-2">
-              <Database className="h-4 w-4" />
-              Veritabanından Ara
-            </TabsTrigger>
-          </TabsList>
+        {/* Info Alert */}
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Fotoğraf eklemek zorunlu değildir. İsterseniz direkt bilgileri kaydedebilirsiniz.
+          </AlertDescription>
+        </Alert>
 
-          <TabsContent value="ai" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-black">
-                  <Brain className="h-5 w-5 text-green-500" />
-                  AI ile Yemek Girişi
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="relative">
-                  <Input
-                    placeholder="Yemek adınızı yazın (örn: döner, mercimek çorbası, tavuk şiş)"
-                    value={foodInput}
-                    onChange={(e) => setFoodInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    className="w-full"
-                    disabled={isAnalyzing}
-                    data-tutorial="manual-entry"
-                  />
-                  {isAnalyzing && (
-                    <div className="absolute right-3 top-3">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => analyzeFoodByName(foodInput)}
-                    disabled={!foodInput.trim() || isAnalyzing}
-                    className="bg-green-500 hover:bg-green-600 text-white"
-                  >
-                    {isAnalyzing ? "Analiz Ediliyor..." : "Analiz Et"}
-                  </Button>
-                </div>
-
-                {/* Quick suggestions */}
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">Hızlı öneriler:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {['döner', 'mercimek çorbası', 'tavuk şiş', 'adana kebap', 'kuru fasulye', 'pilav'].map((suggestion) => (
-                      <Button
-                        key={suggestion}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setFoodInput(suggestion)
-                          analyzeFoodByName(suggestion)
-                        }}
-                        disabled={isAnalyzing}
-                      >
-                        {suggestion}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {analysisResult && (
-                  <div className="border rounded-lg p-4 bg-green-50">
-                    <h4 className="font-medium mb-3">AI Analiz Sonucu</h4>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Tanımlanan: <span className="font-medium">{analysisResult.recognized_name}</span>
-                      {analysisResult.confidence && (
-                        <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                          %{Math.round(analysisResult.confidence * 100)} güven
-                        </span>
-                      )}
-                    </p>
-                    
-                    <div className="space-y-2">
-                      {analysisResult.foods.map((food, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-white rounded border">
-                          <div>
-                            <p className="font-medium">{food.name}</p>
-                            <p className="text-sm text-gray-500">
-                              {food.amount} {food.unit} • {food.calories} kcal
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => addAIFoodToSelection(food)}
-                            className="bg-green-500 hover:bg-green-600 text-white"
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Ekle
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-
-                    {analysisResult.notes && (
-                      <p className="text-xs text-gray-500 mt-2 italic">
-                        {analysisResult.notes}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="database" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-black">
-                  <Search className="h-5 w-5 text-green-500" />
-                  Veritabanından Yemek Arayın
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="relative">
-                  <Input
-                    placeholder="Yemek adı yazın (örn: tavuk döner, mercimek çorbası)"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full"
-                  />
-                  {isSearching && (
-                    <div className="absolute right-3 top-3">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
-                    </div>
-                  )}
-                </div>
-
-                {searchResults.length > 0 && (
-                  <div className="border rounded-lg max-h-60 overflow-y-auto">
-                    {searchResults.map((food) => (
-                      <div
-                        key={food.id}
-                        className="p-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50"
-                        onClick={() => addFoodToSelection(food)}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <h4 className="font-medium">{food.name}</h4>
-                            <p className="text-sm text-gray-500">{food.category}</p>
-                          </div>
-                          <div className="text-right text-sm">
-                            <p className="font-medium">{Math.round(food.calories_per_100g)} kcal/100g</p>
-                            <Button size="sm" className="mt-1">
-                              <Plus className="h-3 w-3 mr-1" />
-                              Ekle
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        {selectedFoods.length > 0 && (
+        {/* Favorites Section */}
+        {favoriteMeals.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-black">Seçilen Yemekler</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Star className="h-4 w-4 text-yellow-500" />
+                Sık Kullanılanlar
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {selectedFoods.map((food, index) => (
-                <div key={index} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <h4 className="font-medium">{food.name}</h4>
-                      {food.source && (
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          food.source === 'ai' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                        }`}>
-                          {food.source === 'ai' ? 'AI Tanımlı' : 'Veritabanı'}
-                        </span>
-                      )}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFoodFromSelection(index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-xs">Porsiyon (gram)</Label>
-                      <Input
-                        type="number"
-                        value={food.portionSize}
-                        onChange={(e) => updateFoodPortion(index, parseInt(e.target.value) || 0)}
-                        className="h-8"
-                        min="1"
-                      />
-                    </div>
-                    <div className="text-sm space-y-1">
-                      <p><span className="font-medium">{Math.round(food.caloriesPer100g * food.portionSize / 100)}</span> kcal</p>
-                      <p>P: {Math.round(food.proteinPer100g * food.portionSize / 100 * 10) / 10}g • K: {Math.round(food.carbsPer100g * food.portionSize / 100 * 10) / 10}g • Y: {Math.round(food.fatPer100g * food.portionSize / 100 * 10) / 10}g</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              <div className="mt-6 p-4 bg-primary/10 rounded-lg">
-                <h3 className="font-semibold mb-3">Toplam Besin Değerleri</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-primary">
-                      {Math.round(totalNutrition.calories)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Kalori</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-green-600">
-                      {Math.round(totalNutrition.protein * 10) / 10}g
-                    </p>
-                    <p className="text-sm text-muted-foreground">Protein</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-blue-600">
-                      {Math.round(totalNutrition.carbs * 10) / 10}g
-                    </p>
-                    <p className="text-sm text-muted-foreground">Karbonhidrat</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-orange-600">
-                      {Math.round(totalNutrition.fat * 10) / 10}g
-                    </p>
-                    <p className="text-sm text-muted-foreground">Yağ</p>
-                  </div>
-                </div>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {favoriteMeals.map((meal) => (
+                  <Button
+                    key={meal.id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyFavoriteMeal(meal)}
+                    disabled={loadingFavorites}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    {meal.meal_name}
+                  </Button>
+                ))}
               </div>
-
-              <Button
-                onClick={handleSubmit}
-                className="w-full bg-green-500 hover:bg-green-600 text-white"
-                disabled={loading}
-              >
-                {loading ? "Kaydediliyor..." : "Devam Et"}
-              </Button>
             </CardContent>
           </Card>
         )}
+
+        {/* Yesterday's Meals */}
+        {yesterdayMeals.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Copy className="h-4 w-4 text-blue-500" />
+                Dünkü Öğünleriniz
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {yesterdayMeals.map((meal) => (
+                  <Button
+                    key={meal.id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyYesterdayMeal(meal)}
+                    disabled={loadingYesterday}
+                  >
+                    <Clock className="h-3 w-3 mr-1" />
+                    {meal.meal_type} ({Math.round(meal.total_calories)} kcal)
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Photo Upload - Optional */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Fotoğraf Ekle (Opsiyonel)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {photoUrl ? (
+              <div className="space-y-2">
+                <img src={photoUrl} alt="Meal" className="w-full h-48 object-cover rounded-md" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPhotoUrl(null)}
+                >
+                  Fotoğrafı Kaldır
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="w-full"
+                >
+                  {isUploading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-success mr-2"></div>
+                      Yükleniyor...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Fotoğraf Seç
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Main Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Öğün Bilgileri</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Meal Name - Required */}
+            <div className="space-y-2">
+              <Label htmlFor="mealName">
+                Öğün Adı <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="mealName"
+                placeholder="Örn: Tavuk Döner, Mercimek Çorbası"
+                value={formData.mealName}
+                onChange={(e) => handleInputChange('mealName', e.target.value)}
+              />
+            </div>
+
+            {/* Category - Required */}
+            <div className="space-y-2">
+              <Label>
+                Kategori <span className="text-destructive">*</span>
+              </Label>
+              <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Öğün kategorisi seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MEAL_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Portion Size */}
+            <div className="space-y-2">
+              <Label>Miktar</Label>
+              
+              {/* Quick Options */}
+              <div className="flex flex-wrap gap-2 mb-2">
+                {QUICK_PORTIONS.map((option) => (
+                  <Button
+                    key={option.label}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleQuickPortion(option)}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Manual Input */}
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="Miktar"
+                  value={formData.portionAmount}
+                  onChange={(e) => handleInputChange('portionAmount', e.target.value)}
+                  className="flex-1"
+                />
+                <Select value={formData.portionUnit} onValueChange={(value) => handleInputChange('portionUnit', value)}>
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="g">gram</SelectItem>
+                    <SelectItem value="porsiyon">porsiyon</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Calories - Required */}
+            <div className="space-y-2">
+              <Label htmlFor="calories">
+                Kalori (kcal) <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="calories"
+                type="number"
+                placeholder="Örn: 350"
+                value={formData.calories}
+                onChange={(e) => handleInputChange('calories', e.target.value)}
+              />
+            </div>
+
+            {/* Macros - Optional */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="protein">Protein (g)</Label>
+                <Input
+                  id="protein"
+                  type="number"
+                  placeholder="0"
+                  value={formData.protein}
+                  onChange={(e) => handleInputChange('protein', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carbs">Karbonhidrat (g)</Label>
+                <Input
+                  id="carbs"
+                  type="number"
+                  placeholder="0"
+                  value={formData.carbs}
+                  onChange={(e) => handleInputChange('carbs', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="fat">Yağ (g)</Label>
+                <Input
+                  id="fat"
+                  type="number"
+                  placeholder="0"
+                  value={formData.fat}
+                  onChange={(e) => handleInputChange('fat', e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Cooking Method - Optional */}
+            <div className="space-y-2">
+              <Label>Pişirme Yöntemi (Opsiyonel)</Label>
+              <Select value={formData.cookingMethod} onValueChange={(value) => handleInputChange('cookingMethod', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pişirme yöntemi seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COOKING_METHODS.map((method) => (
+                    <SelectItem key={method} value={method}>
+                      {method}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Notes - Optional */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Not/Etiket (Opsiyonel)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Örn: Az tuzlu, evde yapılan..."
+                value={formData.notes}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                rows={3}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Save Button */}
+        <Button
+          onClick={handleSubmit}
+          disabled={isSaving || loading}
+          className="w-full bg-success hover:bg-success/90 text-success-foreground"
+          size="lg"
+        >
+          {isSaving ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-success-foreground mr-2"></div>
+              Kaydediliyor...
+            </>
+          ) : (
+            'Öğünü Kaydet'
+          )}
+        </Button>
       </div>
     </div>
   )
