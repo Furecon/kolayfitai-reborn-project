@@ -164,35 +164,42 @@ export function FAQPage({ onBack }: FAQPageProps) {
             </div>
 
             <Tabs defaultValue="general" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1">
-                <TabsTrigger value="general" className="text-xs flex-col sm:flex-row px-1 py-2 h-auto">
-                  <Smartphone className="h-3 w-3 sm:mr-1 mb-1 sm:mb-0" />
-                  <span className="hidden sm:inline">Genel</span>
-                  <span className="sm:hidden text-[10px]">Genel</span>
+              <TabsList className="flex w-full justify-between bg-muted p-1 h-12 overflow-x-auto">
+                <TabsTrigger value="general" className="flex-1 min-w-0 px-2 py-1 h-10">
+                  <div className="flex flex-col items-center justify-center">
+                    <Smartphone className="h-4 w-4 mb-0.5" />
+                    <span className="text-[10px] leading-none hidden sm:block">Genel</span>
+                  </div>
                 </TabsTrigger>
-                <TabsTrigger value="nutrition" className="text-xs flex-col sm:flex-row px-1 py-2 h-auto">
-                  <Calculator className="h-3 w-3 sm:mr-1 mb-1 sm:mb-0" />
-                  <span className="hidden sm:inline">Beslenme</span>
-                  <span className="sm:hidden text-[10px]">Beslen</span>
+                <TabsTrigger value="nutrition" className="flex-1 min-w-0 px-2 py-1 h-10">
+                  <div className="flex flex-col items-center justify-center">
+                    <Calculator className="h-4 w-4 mb-0.5" />
+                    <span className="text-[10px] leading-none hidden sm:block">Beslenme</span>
+                  </div>
                 </TabsTrigger>
-                <TabsTrigger value="ai" className="text-xs flex-col sm:flex-row px-1 py-2 h-auto">
-                  <Brain className="h-3 w-3 sm:mr-1 mb-1 sm:mb-0" />
-                  <span>AI</span>
+                <TabsTrigger value="ai" className="flex-1 min-w-0 px-2 py-1 h-10">
+                  <div className="flex flex-col items-center justify-center">
+                    <Brain className="h-4 w-4 mb-0.5" />
+                    <span className="text-[10px] leading-none hidden sm:block">AI</span>
+                  </div>
                 </TabsTrigger>
-                <TabsTrigger value="technical" className="text-xs flex-col sm:flex-row px-1 py-2 h-auto">
-                  <HelpCircle className="h-3 w-3 sm:mr-1 mb-1 sm:mb-0" />
-                  <span className="hidden sm:inline">Teknik</span>
-                  <span className="sm:hidden text-[10px]">Teknik</span>
+                <TabsTrigger value="technical" className="flex-1 min-w-0 px-2 py-1 h-10">
+                  <div className="flex flex-col items-center justify-center">
+                    <HelpCircle className="h-4 w-4 mb-0.5" />
+                    <span className="text-[10px] leading-none hidden sm:block">Teknik</span>
+                  </div>
                 </TabsTrigger>
-                <TabsTrigger value="subscription" className="text-xs flex-col sm:flex-row px-1 py-2 h-auto">
-                  <CreditCard className="h-3 w-3 sm:mr-1 mb-1 sm:mb-0" />
-                  <span className="hidden sm:inline">Abonelik</span>
-                  <span className="sm:hidden text-[10px]">Abone</span>
+                <TabsTrigger value="subscription" className="flex-1 min-w-0 px-2 py-1 h-10">
+                  <div className="flex flex-col items-center justify-center">
+                    <CreditCard className="h-4 w-4 mb-0.5" />
+                    <span className="text-[10px] leading-none hidden sm:block">Abonelik</span>
+                  </div>
                 </TabsTrigger>
-                <TabsTrigger value="security" className="text-xs flex-col sm:flex-row px-1 py-2 h-auto">
-                  <Shield className="h-3 w-3 sm:mr-1 mb-1 sm:mb-0" />
-                  <span className="hidden sm:inline">Güvenlik</span>
-                  <span className="sm:hidden text-[10px]">Güven</span>
+                <TabsTrigger value="security" className="flex-1 min-w-0 px-2 py-1 h-10">
+                  <div className="flex flex-col items-center justify-center">
+                    <Shield className="h-4 w-4 mb-0.5" />
+                    <span className="text-[10px] leading-none hidden sm:block">Güvenlik</span>
+                  </div>
                 </TabsTrigger>
               </TabsList>
 
