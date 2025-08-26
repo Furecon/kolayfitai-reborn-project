@@ -54,16 +54,6 @@ ${message}
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="border-b border-gray-200 px-4 py-4 bg-white">
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="text-gray-600"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Geri
-        </Button>
-      </div>
 
       <div className="p-4 max-w-2xl mx-auto">
         <Card>

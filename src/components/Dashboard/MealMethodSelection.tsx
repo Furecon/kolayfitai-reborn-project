@@ -80,19 +80,10 @@ export function MealMethodSelection({
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 bg-background border-b border-border px-4 py-4 z-10">
-        <div className="flex items-center justify-between max-w-2xl mx-auto">
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="text-muted-foreground"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Geri
-          </Button>
+        <div className="flex items-center justify-center max-w-2xl mx-auto">
           <h1 className="text-lg font-semibold text-foreground">
             Öğün Ekleme Yöntemi
           </h1>
-          <div className="w-16" />
         </div>
       </div>
 

@@ -226,14 +226,7 @@ export function Dashboard() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="border-b border-gray-200 bg-white px-3 sm:px-4 py-3 sm:py-4">
-          <Button
-            variant="ghost"
-            onClick={() => setCurrentView('dashboard')}
-            className="text-gray-600 h-10"
-          >
-            ← Geri
-          </Button>
-          <h1 className="text-xl font-semibold mt-2">Gelişim Takibi</h1>
+          <h1 className="text-xl font-semibold">Gelişim Takibi</h1>
         </div>
         <div className="p-4">
           <ProgressTracker />
@@ -289,14 +282,7 @@ export function Dashboard() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="border-b border-gray-200 bg-white px-3 sm:px-4 py-3 sm:py-4">
-          <Button
-            variant="ghost"
-            onClick={() => setCurrentView('dashboard')}
-            className="text-gray-600 h-10"
-          >
-            ← Geri
-          </Button>
-          <h1 className="text-xl font-semibold mt-2">Abonelik Yönetimi</h1>
+          <h1 className="text-xl font-semibold">Abonelik Yönetimi</h1>
         </div>
         <div className="p-4">
           <SubscriptionManager />

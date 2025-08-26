@@ -593,15 +593,7 @@ export default function ManualFoodEntry({
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="text-muted-foreground"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Geri
-          </Button>
+        <div className="text-center mb-6">
           <h1 className="text-xl font-semibold text-foreground">Manuel Öğün Girişi</h1>
           <Badge variant="secondary">{mealType}</Badge>
         </div>

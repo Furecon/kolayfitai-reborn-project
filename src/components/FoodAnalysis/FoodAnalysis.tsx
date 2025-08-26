@@ -253,19 +253,10 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   return (
     <div className="min-h-screen bg-white">
       <div className="sticky top-0 bg-white border-b border-gray-200 px-3 sm:px-4 py-3 sm:py-4 z-10">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={handleBack}
-            className="text-gray-600 h-10 px-2"
-          >
-            <ArrowLeft className="h-5 w-5 mr-1" />
-            Geri
-          </Button>
+        <div className="flex items-center justify-center">
           <h1 className="text-lg font-semibold text-gray-900">
             {getStepTitle()}
           </h1>
-          <div className="w-16" />
         </div>
       </div>
 

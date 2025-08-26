@@ -196,15 +196,7 @@ export function BarcodeScanner({ onProductFound, onBack }: BarcodeScannerProps) 
     return (
       <div className="min-h-screen bg-white p-4">
         <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
-            <Button
-              variant="ghost"
-              onClick={onBack}
-              className="text-gray-600"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Geri
-            </Button>
+          <div className="text-center mb-6">
             <h1 className="text-xl font-semibold text-black">Barkod Okuyucu</h1>
           </div>
 
@@ -230,15 +222,7 @@ export function BarcodeScanner({ onProductFound, onBack }: BarcodeScannerProps) 
   return (
     <div className="min-h-screen bg-white p-4">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="text-gray-600"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Geri
-          </Button>
+        <div className="text-center mb-6">
           <h1 className="text-xl font-semibold text-black">Barkod Okuyucu</h1>
         </div>
 
