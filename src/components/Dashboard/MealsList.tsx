@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Camera, Utensils, Clock } from 'lucide-react'
+import { Plus, Camera, Utensils, Clock, Trash2 } from 'lucide-react'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
+import { useToast } from '@/hooks/use-toast'
 
 interface MealLog {
   id: string
@@ -25,6 +27,7 @@ interface MealsListProps {
 
 export function MealsList({ onAddMeal, refreshTrigger }: MealsListProps) {
   const { user } = useAuth()
+  const { toast } = useToast()
   const [meals, setMeals] = useState<MealLog[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -97,6 +100,38 @@ export function MealsList({ onAddMeal, refreshTrigger }: MealsListProps) {
     return translations[mealType.toLowerCase() as keyof typeof translations] || mealType
   }
 
+  const deleteMeal = async (mealId: string) => {
+    if (!user) return
+
+    try {
+      const { error } = await supabase
+        .from('meal_logs')
+        .delete()
+        .eq('id', mealId)
+        .eq('user_id', user.id) // Extra security check
+
+      if (error) throw error
+
+      // Remove meal from local state
+      setMeals(prevMeals => prevMeals.filter(meal => meal.id !== mealId))
+      
+      // Refresh the data to update parent components
+      await fetchTodaysMeals()
+
+      toast({
+        title: "Öğün silindi",
+        description: "Öğün başarıyla silindi ve günlük toplamlar güncellendi.",
+      })
+    } catch (error) {
+      console.error('Error deleting meal:', error)
+      toast({
+        title: "Hata",
+        description: "Öğün silinirken bir hata oluştu. Lütfen tekrar deneyin.",
+        variant: "destructive"
+      })
+    }
+  }
+
   if (loading) {
     return (
       <div className="px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
@@ -149,8 +184,38 @@ export function MealsList({ onAddMeal, refreshTrigger }: MealsListProps) {
               {meals.map((meal) => (
                 <div
                   key={meal.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors gap-3 sm:gap-4"
+                  className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors gap-3 sm:gap-4"
                 >
+                  {/* Delete Button - Top Right Corner */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 h-6 w-6 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Öğünü Sil</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Bu öğünü silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve günlük toplamlarınız otomatik olarak güncellenecektir.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>İptal</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteMeal(meal.id)}
+                          className="bg-red-500 hover:bg-red-600"
+                        >
+                          Sil
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
                   <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
                     <div className="text-xl sm:text-2xl flex-shrink-0 mt-0.5 sm:mt-0">
                       {getMealIcon(meal.meal_type)}
