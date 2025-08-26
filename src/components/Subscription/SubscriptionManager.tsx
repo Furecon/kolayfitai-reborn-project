@@ -174,16 +174,16 @@ export function SubscriptionManager() {
             <CardDescription>
               <div className="space-y-1">
                 <div>
-                  <span className="text-2xl font-bold text-primary">119,90 ₺</span>
+                  <span className="text-2xl font-bold text-primary">119,99 ₺</span>
                   <span className="text-muted-foreground">/ay</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Her ay 119,90 ₺ faturalandırılır
+                  Her ay düzenli olarak 119,99 ₺ tahsil edilir.
                 </div>
                 {!isPremiumActive && isTrialActive && (
-                  <div className="text-xs text-green-600 font-medium">
-                    İlk 3 gün ücretsiz, sonra aylık 119,90 ₺
-                  </div>
+                <div className="text-xs text-green-600 font-medium">
+                  İlk 3 gün ücretsiz, sonra aylık 119,99 ₺
+                </div>
                 )}
               </div>
             </CardDescription>
@@ -227,10 +227,10 @@ export function SubscriptionManager() {
                   <span className="text-muted-foreground">/yıl</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Yılda bir kez 1.199,99 ₺ faturalandırılır
+                  Yılda bir kez 1.199,99 ₺ tahsil edilir (Aylık ortalama 100 ₺).
                 </div>
                 <div className="text-xs text-green-600 font-medium">
-                  Aylık {(1199.99 / 12).toFixed(2)} ₺ (Normal fiyat: {(119.90 * 12).toFixed(2)} ₺)
+                  %17 indirim ile yaklaşık 240 ₺ tasarruf
                 </div>
                 {!isPremiumActive && isTrialActive && (
                   <div className="text-xs text-green-600 font-medium">
@@ -242,8 +242,8 @@ export function SubscriptionManager() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-2 text-sm text-muted-foreground mb-4">
-              <li>• Tüm aylık plan özellikleri</li>
-              <li>• %17 daha ucuz (240+ ₺ tasarruf)</li>
+              <li>• Aylık planın tüm özellikleri</li>
+              <li>• %17 indirim ile yaklaşık 240 ₺ tasarruf</li>
               <li>• Öncelikli müşteri desteği</li>
               <li>• Gelişmiş analitikler ve raporlar</li>
               <li>• Özel AI önerileri</li>
@@ -266,11 +266,11 @@ export function SubscriptionManager() {
           <div className="text-sm text-muted-foreground space-y-2">
             <p><strong>Önemli Bilgiler:</strong></p>
             <ul className="space-y-1 ml-4">
-              <li>• Ödeme Google Play hesabınızdan tahsil edilir</li>
-              <li>• Abonelik otomatik olarak yenilenir</li>
-              <li>• İptal etmek için Play Store → Abonelikler bölümüne gidin</li>
-              <li>• İptal durumunda mevcut dönem sonuna kadar erişim devam eder</li>
-              <li>• Ücretsiz deneme süresi içinde iptal ederseniz ücret alınmaz</li>
+              <li>• Ödemeler Google Play hesabınız üzerinden güvenli şekilde yapılır.</li>
+              <li>• Abonelik süresi sonunda otomatik olarak yenilenir.</li>
+              <li>• İptal etmek için Play Store → Abonelikler bölümünü kullanabilirsiniz.</li>
+              <li>• İptal durumunda mevcut fatura dönemi sonuna kadar Premium erişim devam eder.</li>
+              <li>• Ücretsiz deneme süresi içinde iptal ederseniz ücret alınmaz.</li>
             </ul>
           </div>
         </CardContent>
