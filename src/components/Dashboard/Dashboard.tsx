@@ -5,9 +5,11 @@ import { CalorieCards } from './CalorieCards'
 import { MealsList } from './MealsList'
 import { AIInsights } from './AIInsights'
 import { HistoryMeals } from './HistoryMeals'
+import { MealMethodSelection } from './MealMethodSelection'
 import { TutorialOverlay } from '../Tutorial/TutorialOverlay'
 import { useTutorial, useTutorialAutoShow } from '@/context/TutorialContext'
 import FoodAnalysis from '../FoodAnalysis'
+import ManualFoodEntry from '../FoodAnalysis/ManualFoodEntry'
 import ProfileSetup from '../Profile/ProfileSetup'
 import ProgressTracker from '../Profile/ProgressTracker'
 import { ContactPage } from '../Support/ContactPage'
@@ -23,7 +25,7 @@ import { useAuth } from '@/components/Auth/AuthProvider'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, X, Sparkles, Heart, TrendingUp } from 'lucide-react'
 
-type View = 'dashboard' | 'camera' | 'profile' | 'progress' | 'assistant' | 'suggestions' | 'favorites' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
+type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'profile' | 'progress' | 'assistant' | 'suggestions' | 'favorites' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -181,6 +183,26 @@ export function Dashboard() {
     tutorial.showTutorial('dashboard')
   }
 
+  if (currentView === 'meal-selection') {
+    return (
+      <MealMethodSelection
+        onBack={() => setCurrentView('dashboard')}
+        onSelectPhoto={() => setCurrentView('camera')}
+        onSelectManual={() => setCurrentView('manual-entry')}
+      />
+    )
+  }
+
+  if (currentView === 'manual-entry') {
+    return (
+      <ManualFoodEntry
+        mealType=""
+        onBack={() => setCurrentView('meal-selection')}
+        onMealSaved={handleMealAdded}
+      />
+    )
+  }
+
   if (currentView === 'camera') {
     return (
       <FoodAnalysis 
@@ -284,7 +306,7 @@ export function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader
-        onCameraClick={() => setCurrentView('camera')}
+        onCameraClick={() => setCurrentView('meal-selection')}
         onProfileClick={() => setCurrentView('profile')}
         onContactClick={() => setCurrentView('contact')}
         onResourcesClick={() => setCurrentView('resources')}
@@ -297,7 +319,7 @@ export function Dashboard() {
       <div data-tutorial="calorie-cards">
         <CalorieCards 
           {...dailyStats} 
-          onCameraClick={() => setCurrentView('camera')}
+          onCameraClick={() => setCurrentView('meal-selection')}
         />
       </div>
       
@@ -343,7 +365,7 @@ export function Dashboard() {
       
       <div data-tutorial="meal-history">
         <MealsList
-          onAddMeal={() => setCurrentView('camera')}
+          onAddMeal={() => setCurrentView('meal-selection')}
           refreshTrigger={refreshTrigger}
         />
       </div>
