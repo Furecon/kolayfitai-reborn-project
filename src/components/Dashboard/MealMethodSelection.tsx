@@ -79,24 +79,24 @@ export function MealMethodSelection({
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 bg-background border-b border-border px-4 py-4 z-10">
+      <div className="sticky top-0 bg-background border-b border-border px-3 py-3 z-10">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <Button
             variant="ghost"
             onClick={onBack}
-            className="text-muted-foreground"
+            className="text-muted-foreground p-2"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Geri
+            <ArrowLeft className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Geri</span>
           </Button>
-          <h1 className="text-lg font-semibold text-foreground">
+          <h1 className="text-base sm:text-lg font-semibold text-foreground text-center flex-1 px-2">
             Öğün Ekleme Yöntemi
           </h1>
-          <div className="w-16" />
+          <div className="w-8 sm:w-16" />
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto p-4 space-y-6">
+      <div className="max-w-2xl mx-auto p-3 sm:p-4 space-y-4 sm:space-y-6">
         {/* Camera Permission Denied Alert */}
         {cameraPermissionDenied && (
           <Alert>
@@ -118,30 +118,32 @@ export function MealMethodSelection({
             }`}
             onClick={() => setSelectedMethod('manual')}
           >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-lg ${
+            <CardHeader className="pb-2 sm:pb-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className={`p-2 sm:p-3 rounded-lg flex-shrink-0 ${
                     selectedMethod === 'manual' 
                       ? 'bg-success text-success-foreground' 
                       : 'bg-muted text-muted-foreground'
                   }`}>
-                    <Edit3 className="h-5 w-5" />
+                    <Edit3 className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <div>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      Manuel Ekle
-                      <Badge variant="secondary" className="text-xs">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <CardTitle className="text-base sm:text-lg">
+                        Manuel Ekle
+                      </CardTitle>
+                      <Badge variant="secondary" className="text-xs w-fit">
                         <Zap className="h-3 w-3 mr-1" />
                         Önerilen
                       </Badge>
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    </div>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                       Bilgileri doğrudan form ile girin
                     </p>
                   </div>
                 </div>
-                <div className={`w-4 h-4 rounded-full border-2 mt-1 ${
+                <div className={`w-5 h-5 sm:w-4 sm:h-4 rounded-full border-2 mt-1 flex-shrink-0 ${
                   selectedMethod === 'manual' 
                     ? 'border-success bg-success' 
                     : 'border-muted-foreground'
@@ -152,12 +154,12 @@ export function MealMethodSelection({
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4" />
+            <CardContent className="space-y-2 pt-0">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span>Hızlı ve kolay</span>
               </div>
-              <ul className="text-sm text-muted-foreground space-y-1 ml-6">
+              <ul className="text-xs sm:text-sm text-muted-foreground space-y-1 ml-4 sm:ml-6">
                 <li>• Öğün adı, kalori ve makro girişi</li>
                 <li>• Fotoğraf opsiyonel</li>
                 <li>• Sık kullanılanlardan kopyalama</li>
@@ -175,31 +177,33 @@ export function MealMethodSelection({
             } ${cameraPermissionDenied ? 'opacity-50' : ''}`}
             onClick={() => !cameraPermissionDenied && setSelectedMethod('photo')}
           >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-lg ${
+            <CardHeader className="pb-2 sm:pb-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className={`p-2 sm:p-3 rounded-lg flex-shrink-0 ${
                     selectedMethod === 'photo' 
                       ? 'bg-success text-success-foreground' 
                       : 'bg-muted text-muted-foreground'
                   }`}>
-                    <Camera className="h-5 w-5" />
+                    <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <div>
-                    <CardTitle className="text-lg">
-                      Fotoğrafla Ekle
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col gap-1">
+                      <CardTitle className="text-base sm:text-lg">
+                        Fotoğrafla Ekle
+                      </CardTitle>
                       {cameraPermissionDenied && (
-                        <Badge variant="destructive" className="text-xs ml-2">
+                        <Badge variant="destructive" className="text-xs w-fit">
                           İzin Gerekli
                         </Badge>
                       )}
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    </div>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                       AI ile otomatik analiz
                     </p>
                   </div>
                 </div>
-                <div className={`w-4 h-4 rounded-full border-2 mt-1 ${
+                <div className={`w-5 h-5 sm:w-4 sm:h-4 rounded-full border-2 mt-1 flex-shrink-0 ${
                   selectedMethod === 'photo' 
                     ? 'border-success bg-success' 
                     : 'border-muted-foreground'
@@ -210,12 +214,12 @@ export function MealMethodSelection({
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Camera className="h-4 w-4" />
+            <CardContent className="space-y-2 pt-0">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span>AI destekli analiz</span>
               </div>
-              <ul className="text-sm text-muted-foreground space-y-1 ml-6">
+              <ul className="text-xs sm:text-sm text-muted-foreground space-y-1 ml-4 sm:ml-6">
                 <li>• Fotoğraf çekme/yükleme</li>
                 <li>• Otomatik yemek tanıma</li>
                 <li>• AI besin değeri hesaplama</li>
@@ -235,17 +239,19 @@ export function MealMethodSelection({
           {selectedMethod === 'manual' ? (
             <>
               <Edit3 className="h-4 w-4 mr-2" />
-              Manuel Forma Git
+              <span className="hidden sm:inline">Manuel Forma Git</span>
+              <span className="sm:hidden">Manuel Giriş</span>
             </>
           ) : (
             <>
               <Camera className="h-4 w-4 mr-2" />
-              Kamera'ya Git
+              <span className="hidden sm:inline">Kamera'ya Git</span>
+              <span className="sm:hidden">Kamera</span>
             </>
           )}
         </Button>
 
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-xs sm:text-sm text-muted-foreground px-2">
           <p>
             {selectedMethod === 'manual' 
               ? 'Bilgileri kendiniz gireceksiniz. Fotoğraf eklemek opsiyoneldir.'
