@@ -164,30 +164,35 @@ export function FAQPage({ onBack }: FAQPageProps) {
             </div>
 
             <Tabs defaultValue="general" className="w-full">
-              <TabsList className="grid w-full grid-cols-6">
-                <TabsTrigger value="general" className="text-xs">
-                  <Smartphone className="h-3 w-3 mr-1" />
-                  Genel
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1">
+                <TabsTrigger value="general" className="text-xs flex-col sm:flex-row px-1 py-2 h-auto">
+                  <Smartphone className="h-3 w-3 sm:mr-1 mb-1 sm:mb-0" />
+                  <span className="hidden sm:inline">Genel</span>
+                  <span className="sm:hidden text-[10px]">Genel</span>
                 </TabsTrigger>
-                <TabsTrigger value="nutrition" className="text-xs">
-                  <Calculator className="h-3 w-3 mr-1" />
-                  Beslenme
+                <TabsTrigger value="nutrition" className="text-xs flex-col sm:flex-row px-1 py-2 h-auto">
+                  <Calculator className="h-3 w-3 sm:mr-1 mb-1 sm:mb-0" />
+                  <span className="hidden sm:inline">Beslenme</span>
+                  <span className="sm:hidden text-[10px]">Beslen</span>
                 </TabsTrigger>
-                <TabsTrigger value="ai" className="text-xs">
-                  <Brain className="h-3 w-3 mr-1" />
-                  AI
+                <TabsTrigger value="ai" className="text-xs flex-col sm:flex-row px-1 py-2 h-auto">
+                  <Brain className="h-3 w-3 sm:mr-1 mb-1 sm:mb-0" />
+                  <span>AI</span>
                 </TabsTrigger>
-                <TabsTrigger value="technical" className="text-xs">
-                  <HelpCircle className="h-3 w-3 mr-1" />
-                  Teknik
+                <TabsTrigger value="technical" className="text-xs flex-col sm:flex-row px-1 py-2 h-auto">
+                  <HelpCircle className="h-3 w-3 sm:mr-1 mb-1 sm:mb-0" />
+                  <span className="hidden sm:inline">Teknik</span>
+                  <span className="sm:hidden text-[10px]">Teknik</span>
                 </TabsTrigger>
-                <TabsTrigger value="subscription" className="text-xs">
-                  <CreditCard className="h-3 w-3 mr-1" />
-                  Abonelik
+                <TabsTrigger value="subscription" className="text-xs flex-col sm:flex-row px-1 py-2 h-auto">
+                  <CreditCard className="h-3 w-3 sm:mr-1 mb-1 sm:mb-0" />
+                  <span className="hidden sm:inline">Abonelik</span>
+                  <span className="sm:hidden text-[10px]">Abone</span>
                 </TabsTrigger>
-                <TabsTrigger value="security" className="text-xs">
-                  <Shield className="h-3 w-3 mr-1" />
-                  Güvenlik
+                <TabsTrigger value="security" className="text-xs flex-col sm:flex-row px-1 py-2 h-auto">
+                  <Shield className="h-3 w-3 sm:mr-1 mb-1 sm:mb-0" />
+                  <span className="hidden sm:inline">Güvenlik</span>
+                  <span className="sm:hidden text-[10px]">Güven</span>
                 </TabsTrigger>
               </TabsList>
 
