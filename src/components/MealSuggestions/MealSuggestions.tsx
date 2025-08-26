@@ -207,8 +207,16 @@ export function MealSuggestions({ onBack, onMealAdded, dailyStats }: MealSuggest
     <div className="min-h-screen bg-gray-50">
       {/* Header - Responsive */}
       <div className="border-b border-gray-200 px-3 sm:px-4 py-3 sm:py-4 bg-white">
-        <div className="text-center">
-          <h1 className="text-lg sm:text-xl font-semibold text-black">Ai Öğün Önerileri</h1>
+        <div className="flex items-center gap-3 sm:gap-4">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="text-gray-600 h-8 w-8 sm:h-10 sm:w-auto p-0 sm:px-4"
+          >
+            <ArrowLeft className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Geri</span>
+          </Button>
+          <h1 className="text-lg sm:text-xl font-semibold text-black truncate">Ai Öğün Önerileri</h1>
         </div>
       </div>
 

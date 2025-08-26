@@ -240,6 +240,18 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
+      {onBack && (
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="text-gray-600 h-10"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Geri
+          </Button>
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl text-black">Profil Bilgileri</CardTitle>

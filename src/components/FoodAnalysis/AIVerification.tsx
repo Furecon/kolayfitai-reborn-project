@@ -63,7 +63,15 @@ export default function AIVerification({
     return (
       <div className="min-h-screen bg-white p-4">
         <div className="max-w-2xl mx-auto space-y-6">
-        <div className="text-center mb-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="text-gray-600"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Geri
+          </Button>
           <h1 className="text-xl font-semibold text-black">Ai Analiz Doğrulaması</h1>
         </div>
 
@@ -145,7 +153,15 @@ export default function AIVerification({
   return (
     <div className="min-h-screen bg-white p-4">
       <div className="max-w-2xl mx-auto space-y-6">
-        <div className="text-center mb-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="text-gray-600"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Geri
+          </Button>
           <h1 className="text-xl font-semibold text-black">Ai Analiz Doğrulaması</h1>
         </div>
 
