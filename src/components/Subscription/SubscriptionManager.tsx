@@ -137,39 +137,72 @@ export function SubscriptionManager() {
           <CardDescription>
             {subscriptionData.subscriptionValid 
               ? `${subscriptionData.remainingDays} gün kaldı`
-              : "Aboneliğinizi yenilemek için aşağıdaki planlardan birini seçin"
+              : "Premium özelliklerden yararlanmak için bir plan seçin"
             }
           </CardDescription>
         </CardHeader>
+        {isPremiumActive && (
+          <CardContent>
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">
+                <strong>Abonelik Yönetimi:</strong> Play Store üzerinden aboneliğinizi yönetebilir, iptal edebilir veya değiştirebilirsiniz.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                İptal durumunda aboneliğiniz mevcut dönem sonuna kadar aktif kalacaktır.
+              </p>
+            </div>
+          </CardContent>
+        )}
       </Card>
 
       {/* Abonelik Planları */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Aylık Plan */}
         <Card className="relative">
+          {!isPremiumActive && isTrialActive && (
+            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+              <Badge variant="secondary">
+                3 Gün Ücretsiz Deneme
+              </Badge>
+            </div>
+          )}
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
               Aylık Plan
             </CardTitle>
             <CardDescription>
-              <span className="text-2xl font-bold text-primary">119,90 ₺</span>
-              <span className="text-muted-foreground">/ay</span>
+              <div className="space-y-1">
+                <div>
+                  <span className="text-2xl font-bold text-primary">119,90 ₺</span>
+                  <span className="text-muted-foreground">/ay</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Her ay 119,90 ₺ faturalandırılır
+                </div>
+                {!isPremiumActive && isTrialActive && (
+                  <div className="text-xs text-green-600 font-medium">
+                    İlk 3 gün ücretsiz, sonra aylık 119,90 ₺
+                  </div>
+                )}
+              </div>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2 text-sm text-muted-foreground mb-4">
               <li>• Sınırsız yemek analizi</li>
-              <li>• Ai destekli beslenme önerileri</li>
+              <li>• AI destekli beslenme önerileri</li>
               <li>• Kişiselleştirilmiş menüler</li>
               <li>• Detaylı raporlama</li>
+              <li>• Favoriler ve geçmiş kayıtlar</li>
             </ul>
             <Button 
               className="w-full" 
               onClick={() => purchaseSubscription('monthly_119_90')}
               disabled={purchasing || isPremiumActive}
+              variant={isPremiumActive ? "secondary" : "default"}
             >
-              {purchasing ? "İşleniyor..." : "Aylık Abonelik Satın Al"}
+              {purchasing ? "İşleniyor..." : isPremiumActive ? "Mevcut Plan" : "Aylık Plana Geç"}
             </Button>
           </CardContent>
         </Card>
@@ -188,30 +221,60 @@ export function SubscriptionManager() {
               Yıllık Plan
             </CardTitle>
             <CardDescription>
-              <span className="text-2xl font-bold text-primary">1.199,99 ₺</span>
-              <span className="text-muted-foreground">/yıl</span>
-              <div className="text-xs text-muted-foreground mt-1">
-                Aylık {(1199.99 / 12).toFixed(2)} ₺
+              <div className="space-y-1">
+                <div>
+                  <span className="text-2xl font-bold text-primary">1.199,99 ₺</span>
+                  <span className="text-muted-foreground">/yıl</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Yılda bir kez 1.199,99 ₺ faturalandırılır
+                </div>
+                <div className="text-xs text-green-600 font-medium">
+                  Aylık {(1199.99 / 12).toFixed(2)} ₺ (Normal fiyat: {(119.90 * 12).toFixed(2)} ₺)
+                </div>
+                {!isPremiumActive && isTrialActive && (
+                  <div className="text-xs text-green-600 font-medium">
+                    İlk 3 gün ücretsiz, sonra yıllık 1.199,99 ₺
+                  </div>
+                )}
               </div>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2 text-sm text-muted-foreground mb-4">
               <li>• Tüm aylık plan özellikleri</li>
-              <li>• %17 daha ucuz</li>
-              <li>• Öncelikli destek</li>
-              <li>• Gelişmiş analitikler</li>
+              <li>• %17 daha ucuz (240+ ₺ tasarruf)</li>
+              <li>• Öncelikli müşteri desteği</li>
+              <li>• Gelişmiş analitikler ve raporlar</li>
+              <li>• Özel AI önerileri</li>
             </ul>
             <Button 
               className="w-full" 
               onClick={() => purchaseSubscription('yearly_1199_99')}
               disabled={purchasing || isPremiumActive}
+              variant={isPremiumActive ? "secondary" : "default"}
             >
-              {purchasing ? "İşleniyor..." : "Yıllık Abonelik Satın Al"}
+              {purchasing ? "İşleniyor..." : isPremiumActive ? "Mevcut Plan" : "Yıllık Plana Geç"}
             </Button>
           </CardContent>
         </Card>
       </div>
+
+      {/* Play Store Bilgilendirme */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p><strong>Önemli Bilgiler:</strong></p>
+            <ul className="space-y-1 ml-4">
+              <li>• Ödeme Google Play hesabınızdan tahsil edilir</li>
+              <li>• Abonelik otomatik olarak yenilenir</li>
+              <li>• İptal etmek için Play Store → Abonelikler bölümüne gidin</li>
+              <li>• İptal durumunda mevcut dönem sonuna kadar erişim devam eder</li>
+              <li>• Ücretsiz deneme süresi içinde iptal ederseniz ücret alınmaz</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
