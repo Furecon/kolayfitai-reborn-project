@@ -49,6 +49,10 @@ export function FAQPage({ onBack }: FAQPageProps) {
       {
         q: "Manuel besin girişi yapabilir miyim?",
         a: "Evet! Fotoğraf çekemediğiniz durumlarda manuel olarak yemek ekleyebilirsiniz. Kamera ekranında 'Manuel Giriş' seçeneğini kullanın."
+      },
+      {
+        q: "Kaloriyi ben mi girmeliyim?",
+        a: "Hayır. Manuel eklemede de AI otomatik hesaplar; isterseniz düzenleyebilirsiniz. Sadece yemek adı ve miktarını girmeniz yeterli."
       }
     ],
     ai: [

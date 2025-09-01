@@ -13,7 +13,7 @@ export const tutorials: Record<TutorialScreen, TutorialStep[]> = {
     {
       id: 'add-meal-button',
       title: 'Öğün Ekle',
-      description: 'Bu butona tıklayarak yeni bir öğün ekleyebilirsiniz. Fotoğraf çekebilir veya manuel olarak yemek girebilirsiniz.',
+      description: 'Bu butona tıklayarak yeni bir öğün ekleyebilirsiniz. Fotoğrafla analiz en yüksek doğruluğu sağlar.',
       targetSelector: '[data-tutorial="add-meal-button"]',
       position: 'bottom'
     },
@@ -44,7 +44,7 @@ export const tutorials: Record<TutorialScreen, TutorialStep[]> = {
     {
       id: 'manual-entry',
       title: 'Manuel Giriş',
-      description: 'Buraya yemek adını yazarak manuel olarak da yemek ekleyebilirsiniz.',
+      description: 'Fotoğraf olmadan da AI ile otomatik hesap yapılır. Yemek adı ve miktarı girmeniz yeterli.',
       targetSelector: '[data-tutorial="manual-entry"]',
       position: 'top'
     },
