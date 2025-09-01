@@ -70,12 +70,12 @@ export function Dashboard() {
     }
   }, [user, refreshTrigger])
 
-  // Auto-show tutorial for new users
+  // Auto-show tutorial for new users (only once when profile is first loaded)
   useEffect(() => {
-    if (profile) {
+    if (profile && currentView === 'dashboard') {
       autoShowTutorial('dashboard')
     }
-  }, [profile, autoShowTutorial])
+  }, [profile]) // Removed autoShowTutorial dependency to prevent re-runs
 
   const fetchProfile = async () => {
     if (!user) return

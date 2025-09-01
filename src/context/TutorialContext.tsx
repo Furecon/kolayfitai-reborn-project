@@ -135,9 +135,9 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     setIsVisible(true)
   }
 
-  // Auto-show tutorial for new users on specific screens (only if not seen before)
+  // Auto-show tutorial for new users on specific screens (only if not completed)
   const autoShowTutorial = (screen: TutorialScreen) => {
-    if (!isTutorialCompleted(screen) && user && !isTutorialSeen) {
+    if (!isTutorialCompleted(screen) && user && !isVisible) {
       // Small delay to ensure DOM is ready and components are rendered
       setTimeout(() => {
         // Check if target elements exist before showing tutorial
