@@ -572,7 +572,9 @@ export default function ManualFoodEntry({
         total_sugar: 0,
         total_sodium: 0,
         photo_url: photoUrl,
-        notes: formData.notes
+        notes: formData.notes,
+        estimation_source: aiEstimation ? 'manual+ai' : 'manual',
+        confidence: aiEstimation ? aiEstimation.confidence : null
       }
 
       const { error } = await supabase

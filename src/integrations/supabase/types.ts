@@ -230,9 +230,11 @@ export type Database = {
         Row: {
           amount_unit: string | null
           amount_value: number | null
+          confidence: number | null
           cooking_method: string | null
           created_at: string
           date: string
+          estimation_source: string | null
           food_items: Json
           id: string
           meal_name: string | null
@@ -251,9 +253,11 @@ export type Database = {
         Insert: {
           amount_unit?: string | null
           amount_value?: number | null
+          confidence?: number | null
           cooking_method?: string | null
           created_at?: string
           date?: string
+          estimation_source?: string | null
           food_items?: Json
           id?: string
           meal_name?: string | null
@@ -272,9 +276,11 @@ export type Database = {
         Update: {
           amount_unit?: string | null
           amount_value?: number | null
+          confidence?: number | null
           cooking_method?: string | null
           created_at?: string
           date?: string
+          estimation_source?: string | null
           food_items?: Json
           id?: string
           meal_name?: string | null
