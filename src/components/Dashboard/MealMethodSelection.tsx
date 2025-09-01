@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { ArrowLeft, Camera, Edit3, Zap, Clock, AlertCircle, Sparkles, QrCode } from 'lucide-react'
+import { ArrowLeft, Camera, Edit3, Zap, Clock, AlertCircle, Sparkles, QrCode, Upload } from 'lucide-react'
 
 interface MealMethodSelectionProps {
   onBack: () => void
@@ -11,6 +11,8 @@ interface MealMethodSelectionProps {
   onSelectManual: () => void
   onSelectBarcode?: () => void
   onForceManual?: () => void
+  onSelectPhotoFromFile?: () => void
+  onSelectBarcodeFromImage?: () => void
 }
 
 export function MealMethodSelection({ 
@@ -18,7 +20,9 @@ export function MealMethodSelection({
   onSelectPhoto, 
   onSelectManual,
   onSelectBarcode,
-  onForceManual
+  onForceManual,
+  onSelectPhotoFromFile,
+  onSelectBarcodeFromImage
 }: MealMethodSelectionProps) {
   // Get user's last preference or default to photo
   const getInitialMethod = (): 'photo' | 'barcode' | 'manual' => {
@@ -153,8 +157,8 @@ export function MealMethodSelection({
               selectedMethod === 'photo' 
                 ? 'border-success bg-success-muted' 
                 : 'border-border hover:border-success/50'
-            } ${cameraPermissionDenied ? 'opacity-50' : ''}`}
-            onClick={() => !cameraPermissionDenied && handleMethodSelect('photo')}
+            }`}
+            onClick={() => handleMethodSelect('photo')}
           >
             <CardHeader className="pb-2 sm:pb-3">
               <div className="flex items-start justify-between gap-3">
@@ -171,17 +175,10 @@ export function MealMethodSelection({
                       <CardTitle className="text-base sm:text-lg">
                         Fotoğrafla Analiz
                       </CardTitle>
-                      {!cameraPermissionDenied && (
-                        <Badge variant="secondary" className="text-xs w-fit">
-                          <Sparkles className="h-3 w-3 mr-1" />
-                          Önerilir
-                        </Badge>
-                      )}
-                      {cameraPermissionDenied && (
-                        <Badge variant="destructive" className="text-xs w-fit">
-                          İzin Gerekli
-                        </Badge>
-                      )}
+                      <Badge variant="secondary" className="text-xs w-fit">
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        Önerilir
+                      </Badge>
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                       AI ile otomatik besin değeri hesaplama
@@ -199,17 +196,55 @@ export function MealMethodSelection({
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2 pt-0">
+            <CardContent className="space-y-3 pt-0">
               <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                 <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span>En doğru sonuçlar</span>
               </div>
               <ul className="text-xs sm:text-sm text-muted-foreground space-y-1 ml-4 sm:ml-6">
-                <li>• Fotoğraf çekme/yükleme</li>
                 <li>• Otomatik yemek tanıma</li>
                 <li>• AI besin değeri hesaplama</li>
                 <li>• Doğrulama ve düzeltme imkanı</li>
               </ul>
+              
+              {/* Secondary buttons for photo analysis */}
+              {selectedMethod === 'photo' && (
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleContinue()
+                    }}
+                    disabled={cameraPermissionDenied}
+                    className="text-xs"
+                  >
+                    <Camera className="h-3 w-3 mr-1" />
+                    Kamera ile çek
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onSelectPhotoFromFile?.() // Will trigger file selection flow
+                    }}
+                    className="text-xs"
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    Galeriden seç
+                  </Button>
+                </div>
+              )}
+              
+              {cameraPermissionDenied && selectedMethod === 'photo' && (
+                <div className="pt-2 border-t border-border">
+                  <p className="text-xs text-muted-foreground">
+                    Kamera kullanmak istemiyorsanız, galeriden/dosyadan görsel seçebilirsiniz.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -219,8 +254,8 @@ export function MealMethodSelection({
               selectedMethod === 'barcode' 
                 ? 'border-success bg-success-muted' 
                 : 'border-border hover:border-success/50'
-            } ${cameraPermissionDenied ? 'opacity-50' : ''}`}
-            onClick={() => !cameraPermissionDenied && handleMethodSelect('barcode')}
+            }`}
+            onClick={() => handleMethodSelect('barcode')}
           >
             <CardHeader className="pb-2 sm:pb-3">
               <div className="flex items-start justify-between gap-3">
@@ -237,17 +272,10 @@ export function MealMethodSelection({
                       <CardTitle className="text-base sm:text-lg">
                         Barkodla Ekle
                       </CardTitle>
-                      {!cameraPermissionDenied && (
-                        <Badge variant="outline" className="text-xs w-fit">
-                          <QrCode className="h-3 w-3 mr-1" />
-                          Pratik
-                        </Badge>
-                      )}
-                      {cameraPermissionDenied && (
-                        <Badge variant="destructive" className="text-xs w-fit">
-                          İzin Gerekli
-                        </Badge>
-                      )}
+                      <Badge variant="outline" className="text-xs w-fit">
+                        <QrCode className="h-3 w-3 mr-1" />
+                        Pratik
+                      </Badge>
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                       Barkod okuyarak ürün bilgilerini al
@@ -265,17 +293,56 @@ export function MealMethodSelection({
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2 pt-0">
+            <CardContent className="space-y-3 pt-0">
               <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                 <QrCode className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span>Hazır ürün bilgileri</span>
               </div>
               <ul className="text-xs sm:text-sm text-muted-foreground space-y-1 ml-4 sm:ml-6">
-                <li>• Barkod okuma ile otomatik ürün tanıma</li>
-                <li>• Hazır besin değerleri ve markalar</li>
+                <li>• Otomatik ürün tanıma</li>
+                <li>• Hazır besin değerleri</li>
                 <li>• Hızlı porsiyon seçimi</li>
                 <li>• Open Food Facts veritabanı</li>
               </ul>
+              
+              {/* Secondary buttons for barcode scanning */}
+              {selectedMethod === 'barcode' && (
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleContinue()
+                    }}
+                    disabled={cameraPermissionDenied}
+                    className="text-xs"
+                  >
+                    <QrCode className="h-3 w-3 mr-1" />
+                    Barkod tara
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onSelectBarcodeFromImage?.() // Will trigger barcode from image flow
+                    }}
+                    className="text-xs"
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    Fotoğraftan oku
+                  </Button>
+                </div>
+              )}
+              
+              {cameraPermissionDenied && selectedMethod === 'barcode' && (
+                <div className="pt-2 border-t border-border">
+                  <p className="text-xs text-muted-foreground">
+                    Mevcut ürün fotoğrafını galeriden/dosyadan da seçebilirsiniz.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
           <Card 

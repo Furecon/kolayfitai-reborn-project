@@ -53,6 +53,14 @@ export function FAQPage({ onBack }: FAQPageProps) {
       {
         q: "Kaloriyi ben mi girmeliyim?",
         a: "Hayır. Manuel eklemede de AI otomatik hesaplar; isterseniz düzenleyebilirsiniz. Sadece yemek adı ve miktarını girmeniz yeterli."
+      },
+      {
+        q: "Kamera kullanmadan fotoğraf ekleyebilir miyim?",
+        a: "Evet, galeriden/dosyadan görsel seçebilirsiniz. Fotoğraf analizi seçeneğinde 'Galeriden seç' butonunu kullanın."
+      },
+      {
+        q: "Barkodu fotoğraftan okutabilir miyim?",
+        a: "Evet. Barkod içeren fotoğrafı seçerek kodu çıkarabiliriz. Barkod ekleme seçeneğinde 'Fotoğraftan oku' butonunu kullanın."
       }
     ],
     ai: [

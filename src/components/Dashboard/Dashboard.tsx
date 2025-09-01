@@ -12,6 +12,9 @@ import FoodAnalysis from '../FoodAnalysis'
 import ManualFoodEntry from '../FoodAnalysis/ManualFoodEntry'
 import { BarcodeScanner } from '../BarcodeScanner/BarcodeScanner'
 import { BarcodeResult } from '../BarcodeScanner/BarcodeResult'
+import { BarcodeFromImage } from '../BarcodeScanner/BarcodeFromImage'
+import { FileImageSelector } from '../FoodAnalysis/FileImageSelector'
+import { ImageCropEditor } from '../FoodAnalysis/ImageCropEditor'
 import ProfileSetup from '../Profile/ProfileSetup'
 import ProgressTracker from '../Profile/ProgressTracker'
 import { ContactPage } from '../Support/ContactPage'
@@ -27,7 +30,7 @@ import { useAuth } from '@/components/Auth/AuthProvider'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, X, Sparkles, Heart, TrendingUp, ArrowLeft } from 'lucide-react'
 
-type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'barcode-scanner' | 'barcode-result' | 'profile' | 'progress' | 'assistant' | 'suggestions' | 'favorites' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
+type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'barcode-scanner' | 'barcode-result' | 'file-image' | 'crop-image' | 'barcode-from-image' | 'profile' | 'progress' | 'assistant' | 'suggestions' | 'favorites' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -192,7 +195,51 @@ export function Dashboard() {
         onSelectPhoto={() => setCurrentView('camera')}
         onSelectManual={() => setCurrentView('manual-entry')}
         onSelectBarcode={() => setCurrentView('barcode-scanner')}
+        onSelectPhotoFromFile={() => setCurrentView('file-image')}
+        onSelectBarcodeFromImage={() => setCurrentView('barcode-from-image')}
         onForceManual={() => setCurrentView('manual-entry')}
+      />
+    )
+  }
+
+  if (currentView === 'file-image') {
+    return (
+      <FileImageSelector
+        onImageSelected={(imageUrl) => {
+          setCurrentView('crop-image')
+          // Store image for cropping
+          localStorage.setItem('selectedImageForCrop', imageUrl)
+        }}
+        onError={() => setCurrentView('meal-selection')}
+      />
+    )
+  }
+
+  if (currentView === 'crop-image') {
+    return (
+      <ImageCropEditor
+        imageUrl={localStorage.getItem('selectedImageForCrop') || ''}
+        onCropComplete={(croppedImageUrl) => {
+          localStorage.removeItem('selectedImageForCrop')
+          localStorage.setItem('croppedImage', croppedImageUrl)
+          setCurrentView('camera')
+        }}
+        onCancel={() => {
+          localStorage.removeItem('selectedImageForCrop')
+          setCurrentView('file-image')
+        }}
+      />
+    )
+  }
+
+  if (currentView === 'barcode-from-image') {
+    return (
+      <BarcodeFromImage
+        onBarcodeDetected={(barcode) => {
+          localStorage.setItem('scannedBarcode', barcode)
+          setCurrentView('barcode-result')
+        }}
+        onBack={() => setCurrentView('meal-selection')}
       />
     )
   }
