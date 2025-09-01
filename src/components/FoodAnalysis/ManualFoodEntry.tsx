@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { 
   ArrowLeft, 
   Camera, 
@@ -19,7 +20,10 @@ import {
   Clock,
   AlertCircle,
   Search,
-  Heart
+  Heart,
+  Sparkles,
+  Edit,
+  ChevronDown
 } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
@@ -105,6 +109,11 @@ export default function ManualFoodEntry({
     cookingMethod: '',
     notes: ''
   })
+
+  // AI calculation state
+  const [aiEstimation, setAiEstimation] = useState<any>(null)
+  const [isCalculatingAI, setIsCalculatingAI] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -419,6 +428,71 @@ export default function ManualFoodEntry({
     }
   }
 
+  const calculateWithAI = async () => {
+    if (!formData.mealName.trim()) {
+      toast({
+        title: "Eksik Bilgi",
+        description: "AI hesaplama için yemek adı gerekli.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!formData.portionAmount) {
+      toast({
+        title: "Eksik Bilgi",
+        description: "AI hesaplama için miktar bilgisi gerekli.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsCalculatingAI(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-food-by-name', {
+        body: {
+          foodName: `${formData.mealName} ${formData.portionAmount} ${formData.portionUnit} ${formData.cookingMethod || ''}`,
+          mealType: formData.category,
+          photoUrl: photoUrl || null
+        }
+      })
+
+      if (error) throw error
+
+      const analysis = data.analysis
+      setAiEstimation({
+        calories: Math.round(analysis.calories || 0),
+        protein: Math.round(analysis.protein || 0),
+        carbs: Math.round(analysis.carbs || 0),
+        fat: Math.round(analysis.fat || 0),
+        confidence: analysis.confidence || 0.7
+      })
+
+      // Auto-fill the form with AI results
+      setFormData(prev => ({
+        ...prev,
+        calories: Math.round(analysis.calories || 0).toString(),
+        protein: Math.round(analysis.protein || 0).toString(),
+        carbs: Math.round(analysis.carbs || 0).toString(),
+        fat: Math.round(analysis.fat || 0).toString()
+      }))
+
+      toast({
+        title: "AI Hesaplama Tamamlandı",
+        description: "Kalori ve makrolar otomatik hesaplandı.",
+      })
+    } catch (error) {
+      console.error('AI calculation error:', error)
+      toast({
+        title: "Hata",
+        description: "AI hesaplama sırasında hata oluştu. Değerleri manuel girebilirsiniz.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsCalculatingAI(false)
+    }
+  }
+
   const validateForm = () => {
     if (!formData.mealName.trim()) {
       toast({
@@ -438,10 +512,10 @@ export default function ManualFoodEntry({
       return false
     }
 
-    if (!formData.calories || isNaN(Number(formData.calories))) {
+    if (!formData.portionAmount) {
       toast({
         title: "Eksik Bilgi",
-        description: "Geçerli bir kalori değeri giriniz.",
+        description: "Miktar bilgisi zorunludur.",
         variant: "destructive"
       })
       return false
@@ -485,8 +559,12 @@ export default function ManualFoodEntry({
         user_id: user.id,
         date: new Date().toISOString().split('T')[0],
         meal_type: formData.category,
+        meal_name: formData.mealName,
+        amount_value: Number(formData.portionAmount) || null,
+        amount_unit: formData.portionUnit,
+        cooking_method: formData.cookingMethod || null,
         food_items: [foodItem],
-        total_calories: Number(formData.calories),
+        total_calories: Number(formData.calories) || 0,
         total_protein: Number(formData.protein) || 0,
         total_carbs: Number(formData.carbs) || 0,
         total_fat: Number(formData.fat) || 0,
@@ -606,14 +684,11 @@ export default function ManualFoodEntry({
           <Badge variant="secondary">{mealType}</Badge>
         </div>
 
-        {/* Info Alert */}
+        {/* Info Banner */}
         <Alert>
-          <Info className="h-4 w-4" />
+          <Sparkles className="h-4 w-4" />
           <AlertDescription>
-            {cameraPermissionDenied 
-              ? "Kamera iznini sonradan Ayarlar'dan açabilirsiniz. Bu arada manuel ekleme yapabilirsiniz."
-              : "Fotoğraf eklemek zorunlu değildir. İsterseniz direkt bilgileri kaydedebilirsiniz."
-            }
+            Kalori ve makroları otomatik hesaplıyoruz. Daha yüksek doğruluk için fotoğrafla analiz önerilir.
           </AlertDescription>
         </Alert>
 
@@ -673,54 +748,6 @@ export default function ManualFoodEntry({
           </Card>
         )}
 
-        {/* Photo Upload - Optional */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Fotoğraf Ekle (Opsiyonel)</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {photoUrl ? (
-              <div className="space-y-2">
-                <img src={photoUrl} alt="Meal" className="w-full h-48 object-cover rounded-md" />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPhotoUrl(null)}
-                >
-                  Fotoğrafı Kaldır
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="w-full"
-                >
-                  {isUploading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-success mr-2"></div>
-                      Yükleniyor...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Fotoğraf Seç
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Main Form */}
         <Card>
@@ -818,9 +845,11 @@ export default function ManualFoodEntry({
               </Select>
             </div>
 
-            {/* Portion Size */}
+            {/* Portion Size - Required */}
             <div className="space-y-2">
-              <Label>Miktar</Label>
+              <Label>
+                Miktar <span className="text-destructive">*</span>
+              </Label>
               
               {/* Quick Options */}
               <div className="flex flex-wrap gap-2 mb-2">
@@ -857,56 +886,6 @@ export default function ManualFoodEntry({
               </div>
             </div>
 
-            <Separator />
-
-            {/* Calories - Required */}
-            <div className="space-y-2">
-              <Label htmlFor="calories">
-                Kalori (kcal) <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="calories"
-                type="number"
-                placeholder="Örn: 350"
-                value={formData.calories}
-                onChange={(e) => handleInputChange('calories', e.target.value)}
-              />
-            </div>
-
-            {/* Macros - Optional */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="protein">Protein (g)</Label>
-                <Input
-                  id="protein"
-                  type="number"
-                  placeholder="0"
-                  value={formData.protein}
-                  onChange={(e) => handleInputChange('protein', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="carbs">Karbonhidrat (g)</Label>
-                <Input
-                  id="carbs"
-                  type="number"
-                  placeholder="0"
-                  value={formData.carbs}
-                  onChange={(e) => handleInputChange('carbs', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="fat">Yağ (g)</Label>
-                <Input
-                  id="fat"
-                  type="number"
-                  placeholder="0"
-                  value={formData.fat}
-                  onChange={(e) => handleInputChange('fat', e.target.value)}
-                />
-              </div>
-            </div>
-
             {/* Cooking Method - Optional */}
             <div className="space-y-2">
               <Label>Pişirme Yöntemi (Opsiyonel)</Label>
@@ -923,6 +902,192 @@ export default function ManualFoodEntry({
                 </SelectContent>
               </Select>
             </div>
+
+            <Separator />
+
+            {/* AI Calculate Button */}
+            <div className="space-y-4">
+              <Button
+                onClick={calculateWithAI}
+                disabled={isCalculatingAI || !formData.mealName || !formData.portionAmount}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                size="lg"
+              >
+                {isCalculatingAI ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    AI ile Hesaplanıyor...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Otomatik Hesapla (AI)
+                  </>
+                )}
+              </Button>
+
+              {/* Optional Photo Upload */}
+              <div className="space-y-2">
+                {photoUrl ? (
+                  <div className="space-y-2">
+                    <img src={photoUrl} alt="Meal" className="w-full h-32 object-cover rounded-md" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPhotoUrl(null)}
+                    >
+                      Fotoğrafı Kaldır
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      size="sm"
+                      className="w-full"
+                    >
+                      {isUploading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-2"></div>
+                          Yükleniyor...
+                        </>
+                      ) : (
+                        <>
+                          <Camera className="h-3 w-3 mr-2" />
+                          Fotoğraf Ekle (Önerilir)
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* AI Estimation Results */}
+            {aiEstimation && (
+              <Card className="border-green-200 bg-green-50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-green-800 flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Tahmini Kaloriler
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAdvanced(true)}
+                      className="text-green-700 hover:text-green-800"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Düzenle
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Kalori:</span>
+                      <span className="ml-1 font-medium">{aiEstimation.calories} kcal</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Protein:</span>
+                      <span className="ml-1 font-medium">{aiEstimation.protein}g</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Karbonhidrat:</span>
+                      <span className="ml-1 font-medium">{aiEstimation.carbs}g</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Yağ:</span>
+                      <span className="ml-1 font-medium">{aiEstimation.fat}g</span>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Güven Puanı:</span>
+                      <span className="font-medium text-green-700">
+                        %{Math.round(aiEstimation.confidence * 100)}
+                      </span>
+                    </div>
+                    <div className="w-full bg-green-200 rounded-full h-1.5 mt-1">
+                      <div 
+                        className="bg-green-600 h-1.5 rounded-full transition-all duration-300" 
+                        style={{ width: `${aiEstimation.confidence * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Advanced/Manual Input Section */}
+            <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="w-full justify-between" size="sm">
+                  Gelişmiş Ayarlar (Manuel Giriş)
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4">
+                <Separator />
+                
+                {/* Calories - Optional in advanced */}
+                <div className="space-y-2">
+                  <Label htmlFor="calories">Kalori (kcal)</Label>
+                  <Input
+                    id="calories"
+                    type="number"
+                    placeholder="Örn: 350"
+                    value={formData.calories}
+                    onChange={(e) => handleInputChange('calories', e.target.value)}
+                  />
+                </div>
+
+                {/* Macros - Optional */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="protein">Protein (g)</Label>
+                    <Input
+                      id="protein"
+                      type="number"
+                      placeholder="0"
+                      value={formData.protein}
+                      onChange={(e) => handleInputChange('protein', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="carbs">Karbonhidrat (g)</Label>
+                    <Input
+                      id="carbs"
+                      type="number"
+                      placeholder="0"
+                      value={formData.carbs}
+                      onChange={(e) => handleInputChange('carbs', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="fat">Yağ (g)</Label>
+                    <Input
+                      id="fat"
+                      type="number"
+                      placeholder="0"
+                      value={formData.fat}
+                      onChange={(e) => handleInputChange('fat', e.target.value)}
+                    />
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
 
             {/* Notes - Optional */}
             <div className="space-y-2">
