@@ -76,20 +76,37 @@ serve(async (req) => {
           })
         }
         
-        // TODO: Replace with real Google Play Billing validation
-        // This should verify the purchase with Google's servers
-        // For now, we validate the structure and basic requirements
+        // TODO: Implement real Google Play Billing validation
+        // This should validate the receipt with Google's Purchasing API
         console.log('WARNING: Using mock validation - implement real Google Play validation for production')
+        
+        // For production, you would:
+        // 1. Use Google Play Developer API to verify the purchase
+        // 2. Check purchase state, consumption state, etc.
+        // 3. Validate the package name matches your app
+        // 4. Verify the product ID is correct
+        // 5. Check for purchase token replay attacks
+        
+        // Example validation structure:
+        // const googleApiKey = Deno.env.get('GOOGLE_PLAY_API_KEY')
+        // const validationUrl = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptions/${productId}/tokens/${purchaseToken}`
+        // const response = await fetch(validationUrl, {
+        //   headers: { 'Authorization': `Bearer ${googleApiKey}` }
+        // })
+        // const validation = await response.json()
+        // if (!validation.orderId || validation.orderId !== receiptData.orderId) {
+        //   return new Response(JSON.stringify({ error: 'Invalid purchase' }), { status: 400 })
+        // }
         
         const now = new Date()
         let endDate: Date
         let planType: string
         let amount: number
 
-        if (productId === 'monthly_119_90') {
+        if (productId === 'monthly_119_99') {
           endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 gün
           planType = 'monthly'
-          amount = 119.90
+          amount = 119.99
         } else if (productId === 'yearly_1199_99') {
           endDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000) // 365 gün
           planType = 'yearly'

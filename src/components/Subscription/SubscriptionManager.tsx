@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
-import { Crown, Calendar, TrendingUp } from 'lucide-react'
+import { Crown, Calendar, TrendingUp, RefreshCw } from 'lucide-react'
+import { purchaseService } from '@/services/PurchaseService'
 
 interface SubscriptionData {
   subscriptionValid: boolean
@@ -23,9 +24,18 @@ export function SubscriptionManager() {
 
   useEffect(() => {
     if (user) {
+      initializePurchaseService()
       checkSubscriptionStatus()
     }
   }, [user])
+
+  const initializePurchaseService = async () => {
+    try {
+      await purchaseService.initialize()
+    } catch (error) {
+      console.error('Failed to initialize purchase service:', error)
+    }
+  }
 
   const checkSubscriptionStatus = async () => {
     if (!user) return
@@ -58,39 +68,60 @@ export function SubscriptionManager() {
 
     setPurchasing(true)
     try {
-      // Mock purchase data - gerçek uygulamada Google Play API'den gelecek
-      const mockReceiptData = {
-        purchaseToken: `mock_token_${Date.now()}`,
-        orderId: `mock_order_${Date.now()}`,
-        productId,
-        purchaseTime: Date.now()
+      if (!purchaseService.isAvailable()) {
+        throw new Error('Satın alma servisi kullanılamıyor')
       }
 
-      const { data, error } = await supabase.functions.invoke('subscription-manager', {
-        body: {
-          method: 'POST',
-          action: 'validate_purchase',
-          userId: user.id,
-          receiptData: mockReceiptData,
-          productId
-        }
-      })
+      const success = await purchaseService.purchaseProduct(productId, user.id)
+      
+      if (success) {
+        toast({
+          title: "Başarılı!",
+          description: "Aboneliğiniz başarıyla etkinleştirildi",
+        })
 
-      if (error) throw error
+        // Abonelik durumunu yeniden kontrol et
+        await checkSubscriptionStatus()
+      } else {
+        throw new Error('Satın alma işlemi başarısız oldu')
+      }
 
-      toast({
-        title: "Başarılı!",
-        description: "Aboneliğiniz başarıyla etkinleştirildi",
-      })
-
-      // Abonelik durumunu yeniden kontrol et
-      await checkSubscriptionStatus()
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Purchase error:', error)
       toast({
         title: "Hata",
-        description: "Satın alma işlemi başarısız oldu",
+        description: error.message || "Satın alma işlemi başarısız oldu",
+        variant: "destructive"
+      })
+    } finally {
+      setPurchasing(false)
+    }
+  }
+
+  const restorePurchases = async () => {
+    if (!user) return
+
+    setPurchasing(true)
+    try {
+      const success = await purchaseService.restorePurchases()
+      
+      if (success) {
+        toast({
+          title: "Başarılı!",
+          description: "Satın alımlarınız geri yüklendi",
+        })
+        await checkSubscriptionStatus()
+      } else {
+        toast({
+          title: "Bilgi",
+          description: "Geri yüklenecek satın alım bulunamadı",
+        })
+      }
+    } catch (error) {
+      console.error('Restore error:', error)
+      toast({
+        title: "Hata",
+        description: "Satın alımlar geri yüklenemedi",
         variant: "destructive"
       })
     } finally {
@@ -198,7 +229,7 @@ export function SubscriptionManager() {
             </ul>
             <Button 
               className="w-full" 
-              onClick={() => purchaseSubscription('monthly_119_90')}
+              onClick={() => purchaseSubscription('monthly_119_99')}
               disabled={purchasing || isPremiumActive}
               variant={isPremiumActive ? "secondary" : "default"}
             >
@@ -272,6 +303,18 @@ export function SubscriptionManager() {
               <li>• İptal durumunda mevcut fatura dönemi sonuna kadar Premium erişim devam eder.</li>
               <li>• Ücretsiz deneme süresi içinde iptal ederseniz ücret alınmaz.</li>
             </ul>
+            <div className="flex justify-center mt-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={restorePurchases}
+                disabled={purchasing}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                {purchasing ? "Yükleniyor..." : "Satın Alımları Geri Yükle"}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

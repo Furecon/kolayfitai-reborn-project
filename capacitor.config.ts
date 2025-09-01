@@ -23,6 +23,9 @@ const config: CapacitorConfig = {
     },
     Browser: {
       presentationStyle: 'popover'
+    },
+    NativePurchases: {
+      androidApplicationId: 'com.kolayfit.app'
     }
   },
   android: {
