@@ -7,8 +7,9 @@ import { Capacitor } from '@capacitor/core'
 import { ArrowLeft, Scan, X } from 'lucide-react'
 
 interface BarcodeScannerProps {
-  onProductFound: (product: any) => void
   onBack: () => void
+  onBarcodeScanned: (barcode: string) => void
+  onManualFallback: () => void
 }
 
 interface ProductData {
@@ -27,7 +28,7 @@ interface ProductData {
   imageUrl?: string
 }
 
-export function BarcodeScanner({ onProductFound, onBack }: BarcodeScannerProps) {
+export function BarcodeScanner({ onBack, onBarcodeScanned, onManualFallback }: BarcodeScannerProps) {
   const [isScanning, setIsScanning] = useState(false)
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
   const [isSupported, setIsSupported] = useState(true)
@@ -113,7 +114,12 @@ export function BarcodeScanner({ onProductFound, onBack }: BarcodeScannerProps) 
       const result = await CapacitorBarcodeScanner.startScan()
       
       if (result.hasContent) {
-        await searchProduct(result.content)
+        console.log('Barcode scanned:', result.content)
+        onBarcodeScanned(result.content)
+        toast({
+          title: "Barkod Okundu",
+          description: `Barkod: ${result.content}`,
+        })
       }
     } catch (error) {
       console.error('Error starting barcode scan:', error)
@@ -138,59 +144,6 @@ export function BarcodeScanner({ onProductFound, onBack }: BarcodeScannerProps) 
     }
   }
 
-  const searchProduct = async (barcode: string) => {
-    try {
-      toast({
-        title: "Ürün Aranıyor",
-        description: `Barkod: ${barcode}`,
-      })
-
-      // Try Open Food Facts API first
-      const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
-      
-      if (!response.ok) {
-        throw new Error('Product not found')
-      }
-
-      const data = await response.json()
-      
-      if (data.status === 1 && data.product) {
-        const product = data.product
-        
-        const productData: ProductData = {
-          name: product.product_name || product.product_name_tr || 'Bilinmeyen Ürün',
-          brand: product.brands,
-          barcode: barcode,
-          imageUrl: product.image_url,
-          nutritionPer100g: {
-            calories: parseFloat(product.nutriments?.['energy-kcal_100g']) || 0,
-            protein: parseFloat(product.nutriments?.proteins_100g) || 0,
-            carbs: parseFloat(product.nutriments?.carbohydrates_100g) || 0,
-            fat: parseFloat(product.nutriments?.fat_100g) || 0,
-            fiber: parseFloat(product.nutriments?.fiber_100g) || 0,
-            sugar: parseFloat(product.nutriments?.sugars_100g) || 0,
-            sodium: parseFloat(product.nutriments?.sodium_100g) * 1000 || 0, // Convert g to mg
-          }
-        }
-
-        onProductFound(productData)
-        
-        toast({
-          title: "Ürün Bulundu",
-          description: `${productData.name} başarıyla eklendi`,
-        })
-      } else {
-        throw new Error('Product not found in database')
-      }
-    } catch (error) {
-      console.error('Error searching product:', error)
-      toast({
-        title: "Ürün Bulunamadı",
-        description: "Bu barkod veritabanımızda kayıtlı değil. Manuel olarak ekleyebilirsiniz.",
-        variant: "destructive"
-      })
-    }
-  }
 
   if (!isSupported) {
     return (
@@ -285,7 +238,8 @@ export function BarcodeScanner({ onProductFound, onBack }: BarcodeScannerProps) 
                   </Button>
                 )}
                 
-                <Button onClick={onBack} variant="outline">
+                <Button onClick={onManualFallback} variant="outline">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
                   Manuel Giriş
                 </Button>
               </div>

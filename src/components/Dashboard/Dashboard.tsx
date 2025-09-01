@@ -10,6 +10,8 @@ import { TutorialOverlay } from '../Tutorial/TutorialOverlay'
 import { useTutorial, useTutorialAutoShow } from '@/context/TutorialContext'
 import FoodAnalysis from '../FoodAnalysis'
 import ManualFoodEntry from '../FoodAnalysis/ManualFoodEntry'
+import { BarcodeScanner } from '../BarcodeScanner/BarcodeScanner'
+import { BarcodeResult } from '../BarcodeScanner/BarcodeResult'
 import ProfileSetup from '../Profile/ProfileSetup'
 import ProgressTracker from '../Profile/ProgressTracker'
 import { ContactPage } from '../Support/ContactPage'
@@ -25,7 +27,7 @@ import { useAuth } from '@/components/Auth/AuthProvider'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, X, Sparkles, Heart, TrendingUp, ArrowLeft } from 'lucide-react'
 
-type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'profile' | 'progress' | 'assistant' | 'suggestions' | 'favorites' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
+type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'barcode-scanner' | 'barcode-result' | 'profile' | 'progress' | 'assistant' | 'suggestions' | 'favorites' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -189,7 +191,33 @@ export function Dashboard() {
         onBack={() => setCurrentView('dashboard')}
         onSelectPhoto={() => setCurrentView('camera')}
         onSelectManual={() => setCurrentView('manual-entry')}
+        onSelectBarcode={() => setCurrentView('barcode-scanner')}
         onForceManual={() => setCurrentView('manual-entry')}
+      />
+    )
+  }
+
+  if (currentView === 'barcode-scanner') {
+    return (
+      <BarcodeScanner
+        onBack={() => setCurrentView('meal-selection')}
+        onBarcodeScanned={(barcode) => {
+          // Store scanned barcode and go to result screen
+          localStorage.setItem('scannedBarcode', barcode)
+          setCurrentView('barcode-result')
+        }}
+        onManualFallback={() => setCurrentView('manual-entry')}
+      />
+    )
+  }
+
+  if (currentView === 'barcode-result') {
+    return (
+      <BarcodeResult
+        barcode={localStorage.getItem('scannedBarcode') || ''}
+        onBack={() => setCurrentView('barcode-scanner')}
+        onMealSaved={handleMealAdded}
+        onManualEntry={() => setCurrentView('manual-entry')}
       />
     )
   }

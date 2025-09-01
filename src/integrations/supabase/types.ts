@@ -133,6 +133,39 @@ export type Database = {
         }
         Relationships: []
       }
+      favorite_products: {
+        Row: {
+          barcode: string
+          brand: string | null
+          created_at: string
+          id: string
+          preferred_serving_size: number | null
+          preferred_serving_unit: string | null
+          product_name: string
+          user_id: string
+        }
+        Insert: {
+          barcode: string
+          brand?: string | null
+          created_at?: string
+          id?: string
+          preferred_serving_size?: number | null
+          preferred_serving_unit?: string | null
+          product_name: string
+          user_id: string
+        }
+        Update: {
+          barcode?: string
+          brand?: string | null
+          created_at?: string
+          id?: string
+          preferred_serving_size?: number | null
+          preferred_serving_unit?: string | null
+          product_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
@@ -421,6 +454,63 @@ export type Database = {
           updated_at?: string
           user_id?: string
           weight?: number | null
+        }
+        Relationships: []
+      }
+      scanned_products: {
+        Row: {
+          barcode: string
+          brand: string | null
+          calories_per_100g: number | null
+          carbs_per_100g: number | null
+          created_at: string
+          created_by: string | null
+          fat_per_100g: number | null
+          fiber_per_100g: number | null
+          id: string
+          product_name: string
+          protein_per_100g: number | null
+          serving_size: string | null
+          sodium_per_100g: number | null
+          source: string | null
+          sugar_per_100g: number | null
+          updated_at: string
+        }
+        Insert: {
+          barcode: string
+          brand?: string | null
+          calories_per_100g?: number | null
+          carbs_per_100g?: number | null
+          created_at?: string
+          created_by?: string | null
+          fat_per_100g?: number | null
+          fiber_per_100g?: number | null
+          id?: string
+          product_name: string
+          protein_per_100g?: number | null
+          serving_size?: string | null
+          sodium_per_100g?: number | null
+          source?: string | null
+          sugar_per_100g?: number | null
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string
+          brand?: string | null
+          calories_per_100g?: number | null
+          carbs_per_100g?: number | null
+          created_at?: string
+          created_by?: string | null
+          fat_per_100g?: number | null
+          fiber_per_100g?: number | null
+          id?: string
+          product_name?: string
+          protein_per_100g?: number | null
+          serving_size?: string | null
+          sodium_per_100g?: number | null
+          source?: string | null
+          sugar_per_100g?: number | null
+          updated_at?: string
         }
         Relationships: []
       }
