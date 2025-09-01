@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { 
   ArrowLeft, 
   Camera, 
@@ -23,7 +24,9 @@ import {
   Heart,
   Sparkles,
   Edit,
-  ChevronDown
+  ChevronDown,
+  CheckCircle,
+  AlertTriangle
 } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
@@ -114,6 +117,8 @@ export default function ManualFoodEntry({
   const [aiEstimation, setAiEstimation] = useState<any>(null)
   const [isCalculatingAI, setIsCalculatingAI] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [showManualCorrection, setShowManualCorrection] = useState(false)
 
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -481,6 +486,9 @@ export default function ManualFoodEntry({
         title: "AI Hesaplama Tamamlandı",
         description: "Kalori ve makrolar otomatik hesaplandı.",
       })
+
+      // Show confirmation dialog
+      setShowConfirmDialog(true)
     } catch (error) {
       console.error('AI calculation error:', error)
       toast({
@@ -491,6 +499,34 @@ export default function ManualFoodEntry({
     } finally {
       setIsCalculatingAI(false)
     }
+  }
+
+  const handleConfirmAI = () => {
+    setShowConfirmDialog(false)
+    // Values are already set in formData, so we can proceed
+    toast({
+      title: "Onaylandı",
+      description: "AI hesaplaması onaylandı, kaydedebilirsiniz.",
+    })
+  }
+
+  const handleEditValues = () => {
+    setShowConfirmDialog(false)
+    setShowAdvanced(true)
+    toast({
+      title: "Düzenleme Modu",
+      description: "Değerleri manuel olarak düzenleyebilirsiniz.",
+    })
+  }
+
+  const handleManualCorrection = () => {
+    setShowConfirmDialog(false)
+    setShowManualCorrection(true)
+  }
+
+  const handleRecalculate = async () => {
+    setShowManualCorrection(false)
+    await calculateWithAI()
   }
 
   const validateForm = () => {
@@ -1104,6 +1140,184 @@ export default function ManualFoodEntry({
             </div>
           </CardContent>
         </Card>
+
+        {/* AI Confirmation Dialog */}
+        <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                Sonucu Onayla
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {aiEstimation && (
+                <>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-sm">Yemek:</span>
+                      <span className="text-sm">{formData.mealName}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-sm">Miktar:</span>
+                      <span className="text-sm">{formData.portionAmount} {formData.portionUnit}</span>
+                    </div>
+                    <Separator />
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="flex justify-between">
+                        <span>Kalori:</span>
+                        <span className="font-medium">{aiEstimation.calories} kcal</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Protein:</span>
+                        <span className="font-medium">{aiEstimation.protein}g</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Karbonhidrat:</span>
+                        <span className="font-medium">{aiEstimation.carbs}g</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Yağ:</span>
+                        <span className="font-medium">{aiEstimation.fat}g</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-xs p-2 bg-green-50 rounded">
+                      <span>Güven Puanı:</span>
+                      <span className="font-medium text-green-700">
+                        %{Math.round(aiEstimation.confidence * 100)}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            
+            <DialogFooter className="flex-col space-y-2">
+              <Button 
+                onClick={handleConfirmAI}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Onayla ve Kaydet
+              </Button>
+              
+              <div className="flex gap-2 w-full">
+                <Button 
+                  variant="outline" 
+                  onClick={handleEditValues}
+                  className="flex-1"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Değerleri Düzenle
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleManualCorrection}
+                  className="flex-1"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Manuel Bilgi Gir
+                </Button>
+              </div>
+              
+              <Button 
+                variant="ghost" 
+                onClick={handleManualCorrection}
+                className="w-full text-xs text-muted-foreground hover:text-foreground"
+              >
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Yanlış tanındıysa?
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Manual Correction Dialog */}
+        <Dialog open={showManualCorrection} onOpenChange={setShowManualCorrection}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit className="h-5 w-5 text-blue-600" />
+                Manuel Düzeltme
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="correctedName">Yemek Adı</Label>
+                <Input
+                  id="correctedName"
+                  value={formData.mealName}
+                  onChange={(e) => handleInputChange('mealName', e.target.value)}
+                  placeholder="Doğru yemek adını girin"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Label htmlFor="correctedAmount">Miktar</Label>
+                  <Input
+                    id="correctedAmount"
+                    type="number"
+                    value={formData.portionAmount}
+                    onChange={(e) => handleInputChange('portionAmount', e.target.value)}
+                    placeholder="Miktar"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Birim</Label>
+                  <Select value={formData.portionUnit} onValueChange={(value) => handleInputChange('portionUnit', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="g">gram</SelectItem>
+                      <SelectItem value="porsiyon">porsiyon</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Pişirme Yöntemi</Label>
+                <Select value={formData.cookingMethod} onValueChange={(value) => handleInputChange('cookingMethod', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pişirme yöntemi seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COOKING_METHODS.map((method) => (
+                      <SelectItem key={method} value={method}>
+                        {method}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <DialogFooter className="flex-col space-y-2">
+              <Button 
+                onClick={handleRecalculate}
+                disabled={!formData.mealName || !formData.portionAmount}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Yeniden Hesapla
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={() => setShowManualCorrection(false)}
+                className="w-full"
+              >
+                İptal
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Save Button */}
         <div className="flex gap-2">
