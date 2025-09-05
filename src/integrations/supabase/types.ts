@@ -517,14 +517,17 @@ export type Database = {
       subscriptions: {
         Row: {
           auto_renew: boolean | null
+          cancelled_at: string | null
           created_at: string
           currency: string | null
           end_date: string | null
           id: string
+          last_rtdn_timestamp: string | null
           order_id: string | null
           plan_type: string
           price_amount: number | null
           purchase_token: string | null
+          rtdn_notification_type: string | null
           start_date: string
           status: string
           updated_at: string
@@ -532,14 +535,17 @@ export type Database = {
         }
         Insert: {
           auto_renew?: boolean | null
+          cancelled_at?: string | null
           created_at?: string
           currency?: string | null
           end_date?: string | null
           id?: string
+          last_rtdn_timestamp?: string | null
           order_id?: string | null
           plan_type: string
           price_amount?: number | null
           purchase_token?: string | null
+          rtdn_notification_type?: string | null
           start_date?: string
           status: string
           updated_at?: string
@@ -547,14 +553,17 @@ export type Database = {
         }
         Update: {
           auto_renew?: boolean | null
+          cancelled_at?: string | null
           created_at?: string
           currency?: string | null
           end_date?: string | null
           id?: string
+          last_rtdn_timestamp?: string | null
           order_id?: string | null
           plan_type?: string
           price_amount?: number | null
           purchase_token?: string | null
+          rtdn_notification_type?: string | null
           start_date?: string
           status?: string
           updated_at?: string
