@@ -77,9 +77,13 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     setIsVisible(true)
   }
 
-  const hideTutorial = () => {
+  const hideTutorial = async () => {
     setIsVisible(false)
     setCurrentScreen(null)
+    // Mark tutorial as seen when user closes/skips it
+    if (!isTutorialSeen) {
+      await markTutorialAsSeen()
+    }
   }
 
   const markTutorialAsSeen = async () => {
@@ -135,9 +139,9 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     setIsVisible(true)
   }
 
-  // Auto-show tutorial for new users on specific screens (only if not completed)
+  // Auto-show tutorial for new users on specific screens (only if not completed and not seen)
   const autoShowTutorial = (screen: TutorialScreen) => {
-    if (!isTutorialCompleted(screen) && user && !isVisible) {
+    if (!isTutorialCompleted(screen) && !isTutorialSeen && user && !isVisible) {
       // Small delay to ensure DOM is ready and components are rendered
       setTimeout(() => {
         // Check if target elements exist before showing tutorial

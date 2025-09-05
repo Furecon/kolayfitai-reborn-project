@@ -74,9 +74,7 @@ function AppContent() {
 export default function Index() {
   return (
     <AuthProvider>
-      <TutorialProvider>
-        <AppContent />
-      </TutorialProvider>
+      <AppContent />
     </AuthProvider>
   )
 }
