@@ -76,11 +76,11 @@ export function DashboardHeader({
                 <Lightbulb className="h-3 w-3 sm:h-5 sm:w-5" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-48 sm:w-56 p-2">
+            <PopoverContent className="w-56 sm:w-64 p-2" align="end">
               <div className="space-y-1">
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-sm"
+                  className="w-full justify-start text-xs sm:text-sm"
                   onClick={onContactClick}
                 >
                   <Phone className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
@@ -88,7 +88,7 @@ export function DashboardHeader({
                 </Button>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-sm"
+                  className="w-full justify-start text-xs sm:text-sm"
                   onClick={onResourcesClick}
                 >
                   <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
@@ -96,7 +96,7 @@ export function DashboardHeader({
                 </Button>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-sm"
+                  className="w-full justify-start text-xs sm:text-sm"
                   onClick={onPoliciesClick}
                 >
                   <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
@@ -104,7 +104,7 @@ export function DashboardHeader({
                 </Button>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-sm"
+                  className="w-full justify-start text-xs sm:text-sm"
                   onClick={onFAQClick}
                 >
                   <HelpCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
@@ -112,7 +112,7 @@ export function DashboardHeader({
                 </Button>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-sm text-primary"
+                  className="w-full justify-start text-xs sm:text-sm text-primary"
                   onClick={onSubscriptionClick}
                 >
                   <Crown className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
@@ -120,11 +120,11 @@ export function DashboardHeader({
                 </Button>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-sm"
+                  className="w-full justify-start text-xs sm:text-sm"
                   onClick={handleTutorialClick}
                 >
                   <PlayCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                  Kullanım İpuçlarını Göster
+                  Kullanım İpuçları
                 </Button>
               </div>
             </PopoverContent>
