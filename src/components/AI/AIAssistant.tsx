@@ -76,27 +76,10 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
     setIsLoading(true)
 
     try {
-      // Get user's recent meal data for context
-      const today = new Date().toISOString().split('T')[0]
-      const { data: recentMeals } = await supabase
-        .from('meal_logs')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-        .order('created_at', { ascending: false })
-        .limit(10)
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-
       const { data, error } = await supabase.functions.invoke('diet-assistant', {
         body: {
           message: input.trim(),
-          userProfile: profile,
-          recentMeals: recentMeals || []
+          userId: user.id
         }
       })
 
