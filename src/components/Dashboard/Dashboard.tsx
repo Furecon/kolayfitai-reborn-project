@@ -21,16 +21,16 @@ import { ContactPage } from '../Support/ContactPage'
 import { ResourcesPage } from '../Support/ResourcesPage'
 import { PoliciesPage } from '../Support/PoliciesPage'
 import { FAQPage } from '../Support/FAQPage'
-import { AIAssistant } from '../AI/AIAssistant'
+
 import { MealSuggestions } from '../MealSuggestions/MealSuggestions'
 import { FavoriteMeals } from '../MealSuggestions/FavoriteMeals'
 import { SubscriptionManager } from '../Subscription/SubscriptionManager'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { Button } from '@/components/ui/button'
-import { MessageCircle, X, Sparkles, Heart, TrendingUp, ArrowLeft } from 'lucide-react'
+import { Sparkles, Heart, TrendingUp, ArrowLeft } from 'lucide-react'
 
-type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'barcode-scanner' | 'barcode-result' | 'file-image' | 'crop-image' | 'barcode-from-image' | 'profile' | 'progress' | 'assistant' | 'suggestions' | 'favorites' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
+type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'barcode-scanner' | 'barcode-result' | 'file-image' | 'crop-image' | 'barcode-from-image' | 'profile' | 'progress' | 'suggestions' | 'favorites' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -61,7 +61,7 @@ export function Dashboard() {
     fatGoal: 67
   })
   const [refreshTrigger, setRefreshTrigger] = useState(0)
-  const [showAssistant, setShowAssistant] = useState(false)
+  
   const [profile, setProfile] = useState<any>(null)
   
   // Tutorial context
@@ -458,23 +458,6 @@ export function Dashboard() {
       </div>
       
       <HistoryMeals />
-
-      {/* AI Assistant Button - Responsive positioning */}
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6">
-        <Button
-          onClick={() => setShowAssistant(!showAssistant)}
-          className="bg-green-500 hover:bg-green-600 text-white rounded-full w-12 h-12 sm:w-14 sm:h-14 shadow-lg"
-        >
-          {showAssistant ? <X className="h-5 w-5 sm:h-6 sm:w-6" /> : <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />}
-        </Button>
-      </div>
-
-      {/* AI Assistant Panel - Responsive sizing */}
-      {showAssistant && (
-        <div className="fixed bottom-20 sm:bottom-24 right-4 sm:right-6 w-80 sm:w-80 h-80 sm:h-96 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
-          <AIAssistant onClose={() => setShowAssistant(false)} />
-        </div>
-      )}
 
       <TutorialOverlay
         isVisible={tutorialVisible}
