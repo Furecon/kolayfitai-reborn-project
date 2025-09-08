@@ -93,21 +93,28 @@ export class PurchaseService {
   }
 
   async purchaseProduct(productId: string, userId: string): Promise<boolean> {
+    console.log('🛒 Starting purchase process:', { productId, userId });
+    
     if (!Capacitor.isNativePlatform()) {
       // Mock purchase for web testing
-      console.log('Mock purchase for web:', productId);
+      console.log('🌐 Web platform detected - using mock purchase flow');
       return this.handleMockPurchase(productId, userId);
     }
 
     try {
-      console.log('Starting purchase for product:', productId);
+      console.log('📱 Native platform - initiating Google Play purchase');
       
       const result = await NativePurchases.purchaseProduct({ 
         productIdentifier: productId 
       });
 
       if (result && result.receipt) {
-        console.log('Purchase successful:', result);
+        console.log('✅ Google Play purchase successful');
+        console.log('🎫 Purchase details:', {
+          productId,
+          receiptLength: result.receipt?.length || 0,
+          hasReceipt: !!result.receipt
+        });
         
         // Validate purchase with backend
         const isValid = await this.validatePurchase(
@@ -117,23 +124,30 @@ export class PurchaseService {
         );
         
         if (isValid) {
-          console.log('Purchase validation successful');
+          console.log('✅ Purchase validation successful - user now has premium access');
           return true;
         } else {
-          console.error('Purchase validation failed');
+          console.error('❌ Purchase validation failed');
           return false;
         }
       } else {
-        console.log('Purchase cancelled or failed');
+        console.log('🚫 Purchase cancelled or failed by user');
         return false;
       }
     } catch (error) {
-      console.error('Purchase error:', error);
+      console.error('💥 Google Play purchase error:', error);
+      console.error('🔍 Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
       return false;
     }
   }
 
   private async handleMockPurchase(productId: string, userId: string): Promise<boolean> {
+    console.log('🧪 Handling mock purchase for testing:', { productId, userId });
+    
     // Mock purchase data for web testing
     const mockPurchaseInfo = {
       receipt: `mock_receipt_${Date.now()}`,
@@ -144,7 +158,21 @@ export class PurchaseService {
       packageName: 'com.kolayfit.app'
     };
 
-    return this.validatePurchase(mockPurchaseInfo, productId, userId);
+    console.log('📦 Generated mock purchase data:', {
+      orderId: mockPurchaseInfo.orderId,
+      tokenPrefix: mockPurchaseInfo.purchaseToken.substring(0, 20) + '...',
+      productId: mockPurchaseInfo.productId
+    });
+
+    const validationResult = await this.validatePurchase(mockPurchaseInfo, productId, userId);
+    
+    if (validationResult) {
+      console.log('✅ Mock purchase validation successful');
+    } else {
+      console.error('❌ Mock purchase validation failed');
+    }
+    
+    return validationResult;
   }
 
   private async validatePurchase(
@@ -152,6 +180,14 @@ export class PurchaseService {
     productId: string,
     userId: string
   ): Promise<boolean> {
+    console.log('🔍 Starting purchase validation with backend...');
+    console.log('📋 Validation details:', {
+      productId,
+      userId,
+      hasReceipt: !!purchaseResult.receipt,
+      hasPurchaseToken: !!purchaseResult.purchaseToken
+    });
+
     try {
       const { data, error } = await supabase.functions.invoke('subscription-manager', {
         body: {
@@ -171,30 +207,60 @@ export class PurchaseService {
       });
 
       if (error) {
-        console.error('Purchase validation error:', error);
+        console.error('❌ Backend validation error:', error);
+        console.error('🔍 Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         return false;
       }
 
-      console.log('Purchase validated successfully:', data);
-      return true;
+      if (data?.success) {
+        console.log('✅ Backend validation successful');
+        console.log('🎉 Subscription activated:', {
+          planType: data.subscription?.planType,
+          endDate: data.subscription?.endDate,
+          status: data.subscription?.status
+        });
+        return true;
+      } else {
+        console.error('❌ Backend validation failed - unexpected response format');
+        console.error('📋 Response data:', data);
+        return false;
+      }
     } catch (error) {
-      console.error('Purchase validation failed:', error);
+      console.error('💥 Purchase validation network error:', error);
+      console.error('🔍 Network error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
       return false;
     }
   }
 
   async restorePurchases(): Promise<boolean> {
+    console.log('🔄 Starting purchase restore process...');
+    
     if (!Capacitor.isNativePlatform()) {
-      console.log('Restore purchases not available on web');
+      console.log('🌐 Web platform - restore purchases not available');
       return false;
     }
 
     try {
+      console.log('📱 Native platform - restoring Google Play purchases');
       await NativePurchases.restorePurchases();
-      console.log('Purchases restored successfully');
+      console.log('✅ Google Play purchases restored successfully');
       return true;
     } catch (error) {
-      console.error('Failed to restore purchases:', error);
+      console.error('❌ Failed to restore purchases:', error);
+      console.error('🔍 Restore error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
       return false;
     }
   }
