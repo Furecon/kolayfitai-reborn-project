@@ -21,6 +21,9 @@ interface RTDNMessage {
     purchaseToken: string
     sku: string
   }
+  testNotification?: {
+    version: string
+  }
 }
 
 // Notification types for subscriptions
@@ -231,6 +234,27 @@ Deno.serve(async (req) => {
       
       // Handle one-time purchases if needed
       // This would be for consumable or non-consumable products
+    }
+
+    // Process test notifications from Google Play Console
+    if (rtdnMessage.testNotification) {
+      const notification = rtdnMessage.testNotification
+      console.log('🧪 Processing test notification from Google Play Console')
+      console.log('📋 Test notification details:', JSON.stringify(notification, null, 2))
+      console.log('📱 Package name verified:', rtdnMessage.packageName)
+      console.log('⏰ Event time:', new Date(parseInt(rtdnMessage.eventTimeMillis)).toISOString())
+      console.log('✅ Test notification successfully received and processed!')
+      
+      return new Response(JSON.stringify({
+        status: 'success',
+        message: 'Test notification received successfully',
+        timestamp: new Date().toISOString(),
+        packageName: rtdnMessage.packageName,
+        eventTime: new Date(parseInt(rtdnMessage.eventTimeMillis)).toISOString()
+      }), { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
     return new Response('OK', { 
