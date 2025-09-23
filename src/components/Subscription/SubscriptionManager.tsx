@@ -12,6 +12,7 @@ interface SubscriptionData {
   subscriptionValid: boolean
   subscriptionStatus: 'trial' | 'premium' | 'expired'
   remainingDays: number
+  currentPlan?: 'monthly_119_99' | 'yearly_1199_99' | null
   subscription?: any
 }
 
@@ -98,6 +99,24 @@ export function SubscriptionManager() {
     }
   }
 
+  const cancelSubscription = async () => {
+    if (!user) return
+
+    // Play Store yönlendirmesi için bilgilendirme
+    toast({
+      title: "Abonelik İptali",
+      description: "Aboneliğinizi iptal etmek için Play Store'dan Abonelikler bölümünü açın. Alternatif olarak aşağıdaki linke tıklayabilirsiniz.",
+    })
+
+    // Play Store abonelik yönetim sayfasını aç
+    try {
+      const playStoreUrl = "https://play.google.com/store/account/subscriptions"
+      window.open(playStoreUrl, '_blank')
+    } catch (error) {
+      console.error('Failed to open Play Store:', error)
+    }
+  }
+
   const restorePurchases = async () => {
     if (!user) return
 
@@ -150,6 +169,8 @@ export function SubscriptionManager() {
 
   const isTrialActive = subscriptionData.subscriptionStatus === 'trial' && subscriptionData.subscriptionValid
   const isPremiumActive = subscriptionData.subscriptionStatus === 'premium' && subscriptionData.subscriptionValid
+  const isMonthlyPlan = subscriptionData.currentPlan === 'monthly_119_99'
+  const isYearlyPlan = subscriptionData.currentPlan === 'yearly_1199_99'
 
   return (
     <div className="space-y-6">
@@ -174,13 +195,28 @@ export function SubscriptionManager() {
         </CardHeader>
         {isPremiumActive && (
           <CardContent>
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground mb-2">
-                <strong>Abonelik Yönetimi:</strong> Play Store üzerinden aboneliğinizi yönetebilir, iptal edebilir veya değiştirebilirsiniz.
-              </p>
-              <p className="text-xs text-muted-foreground">
-                İptal durumunda aboneliğiniz mevcut dönem sonuna kadar aktif kalacaktır.
-              </p>
+            <div className="p-4 bg-muted rounded-lg space-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  <strong>Mevcut Plan:</strong> {isMonthlyPlan ? 'Aylık Premium' : isYearlyPlan ? 'Yıllık Premium' : 'Premium'}
+                </p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  <strong>Abonelik Yönetimi:</strong> Play Store üzerinden aboneliğinizi yönetebilir, iptal edebilir veya değiştirebilirsiniz.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  İptal durumunda aboneliğiniz mevcut dönem sonuna kadar aktif kalacaktır.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={cancelSubscription}
+                  className="flex-1"
+                >
+                  Aboneliği İptal Et
+                </Button>
+              </div>
             </div>
           </CardContent>
         )}
@@ -230,10 +266,10 @@ export function SubscriptionManager() {
             <Button 
               className="w-full" 
               onClick={() => purchaseSubscription('monthly_119_99')}
-              disabled={purchasing || isPremiumActive}
-              variant={isPremiumActive ? "secondary" : "default"}
+              disabled={purchasing || (isPremiumActive && isMonthlyPlan)}
+              variant={(isPremiumActive && isMonthlyPlan) ? "secondary" : "default"}
             >
-              {purchasing ? "İşleniyor..." : isPremiumActive ? "Mevcut Plan" : "Aylık Plana Geç"}
+              {purchasing ? "İşleniyor..." : (isPremiumActive && isMonthlyPlan) ? "Mevcut Plan" : "Aylık Plana Geç"}
             </Button>
           </CardContent>
         </Card>
@@ -282,10 +318,10 @@ export function SubscriptionManager() {
             <Button 
               className="w-full" 
               onClick={() => purchaseSubscription('yearly_1199_99')}
-              disabled={purchasing || isPremiumActive}
-              variant={isPremiumActive ? "secondary" : "default"}
+              disabled={purchasing || (isPremiumActive && isYearlyPlan)}
+              variant={(isPremiumActive && isYearlyPlan) ? "secondary" : "default"}
             >
-              {purchasing ? "İşleniyor..." : isPremiumActive ? "Mevcut Plan" : "Yıllık Plana Geç"}
+              {purchasing ? "İşleniyor..." : (isPremiumActive && isYearlyPlan) ? "Mevcut Plan" : "Yıllık Plana Geç"}
             </Button>
           </CardContent>
         </Card>

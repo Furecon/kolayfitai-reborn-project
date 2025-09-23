@@ -348,6 +348,7 @@ serve(async (req) => {
           subscriptionValid,
           subscriptionStatus: profile?.subscription_status || 'trial',
           remainingDays,
+          currentPlan: subscription?.plan_type ? `${subscription.plan_type === 'monthly' ? 'monthly_119_99' : 'yearly_1199_99'}` : null,
           subscription
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
