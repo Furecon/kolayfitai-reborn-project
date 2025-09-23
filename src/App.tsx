@@ -5,6 +5,9 @@ import { Toaster } from '@/components/ui/toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import Index from './pages/Index'
 import NotFound from './pages/NotFound'
+import { PrivacyPolicy } from '@/components/Legal/PrivacyPolicy'
+import { TermsOfService } from '@/components/Legal/TermsOfService'
+import { ContactUs } from '@/components/Legal/ContactUs'
 import './App.css'
 const queryClient = new QueryClient()
 
@@ -15,6 +18,9 @@ function App() {
         <TooltipProvider>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/legal/privacy" element={<PrivacyPolicy />} />
+            <Route path="/legal/terms" element={<TermsOfService />} />
+            <Route path="/legal/contact" element={<ContactUs />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />
