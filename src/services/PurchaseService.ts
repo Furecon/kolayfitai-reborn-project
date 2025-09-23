@@ -245,8 +245,8 @@ export class PurchaseService {
     console.log('🔄 Starting purchase restore process...');
     
     if (!Capacitor.isNativePlatform()) {
-      console.log('🌐 Web platform - restore purchases not available');
-      return false;
+      console.log('🌐 Web platform - checking for existing subscriptions to restore');
+      return await this.handleMockRestore();
     }
 
     try {
@@ -257,6 +257,70 @@ export class PurchaseService {
     } catch (error) {
       console.error('❌ Failed to restore purchases:', error);
       console.error('🔍 Restore error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
+      return false;
+    }
+  }
+
+  private async handleMockRestore(): Promise<boolean> {
+    try {
+      console.log('🔍 Checking database for existing subscriptions...');
+      
+      // Import supabase client
+      const { supabase } = await import("@/integrations/supabase/client");
+      
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('❌ No authenticated user found');
+        return false;
+      }
+
+      // Check for existing active subscriptions
+      const { data: subscriptions, error } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Failed to check subscriptions:', error);
+        return false;
+      }
+
+      if (!subscriptions || subscriptions.length === 0) {
+        console.log('📋 No active subscriptions found to restore');
+        return false;
+      }
+
+      const activeSubscription = subscriptions[0];
+      console.log('✅ Found active subscription to restore:', {
+        planType: activeSubscription.plan_type,
+        status: activeSubscription.status,
+        endDate: activeSubscription.end_date
+      });
+
+      // Update profile subscription status if needed
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ subscription_status: 'premium' })
+        .eq('user_id', user.id);
+
+      if (profileError) {
+        console.error('⚠️ Failed to update profile status:', profileError);
+        // Don't fail the restore for this
+      }
+
+      console.log('🎉 Mock restore completed successfully');
+      return true;
+
+    } catch (error) {
+      console.error('💥 Mock restore failed:', error);
+      console.error('🔍 Mock restore error details:', {
         message: error.message,
         name: error.name,
         stack: error.stack
