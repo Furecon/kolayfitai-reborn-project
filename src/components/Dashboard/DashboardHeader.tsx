@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Camera, User, Lightbulb, Phone, BookOpen, LogOut, FileText, HelpCircle, Crown, PlayCircle } from 'lucide-react'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { useTutorial } from '@/context/TutorialContext'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 interface DashboardHeaderProps {
   onCameraClick: () => void
@@ -47,6 +48,8 @@ export function DashboardHeader({
         </div>
         
         <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+          <ThemeToggle />
+          
           <Button
             variant="outline"
             size="sm"
