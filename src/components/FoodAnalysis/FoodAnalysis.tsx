@@ -13,7 +13,6 @@ import ManualFoodEntry from './ManualFoodEntry'
 import { EnhancedAIVerification } from './EnhancedAIVerification'
 import MealSelectionAfterAnalysis from './MealSelectionAfterAnalysis'
 import NativeCameraCapture from './NativeCameraCapture'
-import { Capacitor } from '@capacitor/core'
 
 type AnalysisStep = 'camera' | 'analysis-type' | 'quick-result' | 'detailed-form' | 'manual-entry' | 'meal-selection' | 'ai-verification'
 
@@ -35,8 +34,6 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
   // Tutorial context
   const { isVisible: tutorialVisible, currentScreen, completeTutorial, hideTutorial } = useTutorial()
   const { autoShowTutorial } = useTutorialAutoShow()
-
-  const isNative = Capacitor.isNativePlatform()
 
   // Enhanced navigation with hardware back button support
   const { goBack } = useNavigation({

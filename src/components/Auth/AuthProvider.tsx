@@ -2,8 +2,6 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
-import { Capacitor } from '@capacitor/core'
-import { Browser } from '@capacitor/browser'
 import { usePlatform } from '@/hooks/usePlatform'
 
 interface AuthContextType {
@@ -53,9 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log(`Starting OAuth flow for ${provider} on platform: ${platform}`)
       
-      const redirectTo = isNative 
-        ? 'com.kolayfit.app://oauth-callback'
-        : `${window.location.origin}/`
+      const redirectTo = `${window.location.origin}/`
       
       console.log(`Using redirectTo: ${redirectTo}`)
       
@@ -76,15 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error
       }
 
-      // For native platforms, open the OAuth URL in browser
-      if (isNative && data.url) {
-        console.log('Opening OAuth URL in native browser:', data.url)
-        console.log('Platform:', platform, 'isNative:', isNative)
-        await Browser.open({ 
-          url: data.url,
-          presentationStyle: 'fullscreen' // Changed to fullscreen for better mobile UX
-        })
-        console.log('Browser opened successfully')
+      // For web platform, the redirect will happen automatically
+      if (data.url) {
+        window.location.href = data.url
       }
 
       console.log(`OAuth flow initiated successfully for ${provider}`)
@@ -122,16 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    // Configure redirect URL based on platform
-    let redirectTo: string
-    
-    if (isNative && isAndroid) {
-      redirectTo = 'com.kolayfit.app://oauth-callback'
-    } else if (isNative) {
-      redirectTo = 'com.kolayfit.app://oauth-callback'
-    } else {
-      redirectTo = `${window.location.origin}/`
-    }
+    const redirectTo = `${window.location.origin}/`
 
     const { error } = await supabase.auth.signUp({
       email,

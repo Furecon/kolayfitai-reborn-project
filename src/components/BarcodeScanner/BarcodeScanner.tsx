@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import { BarcodeScanner as CapacitorBarcodeScanner } from '@capacitor-community/barcode-scanner'
-import { Capacitor } from '@capacitor/core'
+import { BrowserBarcodeReader } from '@zxing/library'
 import { ArrowLeft, Scan, X } from 'lucide-react'
+import { useRef } from 'react'
+import Webcam from 'react-webcam'
 
 interface BarcodeScannerProps {
   onBack: () => void
@@ -12,30 +13,15 @@ interface BarcodeScannerProps {
   onManualFallback: () => void
 }
 
-interface ProductData {
-  name: string
-  brand?: string
-  nutritionPer100g: {
-    calories: number
-    protein: number
-    carbs: number
-    fat: number
-    fiber: number
-    sugar: number
-    sodium: number
-  }
-  barcode: string
-  imageUrl?: string
-}
-
 export function BarcodeScanner({ onBack, onBarcodeScanned, onManualFallback }: BarcodeScannerProps) {
+  const webcamRef = useRef<Webcam>(null)
   const [isScanning, setIsScanning] = useState(false)
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
-  const [isSupported, setIsSupported] = useState(true)
+  const [showCamera, setShowCamera] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
-    checkSupport()
+    checkCameraPermission()
     return () => {
       if (isScanning) {
         stopScan()
@@ -43,59 +29,31 @@ export function BarcodeScanner({ onBack, onBarcodeScanned, onManualFallback }: B
     }
   }, [])
 
-  const checkSupport = async () => {
+  const checkCameraPermission = async () => {
     try {
-      if (!Capacitor.isNativePlatform()) {
-        setIsSupported(false)
-        return
-      }
-
-      // For now, assume it's supported on native platforms
-      setIsSupported(true)
-      
-      if (isSupported) {
-        checkPermission()
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+      stream.getTracks().forEach(track => track.stop())
+      setHasPermission(true)
     } catch (error) {
-      console.error('Error checking barcode scanner support:', error)
-      setIsSupported(false)
-    }
-  }
-
-  const checkPermission = async () => {
-    try {
-      const status = await CapacitorBarcodeScanner.checkPermission({ force: false })
-      
-      if (status.granted) {
-        setHasPermission(true)
-      } else if (status.denied || status.asked || status.neverAsked) {
-        setHasPermission(false)
-      }
-    } catch (error) {
-      console.error('Error checking camera permission:', error)
+      console.error('Camera permission check failed:', error)
       setHasPermission(false)
     }
   }
 
   const requestPermission = async () => {
     try {
-      const status = await CapacitorBarcodeScanner.checkPermission({ force: true })
-      setHasPermission(status.granted)
-      
-      if (!status.granted) {
-        toast({
-          title: "Kamera İzni Gerekli",
-          description: "Barkod okutmak için kamera iznine ihtiyaç var",
-          variant: "destructive"
-        })
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+      stream.getTracks().forEach(track => track.stop())
+      setHasPermission(true)
+      setShowCamera(true)
     } catch (error) {
-      console.error('Error requesting camera permission:', error)
+      console.error('Camera permission request failed:', error)
       toast({
-        title: "İzin Hatası",
-        description: "Kamera izni alınamadı",
+        title: "Kamera İzni Gerekli",
+        description: "Barkod okutmak için kamera iznine ihtiyaç var",
         variant: "destructive"
       })
+      setHasPermission(false)
     }
   }
 
@@ -105,68 +63,98 @@ export function BarcodeScanner({ onBack, onBarcodeScanned, onManualFallback }: B
       return
     }
 
+    setShowCamera(true)
+    setIsScanning(true)
+  }
+
+  const stopScan = () => {
     try {
-      setIsScanning(true)
+      setIsScanning(false)
+      setShowCamera(false)
+    } catch (error) {
+      console.error('Error stopping scan:', error)
+    }
+  }
+
+  const scanBarcodeFromVideo = async () => {
+    if (!webcamRef.current) return
+
+    try {
+      const imageSrc = webcamRef.current.getScreenshot()
+      if (!imageSrc) return
+
+      const codeReader = new BrowserBarcodeReader()
+      const img = new Image()
       
-      // Hide background to show camera
-      document.body.classList.add('barcode-scanner-active')
-      
-      const result = await CapacitorBarcodeScanner.startScan()
-      
-      if (result.hasContent) {
-        console.log('Barcode scanned:', result.content)
-        onBarcodeScanned(result.content)
-        toast({
-          title: "Barkod Okundu",
-          description: `Barkod: ${result.content}`,
-        })
+      img.onload = async () => {
+        try {
+          const result = await codeReader.decodeFromImageElement(img)
+          onBarcodeScanned(result.getText())
+          setShowCamera(false)
+          setIsScanning(false)
+          
+          toast({
+            title: "Barkod Okundu",
+            description: `Barkod: ${result.getText()}`,
+          })
+        } catch (error) {
+          console.log('No barcode found, continuing scan...')
+          // Continue scanning
+          setTimeout(scanBarcodeFromVideo, 1000)
+        }
       }
+      img.src = imageSrc
     } catch (error) {
-      console.error('Error starting barcode scan:', error)
-      toast({
-        title: "Tarama Hatası",
-        description: "Barkod tarama başlatılamadı",
-        variant: "destructive"
-      })
-    } finally {
-      setIsScanning(false)
-      document.body.classList.remove('barcode-scanner-active')
+      console.error('Barcode scan error:', error)
     }
   }
 
-  const stopScan = async () => {
-    try {
-      await CapacitorBarcodeScanner.stopScan()
-      setIsScanning(false)
-      document.body.classList.remove('barcode-scanner-active')
-    } catch (error) {
-      console.error('Error stopping barcode scan:', error)
+  // Start continuous scanning when camera is shown
+  useEffect(() => {
+    if (showCamera && isScanning) {
+      const interval = setInterval(scanBarcodeFromVideo, 1000)
+      return () => clearInterval(interval)
     }
-  }
+  }, [showCamera, isScanning])
 
-
-  if (!isSupported) {
+  if (showCamera) {
     return (
       <div className="min-h-screen bg-white p-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-6">
-            <h1 className="text-xl font-semibold text-black">Barkod Okuyucu</h1>
+        <div className="max-w-2xl mx-auto space-y-4">
+          <div className="text-center">
+            <h1 className="text-xl font-semibold text-black">Barkod Tarayıcı</h1>
+            <p className="text-sm text-gray-600 mt-2">
+              Barkodu kamera karesi içerisine hizalayın
+            </p>
           </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-center text-red-600">Desteklenmiyor</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <p className="text-gray-600">
-                Barkod okuyucu bu cihazda desteklenmiyor. 
-                Mobile uygulamada bu özelliği kullanabilirsiniz.
-              </p>
-              <Button onClick={onBack} variant="outline">
-                Manuel Girişe Geç
-              </Button>
-            </CardContent>
-          </Card>
+          
+          <Webcam
+            audio={false}
+            ref={webcamRef}
+            screenshotFormat="image/jpeg"
+            className="rounded-md w-full"
+            videoConstraints={{
+              facingMode: 'environment'
+            }}
+          />
+          
+          <div className="flex gap-3">
+            <Button
+              onClick={stopScan}
+              variant="outline"
+              className="flex-1"
+            >
+              <X className="h-4 w-4 mr-2" />
+              İptal
+            </Button>
+            <Button
+              onClick={onManualFallback}
+              variant="outline"
+              className="flex-1"
+            >
+              Manuel Giriş
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -178,28 +166,6 @@ export function BarcodeScanner({ onBack, onBarcodeScanned, onManualFallback }: B
         <div className="text-center mb-6">
           <h1 className="text-xl font-semibold text-black">Barkod Okuyucu</h1>
         </div>
-
-        {isScanning && (
-          <div className="fixed inset-0 z-50 bg-black">
-            <div className="absolute top-4 right-4 z-50">
-              <Button
-                onClick={stopScan}
-                variant="outline"
-                size="sm"
-                className="bg-white text-black"
-              >
-                <X className="h-4 w-4 mr-2" />
-                İptal
-              </Button>
-            </div>
-            <div className="flex items-center justify-center h-full text-white text-center">
-              <div>
-                <p className="text-lg mb-4">Barkodu kameranın merkezine hizalayın</p>
-                <div className="w-64 h-64 border-2 border-white border-dashed mx-auto"></div>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="space-y-6">
           <Card>

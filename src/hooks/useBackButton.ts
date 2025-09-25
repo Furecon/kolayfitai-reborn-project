@@ -1,6 +1,4 @@
 import { useEffect } from 'react'
-import { App } from '@capacitor/app'
-import { usePlatform } from './usePlatform'
 
 interface UseBackButtonOptions {
   onBackButton?: () => boolean | void // Return true to prevent default, false/void to allow
@@ -13,27 +11,31 @@ export function useBackButton({
   priority = 0,
   enabled = true
 }: UseBackButtonOptions = {}) {
-  const { isAndroid } = usePlatform()
 
   useEffect(() => {
-    if (!isAndroid || !enabled || !onBackButton) return
+    if (!enabled || !onBackButton) return
 
-    const handleBackButton = () => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Handle browser back button or ESC key
+      if (event.key === 'Escape' || (event.key === 'Backspace' && event.ctrlKey)) {
+        event.preventDefault()
+        const preventDefault = onBackButton()
+        return preventDefault === true
+      }
+    }
+
+    const handlePopState = () => {
       const preventDefault = onBackButton()
-      // If handler returns true, prevent default app exit
       return preventDefault === true
     }
 
-    // Add listener for Android hardware back button
-    let listener: any
-    App.addListener('backButton', handleBackButton).then((handle) => {
-      listener = handle
-    })
+    // Add listeners for web platform
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('popstate', handlePopState)
 
     return () => {
-      if (listener) {
-        listener.remove()
-      }
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('popstate', handlePopState)
     }
-  }, [isAndroid, enabled, onBackButton])
+  }, [enabled, onBackButton])
 }
