@@ -1,7 +1,7 @@
 
 import React, { useRef, useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Camera, Upload, AlertCircle } from 'lucide-react'
+import { Camera, Upload, CircleAlert as AlertCircle } from 'lucide-react'
 import Webcam from 'react-webcam'
 import { useToast } from '@/hooks/use-toast'
 

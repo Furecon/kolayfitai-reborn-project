@@ -4,7 +4,7 @@ import { BrowserBarcodeReader } from '@zxing/library'
 import { useToast } from '@/hooks/use-toast'
 import { FileImageSelector } from '@/components/FoodAnalysis/FileImageSelector'
 import { Card, CardContent } from '@/components/ui/card'
-import { QrCode, AlertCircle, RotateCcw } from 'lucide-react'
+import { QrCode, CircleAlert as AlertCircle, RotateCcw } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface BarcodeFromImageProps {
