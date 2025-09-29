@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Heart, Clock, Users, Trash2, Plus, ArrowLeft } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 
 interface FavoriteMeal {
   id: string

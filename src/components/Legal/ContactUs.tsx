@@ -6,9 +6,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Mail, MessageCircle, Clock, MapPin } from 'lucide-react'
 import { useState } from 'react'
-import { toast } from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 
 export function ContactUs() {
+  const { toast } = useToast()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -30,7 +31,10 @@ export function ContactUs() {
     window.location.href = mailtoLink
     
     // Show success toast
-    toast.success('E-posta istemciniz açıldı. Mesajınızı gönderebilirsiniz.')
+    toast({
+      title: "Başarılı!",
+      description: "E-posta istemciniz açıldı. Mesajınızı gönderebilirsiniz."
+    })
     
     // Clear form
     setFormData({ name: '', email: '', subject: '', message: '' })

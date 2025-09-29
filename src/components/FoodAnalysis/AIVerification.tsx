@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ArrowLeft, CheckCircle, XCircle, Edit3, Save, X } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 
 interface FoodItem {
   name: string
@@ -48,6 +49,7 @@ interface AIVerificationProps {
 }
 
 export default function AIVerification({ 
+  const { toast } = useToast()
   analysisResult, 
   capturedImage, 
   onConfirm, 

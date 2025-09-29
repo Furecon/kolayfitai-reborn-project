@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { BrowserBarcodeReader } from '@zxing/library'
-import { toast } from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 import { FileImageSelector } from '@/components/FoodAnalysis/FileImageSelector'
 import { Card, CardContent } from '@/components/ui/card'
 import { QrCode, AlertCircle, RotateCcw } from 'lucide-react'
@@ -13,6 +13,7 @@ interface BarcodeFromImageProps {
 }
 
 export function BarcodeFromImage({ onBarcodeDetected, onBack }: BarcodeFromImageProps) {
+  const { toast } = useToast()
   const [isProcessing, setIsProcessing] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -41,7 +42,10 @@ export function BarcodeFromImage({ onBarcodeDetected, onBack }: BarcodeFromImage
       })
 
       console.log('Barcode detected:', result)
-      toast.success('Barkod başarıyla okundu!')
+      toast({
+        title: "Başarılı!",
+        description: "Barkod başarıyla okundu!"
+      })
       onBarcodeDetected(result)
 
     } catch (error: any) {
@@ -56,7 +60,11 @@ export function BarcodeFromImage({ onBarcodeDetected, onBack }: BarcodeFromImage
       }
       
       setError(errorMessage)
-      toast.error(errorMessage)
+      toast({
+        title: "Hata",
+        description: errorMessage,
+        variant: "destructive"
+      })
     } finally {
       setIsProcessing(false)
     }

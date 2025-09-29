@@ -3,7 +3,7 @@ import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from 'react-im
 import 'react-image-crop/dist/ReactCrop.css'
 import { Button } from '@/components/ui/button'
 import { RotateCw, Square, Crop as CropIcon, Check, X } from 'lucide-react'
-import { toast } from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 
 interface ImageCropEditorProps {
   imageUrl: string
@@ -12,6 +12,7 @@ interface ImageCropEditorProps {
 }
 
 export function ImageCropEditor({ imageUrl, onCropComplete, onCancel }: ImageCropEditorProps) {
+  const { toast } = useToast()
   const imgRef = useRef<HTMLImageElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [crop, setCrop] = useState<Crop>()
@@ -142,7 +143,11 @@ export function ImageCropEditor({ imageUrl, onCropComplete, onCancel }: ImageCro
 
   const handleCropComplete = async () => {
     if (!completedCrop) {
-      toast.error('Lütfen kırpma alanını seçin')
+      toast({
+        title: "Hata",
+        description: "Lütfen kırpma alanını seçin",
+        variant: "destructive"
+      })
       return
     }
 
@@ -150,10 +155,17 @@ export function ImageCropEditor({ imageUrl, onCropComplete, onCancel }: ImageCro
     try {
       const croppedImageUrl = await getCroppedImg()
       onCropComplete(croppedImageUrl)
-      toast.success('Görsel kırpıldı!')
+      toast({
+        title: "Başarılı!",
+        description: "Görsel kırpıldı!"
+      })
     } catch (error) {
       console.error('Crop error:', error)
-      toast.error('Görsel kırpılırken hata oluştu')
+      toast({
+        title: "Hata",
+        description: "Görsel kırpılırken hata oluştu",
+        variant: "destructive"
+      })
     } finally {
       setIsProcessing(false)
     }

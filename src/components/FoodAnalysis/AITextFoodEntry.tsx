@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -163,7 +163,7 @@ export function AITextFoodEntry({ mealType, onSave, onBack, loading }: AITextFoo
   const totalNutrition = getTotalNutrition();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
+    <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto space-y-6">
         
         {/* Header */}
@@ -432,7 +432,7 @@ export function AITextFoodEntry({ mealType, onSave, onBack, loading }: AITextFoo
           <Button 
             onClick={handleSave} 
             disabled={loading || confirmedFoods.length === 0}
-            className="flex-1"
+            className="flex-1 bg-green-500 hover:bg-green-600 text-white"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -442,5 +442,5 @@ export function AITextFoodEntry({ mealType, onSave, onBack, loading }: AITextFoo
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react'
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -530,8 +530,8 @@ export const EnhancedAIVerification: React.FC<EnhancedAIVerificationProps> = ({
         </Button>
       </div>
     </div>
-  );
-};
+  )
+}
 
 // Edit Food Form Component
 interface EditFoodFormProps {
@@ -656,7 +656,7 @@ const EditFoodForm: React.FC<EditFoodFormProps> = ({ food, onSave, onCancel }) =
         </Button>
       </div>
     </form>
-  );
-};
+  )
+}
 
-export default EnhancedAIVerification;
+export default EnhancedAIVerification
