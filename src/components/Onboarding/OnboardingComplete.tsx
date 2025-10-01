@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { useOnboarding } from './OnboardingProvider'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { supabase } from '@/integrations/supabase/client'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 import { useQueryClient } from '@tanstack/react-query'
 
 export function OnboardingComplete() {
