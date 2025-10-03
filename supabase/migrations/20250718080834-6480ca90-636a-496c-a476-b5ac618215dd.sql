@@ -49,11 +49,36 @@ INSERT INTO public.foods (name, name_en, calories_per_100g, protein_per_100g, ca
 ('Pasta', 'Pasta', 131, 5, 25, 1, 2, 'Grains', false);
 
 -- Add confidence_threshold column to ai_analysis table
-ALTER TABLE public.ai_analysis 
-ADD COLUMN confidence_threshold DECIMAL(3,2) DEFAULT 0.70,
-ADD COLUMN requires_manual_review BOOLEAN DEFAULT false,
-ADD COLUMN manual_corrections JSONB DEFAULT '{}',
-ADD COLUMN final_analysis JSONB DEFAULT '{}';
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'ai_analysis' AND column_name = 'confidence_threshold'
+  ) THEN
+    ALTER TABLE public.ai_analysis ADD COLUMN confidence_threshold DECIMAL(3,2) DEFAULT 0.70;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'ai_analysis' AND column_name = 'requires_manual_review'
+  ) THEN
+    ALTER TABLE public.ai_analysis ADD COLUMN requires_manual_review BOOLEAN DEFAULT false;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'ai_analysis' AND column_name = 'manual_corrections'
+  ) THEN
+    ALTER TABLE public.ai_analysis ADD COLUMN manual_corrections JSONB DEFAULT '{}';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'ai_analysis' AND column_name = 'final_analysis'
+  ) THEN
+    ALTER TABLE public.ai_analysis ADD COLUMN final_analysis JSONB DEFAULT '{}';
+  END IF;
+END $$;
 
 -- Create food_search function for better food matching
 CREATE OR REPLACE FUNCTION search_foods(search_term TEXT)
