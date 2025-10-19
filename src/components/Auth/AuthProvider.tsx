@@ -50,15 +50,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithOAuth = async (provider: 'google' | 'facebook' | 'apple') => {
     try {
       console.log(`Starting OAuth flow for ${provider} on platform: ${platform}`)
-      
-      const redirectTo = `${window.location.origin}/`
-      
+
+      const redirectTo = `${window.location.origin}/auth/callback`
+
       console.log(`Using redirectTo: ${redirectTo}`)
-      
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo
+          redirectTo,
+          skipBrowserRedirect: false
         }
       })
 
@@ -74,6 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // For web platform, the redirect will happen automatically
       if (data.url) {
+        console.log('Redirecting to OAuth provider:', data.url)
         window.location.href = data.url
       }
 

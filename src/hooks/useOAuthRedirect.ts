@@ -4,44 +4,42 @@ import { supabase } from '@/integrations/supabase/client'
 
 export function useOAuthRedirect() {
   useEffect(() => {
-    // Handle OAuth redirects for web platform
-    const handleHashChange = async () => {
+    const processOAuthCallback = async () => {
       const hash = window.location.hash
-      
+      const searchParams = new URLSearchParams(window.location.search)
+
+      console.log('Checking for OAuth callback...')
+      console.log('Hash:', hash)
+      console.log('Search params:', window.location.search)
+
       if (hash && hash.includes('access_token')) {
         console.log('Processing OAuth callback from URL hash...')
-        
+
         try {
           const { data, error } = await supabase.auth.getSession()
-          
+
           if (error) {
             console.error('OAuth session error:', error)
           } else if (data.session) {
-            console.log('OAuth session established successfully')
-            // Clear the hash from URL
+            console.log('OAuth session established successfully:', data.session.user.email)
             window.history.replaceState(null, '', window.location.pathname)
           }
         } catch (error) {
           console.error('Error processing OAuth callback:', error)
         }
-      }
-    }
-
-    // Handle URL parameters for OAuth
-    const handleUrlParams = async () => {
-      const urlParams = new URLSearchParams(window.location.search)
-      
-      if (urlParams.has('code')) {
+      } else if (searchParams.has('code')) {
         console.log('Processing OAuth code from URL params...')
-        
+
         try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href)
-          
+          const code = searchParams.get('code')
+          console.log('Exchanging code for session...')
+
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code!)
+
           if (error) {
             console.error('OAuth code exchange error:', error)
-          } else {
-            console.log('OAuth session established successfully')
-            // Clear the URL parameters
+          } else if (data.session) {
+            console.log('OAuth session established successfully:', data.session.user.email)
             window.history.replaceState(null, '', window.location.pathname)
           }
         } catch (error) {
@@ -50,11 +48,12 @@ export function useOAuthRedirect() {
       }
     }
 
-    // Check for OAuth callback on component mount
-    handleHashChange()
-    handleUrlParams()
-    
-    // Listen for hash changes
+    processOAuthCallback()
+
+    const handleHashChange = () => {
+      processOAuthCallback()
+    }
+
     window.addEventListener('hashchange', handleHashChange)
 
     return () => {

@@ -2,7 +2,6 @@
 import { Button } from '@/components/ui/button'
 import { useAuth } from './AuthProvider'
 import { useState } from 'react'
-import { useOAuthRedirect } from '@/hooks/useOAuthRedirect'
 import { usePlatform } from '@/hooks/usePlatform'
 
 interface SocialAuthButtonsProps {
@@ -12,15 +11,12 @@ interface SocialAuthButtonsProps {
 export function SocialAuthButtons({ mode }: SocialAuthButtonsProps) {
   const { signInWithOAuth } = useAuth()
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null)
-  const { platform, isNative } = usePlatform()
-  
-  // Set up OAuth redirect handler for native platforms
-  useOAuthRedirect()
+  const { platform } = usePlatform()
 
   const handleOAuthLogin = async (provider: 'google' | 'facebook' | 'apple') => {
     console.log(`Attempting ${provider} login on platform: ${platform}`)
     setLoadingProvider(provider)
-    
+
     try {
       await signInWithOAuth(provider)
     } catch (error) {
