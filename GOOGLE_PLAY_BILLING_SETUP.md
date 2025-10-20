@@ -3,8 +3,8 @@
 ## Genel Bakış
 
 KolayFit uygulaması için Google Play Billing entegrasyonu. İki abonelik planı:
-- **Aylık**: 119.99 TRY (`monthly_119_99`)
-- **Yıllık**: 1199.99 TRY (`yearly_1199_99`)
+- **Aylık**: 299.99 TRY (`monthly_299_99`)
+- **Yıllık**: 2999.99 TRY (`yearly_2999_99`)
 
 ---
 
@@ -23,18 +23,18 @@ KolayFit uygulaması için Google Play Billing entegrasyonu. İki abonelik plan�
 2. **Abonelik oluştur** tıkla
 
 #### Aylık Abonelik:
-- Ürün kimliği: `monthly_119_99`
+- Ürün kimliği: `monthly_299_99`
 - Ad: KolayFit Premium - Aylık
 - Açıklama: Aylık premium abonelik
-- Fiyat: 119.99 TRY
+- Fiyat: 299.99 TRY
 - Faturalandırma dönemi: 1 ay
 - Ücretsiz deneme: 7 gün (opsiyonel)
 
 #### Yıllık Abonelik:
-- Ürün kimliği: `yearly_1199_99`
+- Ürün kimliği: `yearly_2999_99`
 - Ad: KolayFit Premium - Yıllık
 - Açıklama: Yıllık premium abonelik (%17 indirim)
-- Fiyat: 1199.99 TRY
+- Fiyat: 2999.99 TRY
 - Faturalandırma dönemi: 1 yıl
 - Ücretsiz deneme: 14 gün (opsiyonel)
 
@@ -162,7 +162,7 @@ supabase functions deploy subscription-manager
 Web üzerinde test yapmak için:
 ```javascript
 // PurchaseService.ts zaten mock mode destekliyor
-await purchaseService.purchaseProduct('monthly_119_99', userId);
+await purchaseService.purchaseProduct('monthly_299_99', userId);
 // Bu "mock_token_" ile başlayan token kullanır
 ```
 
