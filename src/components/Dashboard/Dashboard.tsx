@@ -255,7 +255,12 @@ export function Dashboard() {
   if (currentView === 'profile') {
     return (
       <div className="min-h-screen bg-white">
-        <ProfileSetup onBack={() => setCurrentView('dashboard')} />
+        <ProfileSetup
+          onBack={() => {
+            setRefreshTrigger(prev => prev + 1)
+            setCurrentView('dashboard')
+          }}
+        />
       </div>
     )
   }

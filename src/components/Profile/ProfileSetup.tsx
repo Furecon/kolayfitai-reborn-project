@@ -264,6 +264,10 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
             title: "Başarılı!",
             description: "Profil güncellendi ve AI değerlendirmeniz hazırlandı."
           })
+          // Wait a bit for toast to be visible, then navigate back
+          setTimeout(() => {
+            if (onBack) onBack()
+          }, 1000)
         } else {
           throw new Error('AI assessment failed')
         }
@@ -273,6 +277,10 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
           title: "Profil Güncellendi",
           description: "Profil bilgileriniz kaydedildi, ancak AI değerlendirme sırasında bir sorun oluştu."
         })
+        // Still navigate back after showing toast
+        setTimeout(() => {
+          if (onBack) onBack()
+        }, 1500)
       }
 
     } catch (error: any) {
