@@ -27,17 +27,82 @@ interface GooglePlaySubscriptionResponse {
   purchaseType: number;
 }
 
-// Validate Google Play purchase using the Google Play License Key
+async function getGoogleAccessToken(): Promise<string | null> {
+  try {
+    const serviceAccountEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
+    const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
+
+    if (!serviceAccountEmail || !serviceAccountKey) {
+      console.error('Missing service account credentials');
+      return null;
+    }
+
+    const privateKey = JSON.parse(serviceAccountKey).private_key;
+
+    const header = {
+      alg: 'RS256',
+      typ: 'JWT'
+    };
+
+    const now = Math.floor(Date.now() / 1000);
+    const claim = {
+      iss: serviceAccountEmail,
+      scope: 'https://www.googleapis.com/auth/androidpublisher',
+      aud: 'https://oauth2.googleapis.com/token',
+      exp: now + 3600,
+      iat: now
+    };
+
+    const encoder = new TextEncoder();
+    const headerBase64 = btoa(JSON.stringify(header));
+    const claimBase64 = btoa(JSON.stringify(claim));
+    const signatureInput = `${headerBase64}.${claimBase64}`;
+
+    const keyData = await crypto.subtle.importKey(
+      'pkcs8',
+      encoder.encode(privateKey),
+      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+
+    const signature = await crypto.subtle.sign(
+      'RSASSA-PKCS1-v1_5',
+      keyData,
+      encoder.encode(signatureInput)
+    );
+
+    const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)));
+    const jwt = `${signatureInput}.${signatureBase64}`;
+
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
+    });
+
+    if (!tokenResponse.ok) {
+      console.error('Failed to get access token:', await tokenResponse.text());
+      return null;
+    }
+
+    const tokenData = await tokenResponse.json();
+    return tokenData.access_token;
+  } catch (error) {
+    console.error('Error getting access token:', error);
+    return null;
+  }
+}
+
 async function validateGooglePlayPurchase(
   purchaseToken: string,
   productId: string,
   orderId: string
 ): Promise<GooglePlayValidationResult> {
   try {
-    const licenseKey = Deno.env.get('GOOGLE_PLAY_LICENSE_KEY');
     const packageName = Deno.env.get('GOOGLE_PACKAGE_NAME');
-    
-    if (!licenseKey || !packageName) {
+
+    if (!packageName) {
       console.error('Missing Google Play configuration');
       return {
         isValid: false,
@@ -45,13 +110,6 @@ async function validateGooglePlayPurchase(
       };
     }
 
-    // Use Google Play Developer API v3
-    const apiUrl = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptions/${productId}/tokens/${purchaseToken}`;
-    
-    // For production, you would use OAuth 2.0 with service account
-    // This is a simplified validation using the license key for signature verification
-    
-    // Alternative approach: Validate purchase token format and basic checks
     if (!purchaseToken || purchaseToken.length < 10) {
       return {
         isValid: false,
@@ -59,7 +117,6 @@ async function validateGooglePlayPurchase(
       };
     }
 
-    // Check if it's a mock token (for web testing)
     if (purchaseToken.startsWith('mock_token_')) {
       console.log('🧪 Mock purchase token detected - allowing for testing');
       return {
@@ -75,31 +132,67 @@ async function validateGooglePlayPurchase(
       };
     }
 
-    // For real Google Play validation, you would:
-    // 1. Use service account credentials
-    // 2. Get OAuth access token
-    // 3. Call Google Play Developer API
-    // 4. Verify response data
-    
     console.log('📱 Google Play purchase validation initiated');
-    console.log('🔐 Using license key for validation');
     console.log('📦 Package name:', packageName);
     console.log('🛒 Product ID:', productId);
     console.log('🎫 Purchase token (first 20 chars):', purchaseToken.substring(0, 20) + '...');
-    
-    // TODO: Implement full Google Play Developer API validation
-    // For now, we'll use basic validation for production readiness
-    
+
+    const accessToken = await getGoogleAccessToken();
+    if (!accessToken) {
+      console.error('Failed to obtain access token');
+      return {
+        isValid: false,
+        error: 'Authentication failed'
+      };
+    }
+
+    const apiUrl = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptions/${productId}/tokens/${purchaseToken}`;
+
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Google Play API error:', response.status, errorText);
+      return {
+        isValid: false,
+        error: `Google Play API error: ${response.status}`
+      };
+    }
+
+    const subscriptionData: GooglePlaySubscriptionResponse = await response.json();
+
+    console.log('✅ Google Play API validation successful');
+    console.log('📊 Subscription data:', {
+      orderId: subscriptionData.orderId,
+      autoRenewing: subscriptionData.autoRenewing,
+      paymentState: subscriptionData.paymentState,
+      expiryTime: new Date(parseInt(subscriptionData.expiryTimeMillis)).toISOString()
+    });
+
+    if (subscriptionData.paymentState !== 1) {
+      return {
+        isValid: false,
+        error: 'Payment not received'
+      };
+    }
+
+    const expiryTime = parseInt(subscriptionData.expiryTimeMillis);
+    if (expiryTime < Date.now()) {
+      return {
+        isValid: false,
+        error: 'Subscription expired'
+      };
+    }
+
     return {
       isValid: true,
-      subscriptionData: {
-        orderId,
-        purchaseToken,
-        autoRenewing: true,
-        startTimeMillis: Date.now().toString(),
-        expiryTimeMillis: (Date.now() + (productId.includes('yearly') ? 365 : 30) * 24 * 60 * 60 * 1000).toString(),
-        paymentState: 1
-      }
+      subscriptionData
     };
 
   } catch (error) {
