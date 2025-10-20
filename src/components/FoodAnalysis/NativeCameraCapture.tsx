@@ -34,8 +34,9 @@ export default function NativeCameraCapture({ onImageCaptured, onFileUploaded }:
       }
 
       const imageSrc = webcamRef.current.getScreenshot()
-      
+
       if (imageSrc) {
+        // Don't resize here, let parent handle it
         onImageCaptured(imageSrc)
         setShowCamera(false)
         
@@ -91,8 +92,9 @@ export default function NativeCameraCapture({ onImageCaptured, onFileUploaded }:
     const reader = new FileReader()
     reader.onload = (e) => {
       const result = e.target?.result as string
+      // Don't resize here, let parent handle it
       onFileUploaded(result)
-      
+
       toast({
         title: "Başarılı!",
         description: "Dosya yüklendi, analiz ediliyor...",

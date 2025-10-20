@@ -24,6 +24,7 @@ interface FoodAnalysisProps {
 export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps) {
   const [currentStep, setCurrentStep] = useState<AnalysisStep>('camera')
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
+  const [capturedImageHD, setCapturedImageHD] = useState<string | null>(null)
   const [analysisType, setAnalysisType] = useState<'quick' | 'detailed' | null>(null)
   const [selectedMealType, setSelectedMealType] = useState<string>('')
   const [analysisResult, setAnalysisResult] = useState<any>(null)
@@ -64,9 +65,20 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
     hideTutorial()
   }
 
-  const handleImageCaptured = (imageUrl: string) => {
+  const handleImageCaptured = async (imageUrl: string) => {
     console.log('Image captured:', imageUrl.substring(0, 50) + '...')
-    setCapturedImage(imageUrl)
+
+    // Import resize function dynamically
+    const { resizeImage } = await import('@/lib/imageResize')
+
+    // Create 512px version for quick analysis
+    const resizedImage = await resizeImage(imageUrl, 512, 0.8)
+    setCapturedImage(resizedImage)
+
+    // Create 1024px version for detailed analysis
+    const hdImage = await resizeImage(imageUrl, 1024, 0.85)
+    setCapturedImageHD(hdImage)
+
     setCurrentStep('analysis-type')
   }
 
@@ -285,10 +297,12 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
 
         {currentStep === 'quick-result' && capturedImage && (
           <QuickAnalysisResult
-            capturedImage={capturedImage}
+            capturedImage={analysisType === 'detailed' && capturedImageHD ? capturedImageHD : capturedImage}
             mealType=""
             onSave={handleQuickAnalysisComplete}
             onRetry={() => setCurrentStep('camera')}
+            analysisType={analysisType || 'quick'}
+            detailsData={detailedFormData}
           />
         )}
 

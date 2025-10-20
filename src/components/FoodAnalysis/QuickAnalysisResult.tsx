@@ -36,14 +36,18 @@ interface QuickAnalysisResultProps {
   onSave: (foods: FoodItem[]) => void
   onRetry: () => void
   loading?: boolean
+  analysisType?: 'quick' | 'detailed'
+  detailsData?: any
 }
 
-export default function QuickAnalysisResult({ 
+export default function QuickAnalysisResult({
   capturedImage,
   mealType = 'öğün',
-  onSave, 
-  onRetry, 
-  loading 
+  onSave,
+  onRetry,
+  loading,
+  analysisType = 'quick',
+  detailsData
 }: QuickAnalysisResultProps) {
   const { toast } = useToast()
   const [detectedFoods, setDetectedFoods] = useState<FoodItem[]>([])
@@ -72,7 +76,8 @@ export default function QuickAnalysisResult({
         body: {
           imageUrl: capturedImage,
           mealType: mealType,
-          analysisType: 'quick'
+          analysisType: analysisType,
+          detailsData: detailsData
         }
       })
 

@@ -60,13 +60,12 @@ export function FileImageSelector({
       } else {
         // Standard image processing
         const reader = new FileReader()
-        reader.onload = async (e) => {
+        reader.onload = (e) => {
           const result = e.target?.result as string
-          
-          // Resize and compress image
-          const optimizedImage = await optimizeImage(result)
-          onImageSelected(optimizedImage)
-          
+
+          // Don't resize here, let parent handle it
+          onImageSelected(result)
+
           toast.success('Görsel başarıyla yüklendi!')
         }
         reader.onerror = () => {
@@ -99,9 +98,9 @@ export function FileImageSelector({
       try {
         // Try to create an image element to see if browser supports HEIC
         const img = document.createElement('img')
-        img.onload = async () => {
-          const optimizedImage = await optimizeImage(result)
-          onImageSelected(optimizedImage)
+        img.onload = () => {
+          // Don't resize here, let parent handle it
+          onImageSelected(result)
           toast.success('HEIC görsel başarıyla dönüştürüldü!')
         }
         img.onerror = () => {
@@ -119,43 +118,6 @@ export function FileImageSelector({
     reader.readAsDataURL(file)
   }
 
-  const optimizeImage = async (imageDataUrl: string): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = document.createElement('img')
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('2d')
-        
-        if (!ctx) {
-          resolve(imageDataUrl)
-          return
-        }
-
-        // Calculate new dimensions (max 1920px on longest side)
-        const maxDimension = 1920
-        let { width, height } = img
-        
-        if (width > maxDimension || height > maxDimension) {
-          if (width > height) {
-            height = Math.round((height * maxDimension) / width)
-            width = maxDimension
-          } else {
-            width = Math.round((width * maxDimension) / height)
-            height = maxDimension
-          }
-        }
-
-        canvas.width = width
-        canvas.height = height
-        
-        // Draw and compress
-        ctx.drawImage(img, 0, 0, width, height)
-        const optimized = canvas.toDataURL('image/jpeg', 0.8)
-        resolve(optimized)
-      }
-      img.src = imageDataUrl
-    })
-  }
 
   return (
     <div className="space-y-4">

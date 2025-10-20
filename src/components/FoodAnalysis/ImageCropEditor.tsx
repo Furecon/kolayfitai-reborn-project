@@ -154,6 +154,7 @@ export function ImageCropEditor({ imageUrl, onCropComplete, onCancel }: ImageCro
     setIsProcessing(true)
     try {
       const croppedImageUrl = await getCroppedImg()
+      // Don't resize here, let parent handle it
       onCropComplete(croppedImageUrl)
       toast({
         title: "Başarılı!",
