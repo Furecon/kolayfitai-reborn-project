@@ -10,9 +10,6 @@ import { TutorialOverlay } from '../Tutorial/TutorialOverlay'
 import { useTutorial, useTutorialAutoShow } from '@/context/TutorialContext'
 import FoodAnalysis from '../FoodAnalysis'
 import ManualFoodEntry from '../FoodAnalysis/ManualFoodEntry'
-import { BarcodeScanner } from '../BarcodeScanner/BarcodeScanner'
-import { BarcodeResult } from '../BarcodeScanner/BarcodeResult'
-import { BarcodeFromImage } from '../BarcodeScanner/BarcodeFromImage'
 import { FileImageSelector } from '../FoodAnalysis/FileImageSelector'
 import { ImageCropEditor } from '../FoodAnalysis/ImageCropEditor'
 import ProfileSetup from '../Profile/ProfileSetup'
@@ -30,7 +27,7 @@ import { useAuth } from '@/components/Auth/AuthProvider'
 import { Button } from '@/components/ui/button'
 import { Sparkles, Heart, TrendingUp, ArrowLeft } from 'lucide-react'
 
-type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'barcode-scanner' | 'barcode-result' | 'file-image' | 'crop-image' | 'barcode-from-image' | 'profile' | 'progress' | 'suggestions' | 'favorites' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
+type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'file-image' | 'crop-image' | 'profile' | 'progress' | 'suggestions' | 'favorites' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -198,9 +195,7 @@ export function Dashboard() {
         onBack={() => setCurrentView('dashboard')}
         onSelectPhoto={() => setCurrentView('camera')}
         onSelectManual={() => setCurrentView('manual-entry')}
-        onSelectBarcode={() => setCurrentView('barcode-scanner')}
         onSelectPhotoFromFile={() => setCurrentView('file-image')}
-        onSelectBarcodeFromImage={() => setCurrentView('barcode-from-image')}
         onForceManual={() => setCurrentView('manual-entry')}
       />
     )
@@ -236,42 +231,6 @@ export function Dashboard() {
     )
   }
 
-  if (currentView === 'barcode-from-image') {
-    return (
-      <BarcodeFromImage
-        onBarcodeDetected={(barcode) => {
-          localStorage.setItem('scannedBarcode', barcode)
-          setCurrentView('barcode-result')
-        }}
-        onBack={() => setCurrentView('meal-selection')}
-      />
-    )
-  }
-
-  if (currentView === 'barcode-scanner') {
-    return (
-      <BarcodeScanner
-        onBack={() => setCurrentView('meal-selection')}
-        onBarcodeScanned={(barcode) => {
-          // Store scanned barcode and go to result screen
-          localStorage.setItem('scannedBarcode', barcode)
-          setCurrentView('barcode-result')
-        }}
-        onManualFallback={() => setCurrentView('manual-entry')}
-      />
-    )
-  }
-
-  if (currentView === 'barcode-result') {
-    return (
-      <BarcodeResult
-        barcode={localStorage.getItem('scannedBarcode') || ''}
-        onBack={() => setCurrentView('barcode-scanner')}
-        onMealSaved={handleMealAdded}
-        onManualEntry={() => setCurrentView('manual-entry')}
-      />
-    )
-  }
 
   if (currentView === 'manual-entry') {
     return (
