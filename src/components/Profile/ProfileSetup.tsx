@@ -177,14 +177,25 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
       }
 
       console.log('Updating profile with data:', updateData)
-      
+
+      // Use upsert to handle both insert and update cases
       const { error } = await supabase
         .from('profiles')
-        .update(updateData)
-        .eq('user_id', user.id)
+        .upsert(updateData, {
+          onConflict: 'user_id',
+          ignoreDuplicates: false
+        })
 
-      console.log('Profile update result:', { error })
-      if (error) throw error
+      console.log('Profile upsert result:', { error })
+      if (error) {
+        console.error('Profile upsert error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
+        throw error
+      }
 
       // Get previous assessment for comparison
       const { data: previousAssessment } = await supabase
@@ -226,11 +237,18 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
         })
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Profile update error:', error)
+
+      // Provide more detailed error message to user
+      let errorMessage = "Profil güncellenirken hata oluştu."
+      if (error?.message) {
+        errorMessage = error.message
+      }
+
       toast({
         title: "Hata",
-        description: "Profil güncellenirken hata oluştu.",
+        description: errorMessage,
         variant: "destructive"
       })
     } finally {
