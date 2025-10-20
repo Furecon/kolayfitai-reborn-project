@@ -79,6 +79,16 @@ Bu bilgileri kullanarak daha doğru besin değeri hesaplama yap. Pişirme yönte
 
     console.log('Making request to OpenAI API...')
 
+    let useModel = 'gpt-4o-mini'
+    let needsUpgrade = false
+
+    if (analysisType === 'quick') {
+      console.log('Stage 1: Using gpt-4o-mini for quick analysis')
+    } else {
+      console.log('Using gpt-4o-mini for detailed analysis (user requested)')
+      useModel = 'gpt-4o-mini'
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -86,7 +96,7 @@ Bu bilgileri kullanarak daha doğru besin değeri hesaplama yap. Pişirme yönte
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: useModel,
         messages: [
           {
             role: 'system',
@@ -250,6 +260,90 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
     // Ensure confidence is between 0 and 1
     if (analysisResult.confidence > 1) {
       analysisResult.confidence = analysisResult.confidence / 100
+    }
+
+    if (analysisType === 'quick' && analysisResult.confidence < 0.6) {
+      console.log('Stage 1 confidence too low, considering upgrade to gpt-4o')
+      needsUpgrade = true
+    }
+
+    if (needsUpgrade && analysisType === 'quick') {
+      console.log('Stage 2: Upgrading to gpt-4o for better accuracy')
+
+      const upgradeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: `Sen Türk mutfağı ve beslenme konusunda uzman bir yapay zeka asistanısın. Yemek fotoğraflarını analiz ederek doğru besin değerlerini hesaplıyorsun. Türkçe yemek adlarını tercih et ve gerçekçi porsiyon tahminleri yap.
+
+ÖNEMLI: Tüm besin değerlerini eksiksiz hesapla:
+- Kalori (kcal)
+- Protein (g)
+- Karbonhidrat (g)
+- Yağ (g)
+- Lif (g)
+- Şeker (g)
+- Sodyum (mg)
+
+Pişirme yöntemi belirsizse fotoğraftan tahmin et ve açıkla.`
+            },
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `Bu yemek fotoğrafını daha detaylı analiz et. İlk analiz belirsiz sonuçlar verdi, daha yüksek doğrulukta tespit yap.
+
+${detailsPrompt}
+
+Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: imageUrl,
+                    detail: 'high'
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 1500,
+          temperature: 0.2,
+        }),
+      })
+
+      if (upgradeResponse.ok) {
+        const upgradeData = await upgradeResponse.json()
+        const upgradeContent = upgradeData.choices[0]?.message?.content
+
+        if (upgradeContent) {
+          let upgradeJsonStr = upgradeContent.trim()
+          if (upgradeJsonStr.startsWith('```json')) {
+            upgradeJsonStr = upgradeJsonStr.replace(/```json\n?/, '').replace(/\n?```$/, '')
+          }
+          if (upgradeJsonStr.startsWith('```')) {
+            upgradeJsonStr = upgradeJsonStr.replace(/```\n?/, '').replace(/\n?```$/, '')
+          }
+
+          try {
+            const upgradeResult = JSON.parse(upgradeJsonStr)
+            if (upgradeResult.detectedFoods && upgradeResult.detectedFoods.length > 0) {
+              console.log('Stage 2 successful, using upgraded results')
+              analysisResult = upgradeResult
+            }
+          } catch (e) {
+            console.log('Stage 2 parse error, keeping stage 1 results')
+          }
+        }
+      }
     }
 
     // Validate and fix nutrition data for each food

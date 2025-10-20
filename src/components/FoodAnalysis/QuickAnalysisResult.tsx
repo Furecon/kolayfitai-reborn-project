@@ -3,8 +3,9 @@ import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
-import { Loader as Loader2, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Expand, Zap, Droplets } from 'lucide-react'
+import { Loader as Loader2, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Expand, Zap, Droplets, Database } from 'lucide-react'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
+import { AnalysisCacheService } from '@/services/analysisCacheService'
 
 interface FoodItem {
   name: string
@@ -56,6 +57,7 @@ export default function QuickAnalysisResult({
   const [error, setError] = useState<string | null>(null)
   const [confidence, setConfidence] = useState<number>(0)
   const [suggestions, setSuggestions] = useState<string>('')
+  const [fromCache, setFromCache] = useState(false)
 
   useEffect(() => {
     if (capturedImage && !hasAnalyzed) {
@@ -68,10 +70,35 @@ export default function QuickAnalysisResult({
 
     setIsAnalyzing(true)
     setError(null)
-    
+
     try {
       console.log('Starting food analysis...')
-      
+
+      const imageSize = analysisType === 'detailed' ? 1024 : 512
+
+      const cachedResult = await AnalysisCacheService.findSimilarAnalysis(
+        capturedImage,
+        analysisType,
+        imageSize
+      )
+
+      if (cachedResult) {
+        console.log('Using cached analysis result')
+        setDetectedFoods(cachedResult.detectedFoods)
+        setConfidence(cachedResult.confidence)
+        setSuggestions(cachedResult.suggestions)
+        setFromCache(true)
+        setHasAnalyzed(true)
+
+        toast({
+          title: "Önbellekten Yüklendi!",
+          description: `${cachedResult.detectedFoods.length} yemek bulundu (Benzer fotoğraf daha önce analiz edilmişti)`,
+        })
+        return
+      }
+
+      console.log('No cache found, calling API...')
+
       const { data, error } = await supabase.functions.invoke('analyze-food', {
         body: {
           imageUrl: capturedImage,
@@ -96,8 +123,22 @@ export default function QuickAnalysisResult({
         setDetectedFoods(data.detectedFoods)
         setConfidence(data.confidence || 0)
         setSuggestions(data.suggestions || '')
+        setFromCache(false)
         setHasAnalyzed(true)
-        
+
+        if (data.detectedFoods.length > 0) {
+          await AnalysisCacheService.saveAnalysis(
+            capturedImage,
+            analysisType,
+            imageSize,
+            {
+              detectedFoods: data.detectedFoods,
+              confidence: data.confidence || 0,
+              suggestions: data.suggestions || ''
+            }
+          )
+        }
+
         if (data.detectedFoods.length > 0) {
           toast({
             title: "Analiz Tamamlandı!",
@@ -268,6 +309,12 @@ export default function QuickAnalysisResult({
         <p className="text-gray-600">
           {detectedFoods.length} yemek tespit edildi
         </p>
+        {fromCache && (
+          <div className="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+            <Database className="h-3 w-3" />
+            Önbellekten yüklendi
+          </div>
+        )}
       </div>
 
       {/* Captured Image Display */}
