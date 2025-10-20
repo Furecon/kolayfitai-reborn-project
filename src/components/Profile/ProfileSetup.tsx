@@ -80,11 +80,11 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
       }
 
       const activityReverseMap: { [key: string]: string } = {
-        'hareketsiz': 'sedentary',
+        'sedanter': 'sedentary',
         'az_aktif': 'lightly_active',
         'orta_aktif': 'moderately_active',
-        'cok_aktif': 'very_active',
-        'asiri_aktif': 'extremely_active'
+        'çok_aktif': 'very_active',
+        'extra_aktif': 'extremely_active'
       }
 
       const dietGoalReverseMap: { [key: string]: string } = {
@@ -181,11 +181,11 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
       }
 
       const activityMap: { [key: string]: string } = {
-        'sedentary': 'hareketsiz',
+        'sedentary': 'sedanter',
         'lightly_active': 'az_aktif',
         'moderately_active': 'orta_aktif',
-        'very_active': 'cok_aktif',
-        'extremely_active': 'asiri_aktif'
+        'very_active': 'çok_aktif',
+        'extremely_active': 'extra_aktif'
       }
 
       const dietGoalMap: { [key: string]: string } = {

@@ -7,7 +7,7 @@ interface OnboardingData {
   height: number | null
   weight: number | null
   goal: 'lose' | 'maintain' | 'gain' | null
-  activityLevel: 'sedanter' | 'orta_aktif' | 'aktif' | null
+  activityLevel: 'sedanter' | 'az_aktif' | 'orta_aktif' | 'çok_aktif' | 'extra_aktif' | null
 }
 
 interface OnboardingContextType {
@@ -50,12 +50,15 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const calculateDailyCalories = () => {
     const bmr = calculateBMR()
     const { activityLevel, goal } = onboardingData
-    
+
     if (!activityLevel || !goal) return 0
 
     let activityMultiplier = 1.2
+    if (activityLevel === 'sedanter') activityMultiplier = 1.2
+    if (activityLevel === 'az_aktif') activityMultiplier = 1.375
     if (activityLevel === 'orta_aktif') activityMultiplier = 1.55
-    if (activityLevel === 'aktif') activityMultiplier = 1.725
+    if (activityLevel === 'çok_aktif') activityMultiplier = 1.725
+    if (activityLevel === 'extra_aktif') activityMultiplier = 1.9
 
     let dailyCalories = bmr * activityMultiplier
 

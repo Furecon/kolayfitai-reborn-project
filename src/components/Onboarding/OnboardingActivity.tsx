@@ -7,7 +7,7 @@ import { useOnboarding } from './OnboardingProvider'
 export function OnboardingActivity() {
   const { setCurrentStep, updateOnboardingData, onboardingData } = useOnboarding()
 
-  const handleActivitySelect = (activityLevel: 'sedanter' | 'orta_aktif' | 'aktif') => {
+  const handleActivitySelect = (activityLevel: 'sedanter' | 'az_aktif' | 'orta_aktif' | 'çok_aktif' | 'extra_aktif') => {
     updateOnboardingData({ activityLevel })
     setCurrentStep(8)
   }
@@ -37,8 +37,16 @@ export function OnboardingActivity() {
               variant={onboardingData.activityLevel === 'sedanter' ? 'default' : 'outline'}
               className="w-full py-6 min-h-[80px] text-lg border-gray-300 flex flex-col items-center justify-center text-center"
             >
+              <span className="font-semibold">Hareketsiz</span>
+              <span className="text-sm text-gray-600 mt-1">Masa başı işi</span>
+            </Button>
+            <Button
+              onClick={() => handleActivitySelect('az_aktif')}
+              variant={onboardingData.activityLevel === 'az_aktif' ? 'default' : 'outline'}
+              className="w-full py-6 min-h-[80px] text-lg border-gray-300 flex flex-col items-center justify-center text-center"
+            >
               <span className="font-semibold">Az Aktif</span>
-              <span className="text-sm text-gray-600 mt-1">Egzersiz yok</span>
+              <span className="text-sm text-gray-600 mt-1">Haftada 1-3 gün egzersiz</span>
             </Button>
             <Button
               onClick={() => handleActivitySelect('orta_aktif')}
@@ -46,15 +54,23 @@ export function OnboardingActivity() {
               className="w-full py-6 min-h-[80px] text-lg border-gray-300 flex flex-col items-center justify-center text-center"
             >
               <span className="font-semibold">Orta Aktif</span>
-              <span className="text-sm text-gray-600 mt-1">Haftada bir kaç egzersiz</span>
+              <span className="text-sm text-gray-600 mt-1">Haftada 3-5 gün egzersiz</span>
             </Button>
             <Button
-              onClick={() => handleActivitySelect('aktif')}
-              variant={onboardingData.activityLevel === 'aktif' ? 'default' : 'outline'}
+              onClick={() => handleActivitySelect('çok_aktif')}
+              variant={onboardingData.activityLevel === 'çok_aktif' ? 'default' : 'outline'}
               className="w-full py-6 min-h-[80px] text-lg border-gray-300 flex flex-col items-center justify-center text-center"
             >
-              <span className="font-semibold">Aktif</span>
-              <span className="text-sm text-gray-600 mt-1">Düzenli egzersiz</span>
+              <span className="font-semibold">Çok Aktif</span>
+              <span className="text-sm text-gray-600 mt-1">Haftada 6-7 gün egzersiz</span>
+            </Button>
+            <Button
+              onClick={() => handleActivitySelect('extra_aktif')}
+              variant={onboardingData.activityLevel === 'extra_aktif' ? 'default' : 'outline'}
+              className="w-full py-6 min-h-[80px] text-lg border-gray-300 flex flex-col items-center justify-center text-center"
+            >
+              <span className="font-semibold">Aşırı Aktif</span>
+              <span className="text-sm text-gray-600 mt-1">Günde 2x egzersiz</span>
             </Button>
           </div>
 
@@ -66,16 +82,24 @@ export function OnboardingActivity() {
               </p>
               <div className="bg-gray-50 p-3 rounded text-sm">
                 <div className="flex justify-between mb-1">
-                  <span>Az Aktif:</span>
+                  <span>Hareketsiz:</span>
                   <span className="font-medium">~1800 kcal</span>
+                </div>
+                <div className="flex justify-between mb-1">
+                  <span>Az Aktif:</span>
+                  <span className="font-medium">~2000 kcal</span>
                 </div>
                 <div className="flex justify-between mb-1">
                   <span>Orta Aktif:</span>
                   <span className="font-medium">~2200 kcal</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Aktif:</span>
+                <div className="flex justify-between mb-1">
+                  <span>Çok Aktif:</span>
                   <span className="font-medium">~2500 kcal</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Aşırı Aktif:</span>
+                  <span className="font-medium">~2800 kcal</span>
                 </div>
               </div>
             </CardContent>
