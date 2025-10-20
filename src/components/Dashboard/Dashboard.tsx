@@ -271,7 +271,10 @@ export function Dashboard() {
         <div className="border-b border-gray-200 bg-white px-3 sm:px-4 py-3 sm:py-4">
           <Button
             variant="ghost"
-            onClick={() => setCurrentView('dashboard')}
+            onClick={() => {
+              setRefreshTrigger(prev => prev + 1)
+              setCurrentView('dashboard')
+            }}
             className="text-gray-600 h-10"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
