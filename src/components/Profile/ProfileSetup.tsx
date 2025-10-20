@@ -51,7 +51,10 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
 
   const fetchProfile = async () => {
     if (!user) return
-    
+
+    setLoading(true)
+    console.log('Fetching profile for user:', user.id)
+
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -60,20 +63,55 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
       .limit(1)
       .maybeSingle()
 
+    if (error) {
+      console.error('Error fetching profile:', error)
+      setLoading(false)
+      return
+    }
+
     if (data) {
+      console.log('Profile data loaded:', data)
+
+      // Map Turkish values from database to English values for the form
+      const genderReverseMap: { [key: string]: string } = {
+        'erkek': 'male',
+        'kadın': 'female',
+        'belirtmek_istemiyorum': 'other'
+      }
+
+      const activityReverseMap: { [key: string]: string } = {
+        'hareketsiz': 'sedentary',
+        'az_aktif': 'lightly_active',
+        'orta_aktif': 'moderately_active',
+        'cok_aktif': 'very_active',
+        'asiri_aktif': 'extremely_active'
+      }
+
+      const dietGoalReverseMap: { [key: string]: string } = {
+        'kilo_ver': 'lose',
+        'koru': 'maintain',
+        'kilo_al': 'gain'
+      }
+
       setProfile({
         name: data.name || '',
         age: data.age,
-        gender: data.gender,
+        gender: genderReverseMap[data.gender] || data.gender,
         height: data.height,
         weight: data.weight,
-        activity_level: data.activity_level,
-        diet_goal: data.diet_goal || null,
+        activity_level: activityReverseMap[data.activity_level] || data.activity_level,
+        diet_goal: dietGoalReverseMap[data.diet_goal] || data.diet_goal || null,
         daily_protein_goal: data.daily_protein_goal,
         daily_carbs_goal: data.daily_carbs_goal,
         daily_fat_goal: data.daily_fat_goal
       })
+
+      console.log('Profile state updated with mapped values')
+    } else {
+      console.log('No profile data found for user')
     }
+
+    setLoading(false)
   }
 
   const calculateBMR = (gender: string, weight: number, height: number, age: number) => {
@@ -278,8 +316,16 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
           </p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-tutorial="body-info">
+          {loading && !profile.name ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+                <p className="text-gray-600">Profil bilgileriniz yükleniyor...</p>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-tutorial="body-info">
               <div className="space-y-2">
                 <Label htmlFor="name">Ad Soyad</Label>
                 <Input
@@ -378,8 +424,8 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
               </Select>
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full bg-green-500 hover:bg-green-600 text-white"
               disabled={loading}
               data-tutorial="save-profile"
@@ -387,6 +433,7 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
               {loading ? 'Kaydediliyor...' : 'Profili Kaydet'}
             </Button>
           </form>
+          )}
         </CardContent>
       </Card>
     </div>
