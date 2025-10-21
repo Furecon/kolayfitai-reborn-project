@@ -3,7 +3,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+
     <title>KolayfitAI</title>
     <meta name="description" content="KolayfitAI - Akıllı Beslenme Asistanı">
     <meta name="author" content="KolayfitAI" />
@@ -16,8 +19,19 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-    <link rel="icon" type="image/x-icon" href="https://storage.googleapis.com/gpt-engineer-file-uploads/4Y0zbhdWfLdCdZUcfJP5RhCcwpG2/uploads/1758615628082-f09d3fea-7e50-48a8-b674-0e35a54a.png">
-</head>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+      }
+      #root {
+        min-height: 100vh;
+      }
+    </style>
+  </head>
 
   <body>
     <div id="root"></div>
