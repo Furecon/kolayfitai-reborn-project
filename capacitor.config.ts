@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.kolayfit.app',
+  appId: 'com.kolayfitai.app',
   appName: 'KolayFit',
   webDir: 'dist',
   server: {
