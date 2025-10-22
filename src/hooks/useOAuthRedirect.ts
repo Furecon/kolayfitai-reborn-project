@@ -1,16 +1,16 @@
-
 import { useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { App as CapacitorApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 
 export function useOAuthRedirect() {
   useEffect(() => {
-    const processOAuthCallback = async () => {
-      const hash = window.location.hash
-      const searchParams = new URLSearchParams(window.location.search)
+    const processOAuthCallback = async (url?: string) => {
+      const targetUrl = url || window.location.href
+      const hash = url ? '' : window.location.hash
+      const searchParams = new URLSearchParams(url ? new URL(url).search : window.location.search)
 
-      console.log('Checking for OAuth callback...')
-      console.log('Hash:', hash)
-      console.log('Search params:', window.location.search)
+      console.log('Checking for OAuth callback...', { targetUrl, hash })
 
       if (hash && hash.includes('access_token')) {
         console.log('Processing OAuth callback from URL hash...')
@@ -50,14 +50,31 @@ export function useOAuthRedirect() {
 
     processOAuthCallback()
 
-    const handleHashChange = () => {
-      processOAuthCallback()
-    }
+    if (Capacitor.isNativePlatform()) {
+      console.log('Setting up mobile deep link listener...')
 
-    window.addEventListener('hashchange', handleHashChange)
+      const listener = CapacitorApp.addListener('appUrlOpen', (event) => {
+        console.log('Deep link received:', event.url)
 
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange)
+        if (event.url.includes('oauth-callback')) {
+          console.log('OAuth callback deep link detected')
+          processOAuthCallback(event.url)
+        }
+      })
+
+      return () => {
+        listener.then(l => l.remove())
+      }
+    } else {
+      const handleHashChange = () => {
+        processOAuthCallback()
+      }
+
+      window.addEventListener('hashchange', handleHashChange)
+
+      return () => {
+        window.removeEventListener('hashchange', handleHashChange)
+      }
     }
   }, [])
 }
