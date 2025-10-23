@@ -321,78 +321,77 @@ export const EnhancedAIVerification: React.FC<EnhancedAIVerificationProps> = ({
 
       {/* Food Items List */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Tespit Edilen Yemekler</span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={recalculateWithAI}
-                disabled={isRecalculating}
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                {isRecalculating ? 'AI Hesaplıyor...' : 'AI Yeniden Hesapla'}
-              </Button>
-              <Dialog open={showAddFood} onOpenChange={setShowAddFood}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Yemek Ekle
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Yemek Ekle</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="search">Yemek Ara</Label>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="search"
-                          placeholder="Yemek adı yazın..."
-                          value={searchTerm}
-                          onChange={(e) => {
-                            setSearchTerm(e.target.value);
-                            searchFoods(e.target.value);
-                          }}
-                          className="pl-10"
-                        />
-                      </div>
+        <CardHeader className="space-y-3">
+          <CardTitle className="text-base sm:text-lg">Tespit Edilen Yemekler</CardTitle>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={recalculateWithAI}
+              disabled={isRecalculating}
+              className="w-full sm:w-auto text-xs sm:text-sm"
+            >
+              <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              {isRecalculating ? 'Hesaplanıyor...' : 'AI Yeniden Hesapla'}
+            </Button>
+            <Dialog open={showAddFood} onOpenChange={setShowAddFood}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="w-full sm:w-auto text-xs sm:text-sm">
+                  <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  Yemek Ekle
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Yemek Ekle</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="search">Yemek Ara</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="search"
+                        placeholder="Yemek adı yazın..."
+                        value={searchTerm}
+                        onChange={(e) => {
+                          setSearchTerm(e.target.value);
+                          searchFoods(e.target.value);
+                        }}
+                        className="pl-10"
+                      />
                     </div>
-
-                    {isSearching && (
-                      <div className="text-center py-4">
-                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      </div>
-                    )}
-
-                    {searchResults.length > 0 && (
-                      <div className="max-h-64 overflow-y-auto border rounded-lg">
-                        {searchResults.map((result) => (
-                          <div
-                            key={result.id}
-                            className="p-3 border-b last:border-b-0 hover:bg-accent cursor-pointer"
-                            onClick={() => addFoodFromSearch(result)}
-                          >
-                            <div className="font-medium">{result.name}</div>
-                            {result.name_en && (
-                              <div className="text-sm text-muted-foreground">{result.name_en}</div>
-                            )}
-                            <div className="text-sm text-muted-foreground">
-                              {Math.round(result.calories_per_100g)} kcal/100g
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardTitle>
+
+                  {isSearching && (
+                    <div className="text-center py-4">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  )}
+
+                  {searchResults.length > 0 && (
+                    <div className="max-h-64 overflow-y-auto border rounded-lg">
+                      {searchResults.map((result) => (
+                        <div
+                          key={result.id}
+                          className="p-3 border-b last:border-b-0 hover:bg-accent cursor-pointer"
+                          onClick={() => addFoodFromSearch(result)}
+                        >
+                          <div className="font-medium">{result.name}</div>
+                          {result.name_en && (
+                            <div className="text-sm text-muted-foreground">{result.name_en}</div>
+                          )}
+                          <div className="text-sm text-muted-foreground">
+                            {Math.round(result.calories_per_100g)} kcal/100g
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {foods.map((food, index) => (
