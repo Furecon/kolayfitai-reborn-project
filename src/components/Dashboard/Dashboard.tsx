@@ -22,6 +22,7 @@ import { FAQPage } from '../Support/FAQPage'
 import { MealSuggestions } from '../MealSuggestions/MealSuggestions'
 import { FavoriteMeals } from '../MealSuggestions/FavoriteMeals'
 import { SubscriptionManager } from '../Subscription/SubscriptionManager'
+import { TrialUsageCard } from './TrialUsageCard'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { Button } from '@/components/ui/button'
@@ -373,6 +374,11 @@ export function Dashboard() {
         />
       </div>
       
+      {/* Trial Usage Card */}
+      <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4">
+        <TrialUsageCard />
+      </div>
+
       {/* Quick Action Buttons - Responsive Grid */}
       <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

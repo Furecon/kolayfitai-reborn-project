@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.51.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,9 +16,53 @@ serve(async (req) => {
 
   try {
     console.log('Analyze-food function called')
-    
+
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('No authorization header')
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    )
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    if (authError || !user) {
+      throw new Error('Unauthorized')
+    }
+
     const requestData = await req.json()
     const { imageUrl, mealType, analysisType, detailsData } = requestData
+
+    // Check trial limits before processing
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('subscription_status, trial_photo_analysis_count, trial_photo_analysis_limit')
+      .eq('user_id', user.id)
+      .single()
+
+    if (profileError) {
+      console.error('Profile fetch error:', profileError)
+      throw new Error('Failed to fetch user profile')
+    }
+
+    // Check if user has reached trial limit
+    if (profile.subscription_status === 'trial') {
+      if (profile.trial_photo_analysis_count >= profile.trial_photo_analysis_limit) {
+        return new Response(
+          JSON.stringify({
+            error: 'trial_limit_reached',
+            message: 'Ücretsiz fotoğraf analizi hakkınız doldu. Premium üyeliğe geçerek sınırsız analiz yapabilirsiniz.',
+            detectedFoods: [],
+            confidence: 0,
+            suggestions: 'Premium üyeliğe geçerek sınırsız fotoğraf analizi yapabilirsiniz.'
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
     
     // Input validation
     if (!imageUrl || typeof imageUrl !== 'string') {
@@ -393,6 +438,23 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
       confidence: analysisResult.confidence,
       totalCalories: analysisResult.detectedFoods.reduce((sum: number, food: any) => sum + (food.totalNutrition?.calories || 0), 0)
     })
+
+    // Increment photo analysis count for trial users
+    if (profile.subscription_status === 'trial') {
+      const { error: updateError } = await supabaseClient
+        .from('profiles')
+        .update({
+          trial_photo_analysis_count: profile.trial_photo_analysis_count + 1,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id)
+
+      if (updateError) {
+        console.error('Failed to update trial count:', updateError)
+      } else {
+        console.log('Trial photo analysis count incremented:', profile.trial_photo_analysis_count + 1)
+      }
+    }
 
     return new Response(JSON.stringify(analysisResult), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
