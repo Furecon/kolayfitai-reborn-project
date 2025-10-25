@@ -212,6 +212,7 @@ export function Dashboard() {
           localStorage.setItem('selectedImageForCrop', imageUrl)
         }}
         onError={() => setCurrentView('meal-selection')}
+        onBack={() => setCurrentView('meal-selection')}
       />
     )
   }

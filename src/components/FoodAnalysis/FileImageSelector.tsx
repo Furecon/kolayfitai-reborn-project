@@ -1,21 +1,23 @@
 import React, { useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Upload, Image, AlertCircle } from 'lucide-react'
+import { Upload, Image, AlertCircle, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface FileImageSelectorProps {
   onImageSelected: (imageUrl: string) => void
   onError?: (error: string) => void
+  onBack?: () => void
   accept?: string
   maxSizeMB?: number
   title?: string
   subtitle?: string
 }
 
-export function FileImageSelector({ 
-  onImageSelected, 
+export function FileImageSelector({
+  onImageSelected,
   onError,
+  onBack,
   accept = "image/jpeg,image/png,image/heic,image/heif",
   maxSizeMB = 10,
   title = "Görsel Seç",
@@ -120,11 +122,31 @@ export function FileImageSelector({
 
 
   return (
-    <div className="space-y-4">
-      <div className="text-center">
-        <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
-        <p className="text-sm text-muted-foreground">{subtitle}</p>
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="sticky top-0 bg-white border-b border-gray-200 px-3 sm:px-4 py-3 sm:py-4 z-10">
+        <div className="flex items-center justify-between">
+          {onBack && (
+            <Button
+              variant="ghost"
+              onClick={onBack}
+              className="text-gray-600 h-10 px-2"
+            >
+              <ArrowLeft className="h-5 w-5 mr-1" />
+              Geri
+            </Button>
+          )}
+          <h1 className="text-lg font-semibold text-gray-900 flex-1 text-center">
+            {title}
+          </h1>
+          <div className="w-16" />
+        </div>
       </div>
+
+      <div className="px-3 sm:px-4 py-4 sm:py-6 space-y-4">
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
+        </div>
 
       <Alert>
         <AlertCircle className="h-4 w-4" />
@@ -152,8 +174,9 @@ export function FileImageSelector({
         <span className="text-sm">Galeriden/Dosyadan Seç</span>
       </Button>
 
-      <div className="text-center text-xs text-muted-foreground">
-        <p>Seçilen görsel otomatik olarak optimize edilecektir</p>
+        <div className="text-center text-xs text-muted-foreground">
+          <p>Seçilen görsel otomatik olarak optimize edilecektir</p>
+        </div>
       </div>
     </div>
   )
