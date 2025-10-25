@@ -192,7 +192,7 @@ export function MealMethodSelection({
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleContinue()
+                      onSelectPhoto()
                     }}
                     disabled={cameraPermissionDenied}
                     className="text-xs"
@@ -205,7 +205,7 @@ export function MealMethodSelection({
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation()
-                      onSelectPhotoFromFile?.() // Will trigger file selection flow
+                      onSelectPhotoFromFile?.()
                     }}
                     className="text-xs"
                   >
