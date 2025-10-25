@@ -51,10 +51,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log(`Starting OAuth flow for ${provider} on platform: ${platform}`)
 
+      // Use different redirect URLs based on platform
+      const redirectTo = isNative
+        ? 'com.kolayfit.app://oauth-callback'
+        : `${window.location.origin}/`
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: 'com.kolayfit.app://oauth-callback'
+          redirectTo
         }
       })
 
