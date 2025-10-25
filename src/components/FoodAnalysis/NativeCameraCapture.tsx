@@ -9,15 +9,16 @@ import { useRef } from 'react'
 interface NativeCameraCaptureProps {
   onImageCaptured: (imageUrl: string) => void
   onFileUploaded: (imageUrl: string) => void
+  autoOpenCamera?: boolean
 }
 
-export default function NativeCameraCapture({ onImageCaptured, onFileUploaded }: NativeCameraCaptureProps) {
+export default function NativeCameraCapture({ onImageCaptured, onFileUploaded, autoOpenCamera = false }: NativeCameraCaptureProps) {
   const { toast } = useToast()
   const webcamRef = useRef<Webcam>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isCapturing, setIsCapturing] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
-  const [showCamera, setShowCamera] = useState(false)
+  const [showCamera, setShowCamera] = useState(autoOpenCamera)
 
   const captureFromCamera = async () => {
     try {

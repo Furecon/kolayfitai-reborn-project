@@ -21,9 +21,10 @@ interface FoodAnalysisProps {
   onBack: () => void
   initialImage?: string | null
   skipCameraStep?: boolean
+  autoOpenCamera?: boolean
 }
 
-export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null, skipCameraStep = false }: FoodAnalysisProps) {
+export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null, skipCameraStep = false, autoOpenCamera = false }: FoodAnalysisProps) {
   const [currentStep, setCurrentStep] = useState<AnalysisStep>(skipCameraStep && initialImage ? 'analysis-type' : 'camera')
   const [capturedImage, setCapturedImage] = useState<string | null>(initialImage)
   const [capturedImageHD, setCapturedImageHD] = useState<string | null>(initialImage)
@@ -286,6 +287,7 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
           <NativeCameraCapture
             onImageCaptured={handleImageCaptured}
             onFileUploaded={handleImageCaptured}
+            autoOpenCamera={autoOpenCamera}
           />
         )}
 

@@ -255,6 +255,7 @@ export function Dashboard() {
         }}
         initialImage={selectedImageForAnalysis}
         skipCameraStep={!!selectedImageForAnalysis}
+        autoOpenCamera={!selectedImageForAnalysis}
       />
     )
   }
