@@ -65,30 +65,6 @@ export function MealMethodSelection({
     }
   }
 
-  const handleContinue = async () => {
-    if (selectedMethod === 'photo') {
-      // Double-check camera permission before proceeding
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-        stream.getTracks().forEach(track => track.stop())
-        onSelectPhoto()
-      } catch (error: any) {
-        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-          setCameraPermissionDenied(true)
-          handleMethodSelect('manual')
-          setTimeout(() => {
-            if (onForceManual) {
-              onForceManual()
-            } else {
-              onSelectManual()
-            }
-          }, 1000)
-        }
-      }
-    } else {
-      onSelectManual()
-    }
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -184,36 +160,6 @@ export function MealMethodSelection({
                 <li>• Doğrulama ve düzeltme imkanı</li>
               </ul>
               
-              {/* Secondary buttons for photo analysis */}
-              {selectedMethod === 'photo' && (
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onSelectPhoto()
-                    }}
-                    disabled={cameraPermissionDenied}
-                    className="text-xs"
-                  >
-                    <Camera className="h-3 w-3 mr-1" />
-                    Kamera ile çek
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onSelectPhotoFromFile?.()
-                    }}
-                    className="text-xs"
-                  >
-                    <Upload className="h-3 w-3 mr-1" />
-                    Galeriden seç
-                  </Button>
-                </div>
-              )}
               
               {cameraPermissionDenied && selectedMethod === 'photo' && (
                 <div className="pt-2 border-t border-border">
@@ -284,27 +230,40 @@ export function MealMethodSelection({
           </Card>
         </div>
 
-        {/* Continue Button */}
-        <Button
-          onClick={handleContinue}
-          className="w-full bg-success hover:bg-success/90 text-success-foreground"
-          size="lg"
-          disabled={selectedMethod === 'photo' && cameraPermissionDenied}
-        >
-          {selectedMethod === 'manual' ? (
-            <>
-              <Edit3 className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Manuel Forma Git</span>
-              <span className="sm:hidden">Manuel Giriş</span>
-            </>
-          ) : (
-            <>
+        {/* Action Buttons */}
+        {selectedMethod === 'photo' ? (
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              onClick={onSelectPhoto}
+              className="w-full bg-success hover:bg-success/90 text-success-foreground"
+              size="lg"
+              disabled={cameraPermissionDenied}
+            >
               <Camera className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Kamera'ya Git</span>
+              <span className="hidden sm:inline">Kamera ile çek</span>
               <span className="sm:hidden">Kamera</span>
-            </>
-          )}
-        </Button>
+            </Button>
+            <Button
+              onClick={onSelectPhotoFromFile}
+              className="w-full bg-success hover:bg-success/90 text-success-foreground"
+              size="lg"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Galeriden seç</span>
+              <span className="sm:hidden">Galeri</span>
+            </Button>
+          </div>
+        ) : (
+          <Button
+            onClick={onSelectManual}
+            className="w-full bg-success hover:bg-success/90 text-success-foreground"
+            size="lg"
+          >
+            <Edit3 className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Manuel Forma Git</span>
+            <span className="sm:hidden">Manuel Giriş</span>
+          </Button>
+        )}
 
         <div className="text-center text-xs sm:text-sm text-muted-foreground px-2">
           <p>

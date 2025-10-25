@@ -33,7 +33,8 @@ type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'file-i
 export function Dashboard() {
   const { user } = useAuth()
   const [currentView, setCurrentView] = useState<View>('dashboard')
-  
+  const [selectedImageForAnalysis, setSelectedImageForAnalysis] = useState<string | null>(null)
+
   // Enhanced navigation with hardware back button support
   const { goBack } = useNavigation({
     enableHardwareBackButton: true,
@@ -221,7 +222,7 @@ export function Dashboard() {
         imageUrl={localStorage.getItem('selectedImageForCrop') || ''}
         onCropComplete={(croppedImageUrl) => {
           localStorage.removeItem('selectedImageForCrop')
-          localStorage.setItem('croppedImage', croppedImageUrl)
+          setSelectedImageForAnalysis(croppedImageUrl)
           setCurrentView('camera')
         }}
         onCancel={() => {
@@ -246,9 +247,14 @@ export function Dashboard() {
 
   if (currentView === 'camera') {
     return (
-      <FoodAnalysis 
+      <FoodAnalysis
         onMealAdded={handleMealAdded}
-        onBack={() => setCurrentView('dashboard')}
+        onBack={() => {
+          setSelectedImageForAnalysis(null)
+          setCurrentView('dashboard')
+        }}
+        initialImage={selectedImageForAnalysis}
+        skipCameraStep={!!selectedImageForAnalysis}
       />
     )
   }

@@ -19,12 +19,14 @@ type AnalysisStep = 'camera' | 'analysis-type' | 'quick-result' | 'detailed-form
 interface FoodAnalysisProps {
   onMealAdded: () => void
   onBack: () => void
+  initialImage?: string | null
+  skipCameraStep?: boolean
 }
 
-export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps) {
-  const [currentStep, setCurrentStep] = useState<AnalysisStep>('camera')
-  const [capturedImage, setCapturedImage] = useState<string | null>(null)
-  const [capturedImageHD, setCapturedImageHD] = useState<string | null>(null)
+export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null, skipCameraStep = false }: FoodAnalysisProps) {
+  const [currentStep, setCurrentStep] = useState<AnalysisStep>(skipCameraStep && initialImage ? 'analysis-type' : 'camera')
+  const [capturedImage, setCapturedImage] = useState<string | null>(initialImage)
+  const [capturedImageHD, setCapturedImageHD] = useState<string | null>(initialImage)
   const [analysisType, setAnalysisType] = useState<'quick' | 'detailed' | null>(null)
   const [selectedMealType, setSelectedMealType] = useState<string>('')
   const [analysisResult, setAnalysisResult] = useState<any>(null)
