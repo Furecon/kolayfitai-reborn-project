@@ -212,7 +212,8 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
         onBack()
         break
       case 'analysis-type':
-        setCurrentStep('camera')
+        // User has already taken a photo, go back to dashboard instead of camera
+        onBack()
         break
       case 'quick-result':
       case 'detailed-form':
@@ -291,6 +292,7 @@ export default function FoodAnalysis({ onMealAdded, onBack }: FoodAnalysisProps)
             onSelectType={handleAnalysisTypeSelected}
             onBack={handleBack}
             capturedImage={capturedImage}
+            onRetakePhoto={() => setCurrentStep('camera')}
           />
         )}
 

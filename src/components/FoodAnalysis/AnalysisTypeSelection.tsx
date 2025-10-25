@@ -1,15 +1,16 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Zap, Search, Edit3 } from 'lucide-react'
+import { ArrowLeft, Zap, Search, Edit3, Camera } from 'lucide-react'
 
 interface AnalysisTypeSelectionProps {
   onSelectType: (type: 'quick' | 'detailed' | 'manual') => void
   onBack: () => void
   capturedImage: string
+  onRetakePhoto?: () => void
 }
 
-export default function AnalysisTypeSelection({ onSelectType, onBack, capturedImage }: AnalysisTypeSelectionProps) {
+export default function AnalysisTypeSelection({ onSelectType, onBack, capturedImage, onRetakePhoto }: AnalysisTypeSelectionProps) {
   return (
     <div className="min-h-screen bg-white p-4">
       <div className="max-w-2xl mx-auto space-y-6">
@@ -18,12 +19,22 @@ export default function AnalysisTypeSelection({ onSelectType, onBack, capturedIm
         </div>
 
         {capturedImage && (
-          <div className="mb-6">
+          <div className="mb-6 space-y-3">
             <img
               src={capturedImage}
               alt="Captured food"
               className="w-full max-w-md mx-auto rounded-lg shadow-md"
             />
+            {onRetakePhoto && (
+              <Button
+                variant="outline"
+                onClick={onRetakePhoto}
+                className="w-full max-w-md mx-auto flex items-center justify-center gap-2"
+              >
+                <Camera className="h-4 w-4" />
+                Yeni Fotoğraf Çek
+              </Button>
+            )}
           </div>
         )}
 
