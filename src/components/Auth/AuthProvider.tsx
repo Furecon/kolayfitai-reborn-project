@@ -50,15 +50,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithOAuth = async (provider: 'google' | 'facebook' | 'apple') => {
     try {
-      console.log(`Starting OAuth flow for ${provider} on platform: ${platform}`)
+      console.log(`[OAuth] Starting OAuth flow for ${provider}`)
+      console.log(`[OAuth] Platform: ${platform}, isNative: ${isNative}`)
+      console.log(`[OAuth] GoogleAuth available:`, typeof GoogleAuth !== 'undefined')
 
       // For native mobile, use native Google Auth plugin
       if (isNative && provider === 'google') {
-        console.log('Using native Google Auth for mobile')
+        console.log('[OAuth] Using native Google Auth for mobile')
+
+        if (!GoogleAuth || typeof GoogleAuth.signIn !== 'function') {
+          console.error('[OAuth] GoogleAuth plugin not available!')
+          throw new Error('Google Auth plugin yüklenmedi. Uygulamayı yeniden başlatın.')
+        }
 
         try {
+          console.log('[OAuth] Calling GoogleAuth.signIn()...')
           const result = await GoogleAuth.signIn()
-          console.log('Native Google sign in result:', result)
+          console.log('[OAuth] Native Google sign in result:', result)
 
           if (!result?.authentication?.idToken) {
             throw new Error('ID token bulunamadı. Google Auth yapılandırmanızı kontrol edin.')
@@ -119,9 +127,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // For web or other providers, use standard OAuth flow
+      console.log('[OAuth] Using web OAuth flow (fallback)')
+      console.log('[OAuth] isNative:', isNative, 'provider:', provider)
+
+      if (isNative && provider === 'google') {
+        console.error('[OAuth] Native platform detected but falling back to web OAuth - this should not happen!')
+        toast({
+          title: "Uyarı",
+          description: "Native Google Auth kullanılamadı, web OAuth kullanılıyor",
+          variant: "destructive"
+        })
+      }
+
       const redirectTo = isNative
         ? 'com.kolayfitai.app://oauth-callback'
         : `${window.location.origin}/`
+
+      console.log('[OAuth] Redirect URL:', redirectTo)
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
@@ -131,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (error) {
-        console.error('OAuth error:', error)
+        console.error('[OAuth] Supabase OAuth error:', error)
         toast({
           title: "Giriş Hatası",
           description: `${provider} girişi başarısız: ${error.message}`,
@@ -141,11 +163,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data.url) {
-        console.log('Redirecting to OAuth provider:', data.url)
+        console.log('[OAuth] Redirecting to OAuth provider:', data.url)
         window.location.href = data.url
       }
 
-      console.log(`OAuth flow initiated successfully for ${provider}`)
+      console.log(`[OAuth] OAuth flow initiated successfully for ${provider}`)
     } catch (error: any) {
       console.error('OAuth exception:', error)
       toast({
