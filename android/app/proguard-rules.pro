@@ -19,3 +19,15 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Google Play Services
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
+
+# Google Auth
+-keep class com.codetrixstudio.capacitor.GoogleAuth.** { *; }
+-dontwarn com.codetrixstudio.capacitor.GoogleAuth.**
+
+# Capacitor
+-keep class com.getcapacitor.** { *; }
+-dontwarn com.getcapacitor.**
