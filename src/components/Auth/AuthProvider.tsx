@@ -54,8 +54,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log(`[OAuth] Platform: ${platform}, isNative: ${isNative}`)
       console.log(`[OAuth] GoogleAuth available:`, typeof GoogleAuth !== 'undefined')
 
+      // TEMPORARY: Force web OAuth until google-services.json is added
+      const forceWebOAuth = true
+
       // For native mobile, use native Google Auth plugin
-      if (isNative && provider === 'google') {
+      if (isNative && provider === 'google' && !forceWebOAuth) {
         console.log('[OAuth] Using native Google Auth for mobile')
 
         if (!GoogleAuth || typeof GoogleAuth.signIn !== 'function') {
