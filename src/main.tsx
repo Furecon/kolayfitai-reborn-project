@@ -3,8 +3,18 @@ import React, { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
 
 console.log('[KolayFit] Starting application...')
+
+// Initialize Google Auth for web
+if (typeof window !== 'undefined') {
+  GoogleAuth.initialize({
+    clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+    scopes: ['profile', 'email'],
+    grantOfflineAccess: true,
+  })
+}
 
 window.addEventListener('error', (event) => {
   console.error('[KolayFit] Global error:', event.error)

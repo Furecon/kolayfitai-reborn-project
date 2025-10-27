@@ -86,7 +86,19 @@ This app uses Google Sign-In for authentication on both web and mobile platforms
 
 ## Step 3: Update Application Configuration
 
-### 3.1 Update Capacitor Config
+### 3.1 Update Environment Variables
+Create or update your `.env` file with your Google Web Client ID:
+
+```bash
+VITE_GOOGLE_CLIENT_ID=YOUR_WEB_CLIENT_ID.apps.googleusercontent.com
+```
+
+**Important**:
+- Copy `.env.example` to `.env` if you haven't already
+- Replace `YOUR_WEB_CLIENT_ID.apps.googleusercontent.com` with your actual Web Client ID
+- Use your **Web Client ID** (not Android Client ID)
+
+### 3.2 Update Capacitor Config
 Edit `capacitor.config.ts` and replace the placeholder with your actual Web Client ID:
 
 ```typescript
@@ -97,9 +109,9 @@ GoogleAuth: {
 }
 ```
 
-**Important**: Use your **Web Client ID** (not Android Client ID) in the `serverClientId` field.
+**Note**: You need to update this in both `.env` and `capacitor.config.ts` for now.
 
-### 3.2 Add google-services.json (Android)
+### 3.3 Add google-services.json (Android)
 1. Download `google-services.json` from your Firebase project (or create one in Firebase Console)
 2. Place it in: `android/app/google-services.json`
 
@@ -160,6 +172,12 @@ npm run cap:open:android
 - Make sure `google-services.json` is in the correct location
 - Check that package name matches: `com.kolayfitai.app`
 - Try regenerating the debug keystore and updating the SHA-1
+- Make sure you've synced Capacitor: `npm run cap:sync:android`
+
+### Error: "incompatible types: MainActivity cannot be converted to PluginCall"
+- This error has been fixed. MainActivity no longer needs manual GoogleAuth initialization
+- The plugin initializes automatically
+- Just make sure you've updated your code to the latest version
 
 ### iOS: Not implemented (future)
 For iOS support, you'll need to:
