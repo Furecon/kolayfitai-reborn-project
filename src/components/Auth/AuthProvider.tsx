@@ -134,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('[OAuth] isNative:', isNative, 'provider:', provider)
 
       const redirectTo = isNative
-        ? 'com.kolayfitai.app://oauth-callback'
+        ? 'com.kolayfit.app://oauth-callback'
         : `${window.location.origin}/`
 
       console.log('[OAuth] Redirect URL:', redirectTo)

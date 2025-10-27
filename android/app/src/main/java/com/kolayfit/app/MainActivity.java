@@ -1,4 +1,4 @@
-package com.kolayfitai.app;
+package com.kolayfit.app;
 
 import android.os.Bundle;
 import android.util.Log;
