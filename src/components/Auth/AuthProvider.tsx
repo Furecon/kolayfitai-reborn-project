@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { usePlatform } from '@/hooks/usePlatform'
+import GoogleAuth from '@/plugins/GoogleAuthPlugin'
 
 interface AuthContextType {
   user: User | null
@@ -51,7 +52,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log(`Starting OAuth flow for ${provider} on platform: ${platform}`)
 
-      // Use different redirect URLs based on platform
+      // For native mobile, use native Google Auth plugin
+      if (isNative && provider === 'google') {
+        console.log('Using native Google Auth for mobile')
+
+        try {
+          const result = await GoogleAuth.signIn()
+          console.log('Native Google sign in result:', result)
+
+          // Sign in to Supabase with the ID token
+          const { data, error } = await supabase.auth.signInWithIdToken({
+            provider: 'google',
+            token: result.authentication.idToken,
+          })
+
+          if (error) {
+            console.error('Supabase sign in error:', error)
+            toast({
+              title: "Giriş Hatası",
+              description: `Google girişi başarısız: ${error.message}`,
+              variant: "destructive"
+            })
+            throw error
+          }
+
+          console.log('Successfully signed in with Google (native)')
+          toast({
+            title: "Başarılı",
+            description: "Google ile giriş yapıldı",
+          })
+          return
+        } catch (error: any) {
+          console.error('Native Google Auth error:', error)
+          toast({
+            title: "Giriş Hatası",
+            description: error.message || "Google girişi başarısız oldu",
+            variant: "destructive"
+          })
+          throw error
+        }
+      }
+
+      // For web or other providers, use standard OAuth flow
       const redirectTo = isNative
         ? 'com.kolayfit.app://oauth-callback'
         : `${window.location.origin}/`
