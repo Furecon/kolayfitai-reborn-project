@@ -60,23 +60,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const result = await GoogleAuth.signIn()
           console.log('Native Google sign in result:', result)
 
+          if (!result?.authentication?.idToken) {
+            throw new Error('ID token bulunamadı. Google Auth yapılandırmanızı kontrol edin.')
+          }
+
           // Sign in to Supabase with the ID token
           const { data, error } = await supabase.auth.signInWithIdToken({
             provider: 'google',
             token: result.authentication.idToken,
+            nonce: result.authentication.nonce,
           })
 
           if (error) {
             console.error('Supabase sign in error:', error)
+            console.error('Error details:', {
+              message: error.message,
+              status: error.status,
+              name: error.name
+            })
+
+            let errorMessage = error.message
+            if (error.message.includes('invalid') || error.message.includes('path')) {
+              errorMessage = 'OAuth yapılandırması hatalı. Lütfen Supabase\'de Google OAuth provider\'ı kontrol edin ve redirect URL\'leri ekleyin.'
+            }
+
             toast({
               title: "Giriş Hatası",
-              description: `Google girişi başarısız: ${error.message}`,
+              description: errorMessage,
               variant: "destructive"
             })
             throw error
           }
 
-          console.log('Successfully signed in with Google (native)')
+          console.log('Successfully signed in with Google (native)', data)
           toast({
             title: "Başarılı",
             description: "Google ile giriş yapıldı",
@@ -84,9 +100,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return
         } catch (error: any) {
           console.error('Native Google Auth error:', error)
+          console.error('Full error object:', JSON.stringify(error, null, 2))
+
+          let errorMessage = error.message || "Google girişi başarısız oldu"
+          if (error.error === 12501) {
+            errorMessage = "Google girişi iptal edildi"
+          } else if (error.error === 10) {
+            errorMessage = "Google Play Services hatası. Cihazınızı kontrol edin."
+          }
+
           toast({
             title: "Giriş Hatası",
-            description: error.message || "Google girişi başarısız oldu",
+            description: errorMessage,
             variant: "destructive"
           })
           throw error
@@ -95,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // For web or other providers, use standard OAuth flow
       const redirectTo = isNative
-        ? 'com.kolayfit.app://oauth-callback'
+        ? 'com.kolayfitai.app://oauth-callback'
         : `${window.location.origin}/`
 
       const { data, error } = await supabase.auth.signInWithOAuth({

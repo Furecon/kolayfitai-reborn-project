@@ -81,8 +81,10 @@ This app uses Google Sign-In for authentication on both web and mobile platforms
    ```
    http://localhost:5173
    https://your-domain.com
-   com.kolayfit.app://oauth-callback
+   com.kolayfitai.app://oauth-callback
    ```
+
+**CRITICAL**: The redirect URL MUST match your app's package name. In this project it's `com.kolayfitai.app` (NOT `com.kolayfit.app`).
 
 ## Step 3: Update Application Configuration
 
@@ -173,6 +175,35 @@ npm run cap:open:android
 - Check that package name matches: `com.kolayfitai.app`
 - Try regenerating the debug keystore and updating the SHA-1
 - Make sure you've synced Capacitor: `npm run cap:sync:android`
+
+### Error: "requested path is invalid"
+This error typically occurs due to Supabase configuration issues:
+
+1. **Check Supabase Redirect URLs**:
+   - Go to Supabase Dashboard > Authentication > URL Configuration
+   - Make sure these URLs are added to **Redirect URLs**:
+     ```
+     http://localhost:5173
+     https://your-domain.com
+     com.kolayfitai.app://oauth-callback
+     ```
+   - **CRITICAL**: Use `com.kolayfitai.app` (with 'ai'), NOT `com.kolayfit.app`
+
+2. **Check Google OAuth Provider in Supabase**:
+   - Go to Authentication > Providers > Google
+   - Make sure it's enabled
+   - Verify Web Client ID and Secret are correct
+   - Click Save
+
+3. **Verify Google Cloud Console**:
+   - Your **Web Client ID** should be added to Supabase
+   - Your **Android Client ID** should have the correct SHA-1 fingerprint
+   - Both should be from the same Google Cloud project
+
+4. **Check package name consistency**:
+   - `capacitor.config.ts`: `appId: 'com.kolayfitai.app'`
+   - `AndroidManifest.xml`: package matches
+   - Supabase redirect URL: `com.kolayfitai.app://oauth-callback`
 
 ### Error: "incompatible types: MainActivity cannot be converted to PluginCall"
 - This error has been fixed. MainActivity no longer needs manual GoogleAuth initialization
