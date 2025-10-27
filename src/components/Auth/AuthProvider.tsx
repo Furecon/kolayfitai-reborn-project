@@ -130,17 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // For web or other providers, use standard OAuth flow
-      console.log('[OAuth] Using web OAuth flow (fallback)')
+      console.log('[OAuth] Using web OAuth flow')
       console.log('[OAuth] isNative:', isNative, 'provider:', provider)
-
-      if (isNative && provider === 'google') {
-        console.error('[OAuth] Native platform detected but falling back to web OAuth - this should not happen!')
-        toast({
-          title: "Uyarı",
-          description: "Native Google Auth kullanılamadı, web OAuth kullanılıyor",
-          variant: "destructive"
-        })
-      }
 
       const redirectTo = isNative
         ? 'com.kolayfitai.app://oauth-callback'
