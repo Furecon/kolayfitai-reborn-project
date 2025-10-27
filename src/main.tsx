@@ -10,7 +10,7 @@ console.log('[KolayFit] Starting application...')
 // Initialize Google Auth for web
 if (typeof window !== 'undefined') {
   GoogleAuth.initialize({
-    clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+    clientId: '680638175809-ud31fspsid283q4tt7s9etok0nrb9e2g.apps.googleusercontent.com',
     scopes: ['profile', 'email'],
     grantOfflineAccess: true,
   })
