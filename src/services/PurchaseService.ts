@@ -31,19 +31,19 @@ export class PurchaseService {
     // Web platform products
     this.products = [
       {
-        productIdentifier: 'monthly_299_99',
+        productIdentifier: 'monthly_249_99',
         title: 'KolayFit Premium - Aylık',
         description: 'Aylık premium abonelik',
-        price: '299,99 ₺',
-        priceAmountMicros: 299990000,
+        price: '249,99 ₺',
+        priceAmountMicros: 249990000,
         currencyCode: 'TRY'
       },
       {
-        productIdentifier: 'yearly_2999_99',
+        productIdentifier: 'yearly_2499_99',
         title: 'KolayFit Premium - Yıllık',
         description: 'Yıllık premium abonelik (%17 indirim)',
-        price: '2.999,99 ₺',
-        priceAmountMicros: 2999990000,
+        price: '2.499,99 ₺',
+        priceAmountMicros: 2499990000,
         currencyCode: 'TRY'
       }
     ];

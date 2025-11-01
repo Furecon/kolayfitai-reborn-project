@@ -169,8 +169,8 @@ export function SubscriptionManager() {
 
   const isTrialActive = subscriptionData.subscriptionStatus === 'trial' && subscriptionData.subscriptionValid
   const isPremiumActive = subscriptionData.subscriptionStatus === 'premium' && subscriptionData.subscriptionValid
-  const isMonthlyPlan = subscriptionData.currentPlan === 'monthly_299_99'
-  const isYearlyPlan = subscriptionData.currentPlan === 'yearly_2999_99'
+  const isMonthlyPlan = subscriptionData.currentPlan === 'monthly_249_99' || subscriptionData.currentPlan === 'monthly_299_99'
+  const isYearlyPlan = subscriptionData.currentPlan === 'yearly_2499_99' || subscriptionData.currentPlan === 'yearly_2999_99'
 
   return (
     <div className="space-y-6">
@@ -241,15 +241,15 @@ export function SubscriptionManager() {
             <CardDescription>
               <div className="space-y-1">
                 <div>
-                  <span className="text-2xl font-bold text-primary">299,99 ₺</span>
+                  <span className="text-2xl font-bold text-primary">249,99 ₺</span>
                   <span className="text-muted-foreground">/ay</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Her ay düzenli olarak 299,99 ₺ tahsil edilir.
+                  Her ay düzenli olarak 249,99 ₺ tahsil edilir.
                 </div>
                 {!isPremiumActive && isTrialActive && (
                 <div className="text-xs text-green-600 font-medium">
-                  İlk 3 gün ücretsiz, sonra aylık 299,99 ₺
+                  İlk 3 gün ücretsiz, sonra aylık 249,99 ₺
                 </div>
                 )}
               </div>
@@ -263,9 +263,9 @@ export function SubscriptionManager() {
               <li>• Detaylı raporlama</li>
               <li>• Favoriler ve geçmiş kayıtlar</li>
             </ul>
-            <Button 
-              className="w-full" 
-              onClick={() => purchaseSubscription('monthly_299_99')}
+            <Button
+              className="w-full"
+              onClick={() => purchaseSubscription('monthly_249_99')}
               disabled={purchasing || (isPremiumActive && isMonthlyPlan)}
               variant={(isPremiumActive && isMonthlyPlan) ? "secondary" : "default"}
             >
@@ -290,18 +290,18 @@ export function SubscriptionManager() {
             <CardDescription>
               <div className="space-y-1">
                 <div>
-                  <span className="text-2xl font-bold text-primary">2.999,99 ₺</span>
+                  <span className="text-2xl font-bold text-primary">2.499,99 ₺</span>
                   <span className="text-muted-foreground">/yıl</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Yılda bir kez 2.999,99 ₺ tahsil edilir (Aylık ortalama 250 ₺).
+                  Yılda bir kez 2.499,99 ₺ tahsil edilir (Aylık ortalama 208 ₺).
                 </div>
                 <div className="text-xs text-green-600 font-medium">
-                  %17 indirim ile yaklaşık 600 ₺ tasarruf
+                  %17 indirim ile yaklaşık 500 ₺ tasarruf
                 </div>
                 {!isPremiumActive && isTrialActive && (
                   <div className="text-xs text-green-600 font-medium">
-                    İlk 3 gün ücretsiz, sonra yıllık 2.999,99 ₺
+                    İlk 3 gün ücretsiz, sonra yıllık 2.499,99 ₺
                   </div>
                 )}
               </div>
@@ -310,14 +310,14 @@ export function SubscriptionManager() {
           <CardContent>
             <ul className="space-y-2 text-sm text-muted-foreground mb-4">
               <li>• Aylık planın tüm özellikleri</li>
-              <li>• %17 indirim ile yaklaşık 600 ₺ tasarruf</li>
+              <li>• %17 indirim ile yaklaşık 500 ₺ tasarruf</li>
               <li>• Öncelikli müşteri desteği</li>
               <li>• Gelişmiş analitikler ve raporlar</li>
               <li>• Özel AI önerileri</li>
             </ul>
-            <Button 
-              className="w-full" 
-              onClick={() => purchaseSubscription('yearly_2999_99')}
+            <Button
+              className="w-full"
+              onClick={() => purchaseSubscription('yearly_2499_99')}
               disabled={purchasing || (isPremiumActive && isYearlyPlan)}
               variant={(isPremiumActive && isYearlyPlan) ? "secondary" : "default"}
             >

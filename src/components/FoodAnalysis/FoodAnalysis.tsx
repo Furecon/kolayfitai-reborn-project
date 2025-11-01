@@ -22,9 +22,10 @@ interface FoodAnalysisProps {
   initialImage?: string | null
   skipCameraStep?: boolean
   autoOpenCamera?: boolean
+  onUpgradeClick?: () => void
 }
 
-export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null, skipCameraStep = false, autoOpenCamera = false }: FoodAnalysisProps) {
+export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null, skipCameraStep = false, autoOpenCamera = false, onUpgradeClick }: FoodAnalysisProps) {
   const [currentStep, setCurrentStep] = useState<AnalysisStep>(skipCameraStep && initialImage ? 'analysis-type' : 'camera')
   const [capturedImage, setCapturedImage] = useState<string | null>(initialImage)
   const [capturedImageHD, setCapturedImageHD] = useState<string | null>(initialImage)
@@ -309,6 +310,7 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
             onRetry={() => setCurrentStep('camera')}
             analysisType={analysisType || 'quick'}
             detailsData={detailedFormData}
+            onUpgradeClick={onUpgradeClick}
           />
         )}
 

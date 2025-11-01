@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { Loader as Loader2, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Expand, Zap, Droplets, Database } from 'lucide-react'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { AnalysisCacheService } from '@/services/analysisCacheService'
+import { TrialLimitModal } from './TrialLimitModal'
 
 interface FoodItem {
   name: string
@@ -39,6 +40,7 @@ interface QuickAnalysisResultProps {
   loading?: boolean
   analysisType?: 'quick' | 'detailed'
   detailsData?: any
+  onUpgradeClick?: () => void
 }
 
 export default function QuickAnalysisResult({
@@ -48,7 +50,8 @@ export default function QuickAnalysisResult({
   onRetry,
   loading,
   analysisType = 'quick',
-  detailsData
+  detailsData,
+  onUpgradeClick
 }: QuickAnalysisResultProps) {
   const { toast } = useToast()
   const [detectedFoods, setDetectedFoods] = useState<FoodItem[]>([])
@@ -58,6 +61,7 @@ export default function QuickAnalysisResult({
   const [confidence, setConfidence] = useState<number>(0)
   const [suggestions, setSuggestions] = useState<string>('')
   const [fromCache, setFromCache] = useState(false)
+  const [showTrialLimitModal, setShowTrialLimitModal] = useState(false)
 
   useEffect(() => {
     if (capturedImage && !hasAnalyzed) {
@@ -114,6 +118,12 @@ export default function QuickAnalysisResult({
       }
 
       console.log('Analysis result:', data)
+
+      if (data.error === 'trial_limit_reached') {
+        setHasAnalyzed(true)
+        setShowTrialLimitModal(true)
+        return
+      }
 
       if (data.error) {
         throw new Error(data.error)
@@ -476,6 +486,16 @@ export default function QuickAnalysisResult({
           </Button>
         </div>
       </div>
+
+      <TrialLimitModal
+        isOpen={showTrialLimitModal}
+        onClose={() => setShowTrialLimitModal(false)}
+        onUpgrade={() => {
+          setShowTrialLimitModal(false)
+          onUpgradeClick?.()
+        }}
+        limitType="photo"
+      />
     </div>
   )
 }
