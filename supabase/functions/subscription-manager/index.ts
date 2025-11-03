@@ -307,14 +307,14 @@ serve(async (req) => {
         let planType: string
         let amount: number
 
-        if (productId === 'monthly_299_99') {
+        if (productId === 'monthly_249_99') {
           endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 gün
           planType = 'monthly'
-          amount = 299.99
-        } else if (productId === 'yearly_2999_99') {
+          amount = 249.99
+        } else if (productId === 'yearly_2499_99') {
           endDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000) // 365 gün
           planType = 'yearly'
-          amount = 2999.99
+          amount = 2499.99
         } else {
           return new Response(JSON.stringify({ error: 'Invalid product ID' }), {
             status: 400,
@@ -441,7 +441,7 @@ serve(async (req) => {
           subscriptionValid,
           subscriptionStatus: profile?.subscription_status || 'trial',
           remainingDays,
-          currentPlan: subscription?.plan_type ? `${subscription.plan_type === 'monthly' ? 'monthly_299_99' : 'yearly_2999_99'}` : null,
+          currentPlan: subscription?.plan_type ? `${subscription.plan_type === 'monthly' ? 'monthly_249_99' : 'yearly_2499_99'}` : null,
           subscription
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
