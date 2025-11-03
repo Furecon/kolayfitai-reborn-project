@@ -225,14 +225,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
+    try {
+      // Check if there's an active session before attempting to sign out
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
+
+      if (!currentSession) {
+        console.log('[SignOut] No active session, clearing local state')
+        // Clear local state even if no server session
+        setSession(null)
+        setUser(null)
+        toast({
+          title: "Çıkış Yapıldı",
+          description: "Başarıyla çıkış yaptınız."
+        })
+        return
+      }
+
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut()
+
+      if (error) {
+        console.error('[SignOut] Error:', error)
+        // If error is about missing session, still clear local state
+        if (error.message.includes('session') || error.message.includes('Session')) {
+          console.log('[SignOut] Session error, clearing local state anyway')
+          setSession(null)
+          setUser(null)
+          toast({
+            title: "Çıkış Yapıldı",
+            description: "Başarıyla çıkış yaptınız."
+          })
+          return
+        }
+
+        toast({
+          title: "Çıkış Hatası",
+          description: error.message,
+          variant: "destructive"
+        })
+        throw error
+      }
+
+      // Clear local state
+      setSession(null)
+      setUser(null)
+
       toast({
-        title: "Çıkış Hatası",
-        description: error.message,
-        variant: "destructive"
+        title: "Çıkış Yapıldı",
+        description: "Başarıyla çıkış yaptınız."
       })
-      throw error
+    } catch (error: any) {
+      console.error('[SignOut] Exception:', error)
+      // Even on exception, try to clear local state
+      setSession(null)
+      setUser(null)
+
+      toast({
+        title: "Çıkış Yapıldı",
+        description: "Oturum sonlandırıldı."
+      })
     }
   }
 
