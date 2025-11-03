@@ -1,4 +1,20 @@
 import { supabase } from '@/integrations/supabase/client';
+import { Capacitor } from '@capacitor/core';
+
+// RevenueCat Purchases plugin - will be available on native platforms
+let Purchases: any = null;
+
+// Try to import Purchases plugin (only available on native)
+if (Capacitor.isNativePlatform()) {
+  import('@revenuecat/purchases-capacitor')
+    .then((module) => {
+      Purchases = module.Purchases;
+      console.log('✅ RevenueCat Purchases plugin loaded');
+    })
+    .catch((error) => {
+      console.warn('⚠️ RevenueCat Purchases plugin not available:', error);
+    });
+}
 
 export interface PurchaseProduct {
   productIdentifier: string;
@@ -12,6 +28,7 @@ export interface PurchaseProduct {
 export class PurchaseService {
   private static instance: PurchaseService;
   private products: PurchaseProduct[] = [];
+  private isInitialized = false;
 
   private constructor() {}
 
@@ -23,12 +40,84 @@ export class PurchaseService {
   }
 
   async initialize(): Promise<void> {
-    console.log('Purchase service initialized for web platform');
+    if (this.isInitialized) {
+      console.log('Purchase service already initialized');
+      return;
+    }
+
+    const isNative = Capacitor.isNativePlatform();
+    console.log(`🚀 Initializing purchase service for ${isNative ? 'native' : 'web'} platform`);
+
+    if (isNative && Purchases) {
+      try {
+        // RevenueCat API Keys
+        // IMPORTANT: Get these from RevenueCat dashboard after creating app
+        const REVENUECAT_ANDROID_KEY = 'YOUR_REVENUECAT_ANDROID_KEY_HERE';
+
+        if (REVENUECAT_ANDROID_KEY === 'YOUR_REVENUECAT_ANDROID_KEY_HERE') {
+          console.warn('⚠️ RevenueCat API key not configured!');
+          console.warn('📝 Please visit https://app.revenuecat.com/ to:');
+          console.warn('   1. Create a new app');
+          console.warn('   2. Get your API key');
+          console.warn('   3. Configure products with IDs: monthly_249_99, yearly_2499_99');
+        } else {
+          // Configure RevenueCat
+          await Purchases.configure({
+            apiKey: REVENUECAT_ANDROID_KEY,
+            appUserID: undefined, // We'll set this when user logs in
+          });
+
+          console.log('✅ RevenueCat configured successfully');
+        }
+      } catch (error) {
+        console.error('❌ Failed to configure RevenueCat:', error);
+      }
+    }
+
     await this.loadProducts();
+    this.isInitialized = true;
+    console.log('✅ Purchase service initialized');
   }
 
   async loadProducts(): Promise<void> {
-    // Web platform products
+    const isNative = Capacitor.isNativePlatform();
+
+    if (isNative && Purchases) {
+      try {
+        // Load products from RevenueCat/Google Play
+        console.log('📦 Loading products from RevenueCat...');
+
+        const offerings = await Purchases.getOfferings();
+        console.log('📦 Offerings:', offerings);
+
+        if (offerings.current) {
+          const packages = offerings.current.availablePackages;
+          this.products = packages.map((pkg: any) => ({
+            productIdentifier: pkg.product.identifier,
+            title: pkg.product.title,
+            description: pkg.product.description,
+            price: pkg.product.priceString,
+            priceAmountMicros: pkg.product.price * 1000000,
+            currencyCode: pkg.product.currencyCode
+          }));
+
+          console.log('✅ Loaded products from RevenueCat:', this.products);
+        } else {
+          console.warn('⚠️ No offerings available from RevenueCat');
+          this.loadFallbackProducts();
+        }
+      } catch (error) {
+        console.error('❌ Failed to load products from RevenueCat:', error);
+        this.loadFallbackProducts();
+      }
+    } else {
+      // Web platform - use static products
+      this.loadFallbackProducts();
+    }
+  }
+
+  private loadFallbackProducts(): void {
+    console.log('📦 Loading fallback products');
     this.products = [
       {
         productIdentifier: 'monthly_249_99',
@@ -51,21 +140,83 @@ export class PurchaseService {
 
   async purchaseProduct(productId: string, userId: string): Promise<boolean> {
     console.log('🛒 Starting purchase process:', { productId, userId });
-    
-    console.log('🌐 Web platform detected - using mock purchase flow');
-    
-    // Mock purchase data for web testing
-    const mockPurchaseInfo = {
-      receipt: `mock_receipt_${Date.now()}`,
-      purchaseToken: `mock_token_${Date.now()}`,
-      orderId: `mock_order_${Date.now()}`,
-      productId,
-      purchaseTime: Date.now(),
-      packageName: 'com.kolayfit.app'
-    };
 
-    const validationResult = await this.validatePurchase(mockPurchaseInfo, productId, userId);
-    return validationResult;
+    const isNative = Capacitor.isNativePlatform();
+
+    if (isNative && Purchases) {
+      // Native Android purchase flow with RevenueCat
+      try {
+        console.log('📱 Starting native purchase flow...');
+
+        // Set user ID
+        await Purchases.logIn({ appUserID: userId });
+        console.log('✅ User logged in to RevenueCat');
+
+        // Get offerings
+        const offerings = await Purchases.getOfferings();
+        if (!offerings.current) {
+          throw new Error('No offerings available');
+        }
+
+        // Find the package
+        const pkg = offerings.current.availablePackages.find(
+          (p: any) => p.product.identifier === productId
+        );
+
+        if (!pkg) {
+          throw new Error(`Product ${productId} not found in offerings`);
+        }
+
+        console.log('🛍️ Purchasing package:', pkg.identifier);
+
+        // Make the purchase
+        const purchaseResult = await Purchases.purchasePackage({
+          aPackage: pkg
+        });
+
+        console.log('✅ Purchase successful:', purchaseResult);
+
+        // Extract purchase info
+        const purchaseInfo = {
+          purchaseToken: purchaseResult.customerInfo.originalAppUserId,
+          orderId: purchaseResult.transaction?.transactionIdentifier || `order_${Date.now()}`,
+          productId,
+          purchaseTime: Date.now(),
+          packageName: 'com.kolayfit.app',
+          receipt: JSON.stringify(purchaseResult)
+        };
+
+        // Validate with backend
+        const validationResult = await this.validatePurchase(purchaseInfo, productId, userId);
+        return validationResult;
+
+      } catch (error: any) {
+        console.error('❌ Native purchase failed:', error);
+
+        // Check if user cancelled
+        if (error.code === 'PURCHASE_CANCELLED' || error.userCancelled) {
+          console.log('ℹ️ User cancelled purchase');
+          throw new Error('Satın alma iptal edildi');
+        }
+
+        throw new Error(error.message || 'Satın alma başarısız oldu');
+      }
+    } else {
+      // Web platform - mock purchase flow
+      console.log('🌐 Web platform detected - using mock purchase flow');
+
+      const mockPurchaseInfo = {
+        receipt: `mock_receipt_${Date.now()}`,
+        purchaseToken: `mock_token_${Date.now()}`,
+        orderId: `mock_order_${Date.now()}`,
+        productId,
+        purchaseTime: Date.now(),
+        packageName: 'com.kolayfit.app'
+      };
+
+      const validationResult = await this.validatePurchase(mockPurchaseInfo, productId, userId);
+      return validationResult;
+    }
   }
 
   private async validatePurchase(
@@ -74,6 +225,8 @@ export class PurchaseService {
     userId: string
   ): Promise<boolean> {
     try {
+      console.log('🔍 Validating purchase with backend...');
+
       const { data, error } = await supabase.functions.invoke('subscription-manager', {
         body: {
           method: 'POST',
@@ -92,71 +245,107 @@ export class PurchaseService {
       });
 
       if (error) {
-        console.error('Backend validation error:', error);
+        console.error('❌ Backend validation error:', error);
         return false;
       }
 
       if (data?.success) {
-        console.log('Purchase validation successful');
+        console.log('✅ Purchase validation successful');
         return true;
       } else {
-        console.error('Purchase validation failed');
+        console.error('❌ Purchase validation failed');
         return false;
       }
     } catch (error) {
-      console.error('Purchase validation error:', error);
+      console.error('❌ Purchase validation error:', error);
       return false;
     }
   }
 
   async restorePurchases(): Promise<boolean> {
-    console.log('Checking for existing subscriptions to restore...');
-    
-    try {
-      // Check if user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('No authenticated user found');
+    console.log('🔄 Restoring purchases...');
+
+    const isNative = Capacitor.isNativePlatform();
+
+    if (isNative && Purchases) {
+      try {
+        // Restore purchases through RevenueCat
+        const customerInfo = await Purchases.restorePurchases();
+        console.log('✅ Purchases restored:', customerInfo);
+
+        // Check if user has active subscriptions
+        const activeSubscriptions = customerInfo.customerInfo.activeSubscriptions || [];
+
+        if (activeSubscriptions.length > 0) {
+          console.log('✅ Found active subscriptions:', activeSubscriptions);
+
+          // Update profile in database
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { error } = await supabase
+              .from('profiles')
+              .update({ subscription_status: 'premium' })
+              .eq('user_id', user.id);
+
+            if (error) {
+              console.error('❌ Failed to update profile:', error);
+            }
+          }
+
+          return true;
+        } else {
+          console.log('ℹ️ No active subscriptions found');
+          return false;
+        }
+      } catch (error) {
+        console.error('❌ Restore purchases failed:', error);
         return false;
       }
+    } else {
+      // Web platform - check database
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log('❌ No authenticated user found');
+          return false;
+        }
 
-      // Check for existing active subscriptions
-      const { data: subscriptions, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+        const { data: subscriptions, error } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Failed to check subscriptions:', error);
+        if (error) {
+          console.error('❌ Failed to check subscriptions:', error);
+          return false;
+        }
+
+        if (!subscriptions || subscriptions.length === 0) {
+          console.log('ℹ️ No active subscriptions found to restore');
+          return false;
+        }
+
+        const activeSubscription = subscriptions[0];
+        console.log('✅ Found active subscription to restore');
+
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ subscription_status: 'premium' })
+          .eq('user_id', user.id);
+
+        if (profileError) {
+          console.error('❌ Failed to update profile status:', profileError);
+        }
+
+        console.log('✅ Restore completed successfully');
+        return true;
+
+      } catch (error) {
+        console.error('❌ Restore failed:', error);
         return false;
       }
-
-      if (!subscriptions || subscriptions.length === 0) {
-        console.log('No active subscriptions found to restore');
-        return false;
-      }
-
-      const activeSubscription = subscriptions[0];
-      console.log('Found active subscription to restore');
-
-      // Update profile subscription status if needed
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ subscription_status: 'premium' })
-        .eq('user_id', user.id);
-
-      if (profileError) {
-        console.error('Failed to update profile status:', profileError);
-      }
-
-      console.log('Restore completed successfully');
-      return true;
-
-    } catch (error) {
-      console.error('Restore failed:', error);
-      return false;
     }
   }
 
@@ -169,7 +358,7 @@ export class PurchaseService {
   }
 
   isAvailable(): boolean {
-    return true; // Available on web platform
+    return true;
   }
 }
 
