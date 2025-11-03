@@ -468,23 +468,13 @@ export default function QuickAnalysisResult({
           )}
         </Button>
         
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            onClick={analyzeImage}
-            variant="outline"
-            className="py-3"
-            disabled={isAnalyzing}
-          >
-            🔄 Tekrar Analiz Et
-          </Button>
-          <Button
-            onClick={handleRetry}
-            variant="outline"
-            className="py-3"
-          >
-            📷 Yeni Fotoğraf
-          </Button>
-        </div>
+        <Button
+          onClick={handleRetry}
+          variant="outline"
+          className="w-full py-3"
+        >
+          📷 Yeni Fotoğraf
+        </Button>
       </div>
 
       <TrialLimitModal

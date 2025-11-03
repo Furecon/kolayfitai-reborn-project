@@ -513,15 +513,8 @@ export const EnhancedAIVerification: React.FC<EnhancedAIVerificationProps> = ({
         <Button variant="outline" onClick={onBack} className="flex-1">
           Geri
         </Button>
-        <Button 
-          onClick={onManualEntry} 
-          variant="outline"
-          className="flex-1"
-        >
-          Manuel Ekle
-        </Button>
-        <Button 
-          onClick={() => onConfirm(foods)} 
+        <Button
+          onClick={() => onConfirm(foods)}
           disabled={loading || foods.length === 0}
           className="flex-1"
         >

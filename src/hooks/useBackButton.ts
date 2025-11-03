@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { App } from '@capacitor/app'
 
 interface UseBackButtonOptions {
   onBackButton?: () => boolean | void // Return true to prevent default, false/void to allow
@@ -33,9 +34,35 @@ export function useBackButton({
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('popstate', handlePopState)
 
+    // Add Capacitor App backButton listener for mobile
+    let backButtonListener: any = null
+
+    const setupCapacitorBackButton = async () => {
+      try {
+        backButtonListener = await App.addListener('backButton', () => {
+          const preventDefault = onBackButton()
+          // If handler returns true, we prevent default (app exit)
+          // If returns false/void, allow default behavior
+          if (!preventDefault) {
+            App.exitApp()
+          }
+        })
+      } catch (error) {
+        // Capacitor not available (web platform)
+        console.log('Capacitor App plugin not available, using web back button handlers only')
+      }
+    }
+
+    setupCapacitorBackButton()
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('popstate', handlePopState)
+
+      // Remove Capacitor listener
+      if (backButtonListener) {
+        backButtonListener.remove()
+      }
     }
   }, [enabled, onBackButton])
 }
