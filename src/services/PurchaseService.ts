@@ -52,7 +52,7 @@ export class PurchaseService {
       try {
         // RevenueCat API Keys
         // IMPORTANT: Get these from RevenueCat dashboard after creating app
-        const REVENUECAT_ANDROID_KEY = 'YOUR_REVENUECAT_ANDROID_KEY_HERE';
+        const REVENUECAT_ANDROID_KEY = 'goog_AUhCpDdRLQwYohUfGrxVZXCvOYa';
 
         if (REVENUECAT_ANDROID_KEY === 'YOUR_REVENUECAT_ANDROID_KEY_HERE') {
           console.warn('⚠️ RevenueCat API key not configured!');
