@@ -152,27 +152,45 @@ export class PurchaseService {
         await Purchases.logIn({ appUserID: userId });
         console.log('✅ User logged in to RevenueCat');
 
-        // Get offerings
-        const offerings = await Purchases.getOfferings();
-        if (!offerings.current) {
-          throw new Error('No offerings available');
+        // Try to get offerings first (recommended way)
+        let purchaseResult;
+        try {
+          const offerings = await Purchases.getOfferings();
+
+          if (offerings.current && offerings.current.availablePackages.length > 0) {
+            // Find the package
+            const pkg = offerings.current.availablePackages.find(
+              (p: any) => p.product.identifier === productId
+            );
+
+            if (pkg) {
+              console.log('🛍️ Purchasing via package:', pkg.identifier);
+              purchaseResult = await Purchases.purchasePackage({
+                aPackage: pkg
+              });
+            } else {
+              console.log('⚠️ Product not found in packages, trying direct purchase...');
+              throw new Error('Package not found, trying direct purchase');
+            }
+          } else {
+            console.log('⚠️ No offerings available, trying direct purchase...');
+            throw new Error('No offerings, trying direct purchase');
+          }
+        } catch (offeringError) {
+          // Fallback: Try direct product purchase
+          console.log('🔄 Attempting direct product purchase with ID:', productId);
+
+          try {
+            // Purchase directly using product ID
+            purchaseResult = await Purchases.purchaseStoreProduct({
+              product: productId
+            });
+            console.log('✅ Direct purchase successful');
+          } catch (directError) {
+            console.error('❌ Direct purchase also failed:', directError);
+            throw new Error(`Product ${productId} not found. Please configure it in RevenueCat dashboard.`);
+          }
         }
-
-        // Find the package
-        const pkg = offerings.current.availablePackages.find(
-          (p: any) => p.product.identifier === productId
-        );
-
-        if (!pkg) {
-          throw new Error(`Product ${productId} not found in offerings`);
-        }
-
-        console.log('🛍️ Purchasing package:', pkg.identifier);
-
-        // Make the purchase
-        const purchaseResult = await Purchases.purchasePackage({
-          aPackage: pkg
-        });
 
         console.log('✅ Purchase successful:', purchaseResult);
 
