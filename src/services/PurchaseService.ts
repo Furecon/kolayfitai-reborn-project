@@ -51,10 +51,21 @@ export class PurchaseService {
     if (isNative && Purchases) {
       try {
         // RevenueCat API Keys
-        // IMPORTANT: Get these from RevenueCat dashboard after creating app
-        const REVENUECAT_ANDROID_KEY = 'goog_JmFVcxazPsmfZigZlmVZwbAiXWA';
+        // Production: goog_JmFVcxazPsmfZigZlmVZwbAiXWA
+        // Test/Sandbox: test_ZXdniENlMjfZcXxZKRFvITNyJda
 
-        if (REVENUECAT_ANDROID_KEY === 'YOUR_REVENUECAT_ANDROID_KEY_HERE') {
+        // Detect if we're in debug/test mode
+        const isDebugMode = import.meta.env.DEV || import.meta.env.MODE === 'development';
+
+        const REVENUECAT_PRODUCTION_KEY = 'goog_JmFVcxazPsmfZigZlmVZwbAiXWA';
+        const REVENUECAT_TEST_KEY = 'test_ZXdniENlMjfZcXxZKRFvITNyJda';
+
+        // Use test key for sandbox/debug, production key for release
+        const REVENUECAT_API_KEY = isDebugMode ? REVENUECAT_TEST_KEY : REVENUECAT_PRODUCTION_KEY;
+
+        console.log(`🔑 Using RevenueCat ${isDebugMode ? 'TEST/SANDBOX' : 'PRODUCTION'} API key`);
+
+        if (REVENUECAT_API_KEY === 'YOUR_REVENUECAT_ANDROID_KEY_HERE') {
           console.warn('⚠️ RevenueCat API key not configured!');
           console.warn('📝 Please visit https://app.revenuecat.com/ to:');
           console.warn('   1. Create a new app');
@@ -63,11 +74,11 @@ export class PurchaseService {
         } else {
           // Configure RevenueCat
           await Purchases.configure({
-            apiKey: REVENUECAT_ANDROID_KEY,
+            apiKey: REVENUECAT_API_KEY,
             appUserID: undefined, // We'll set this when user logs in
           });
 
-          console.log('✅ RevenueCat configured successfully');
+          console.log(`✅ RevenueCat configured successfully in ${isDebugMode ? 'SANDBOX' : 'PRODUCTION'} mode`);
         }
       } catch (error) {
         console.error('❌ Failed to configure RevenueCat:', error);
