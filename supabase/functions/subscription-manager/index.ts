@@ -310,11 +310,11 @@ serve(async (req) => {
         if (productId === 'monthly_249_99') {
           endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 gün
           planType = 'monthly'
-          amount = 249.99
+          amount = 149.99
         } else if (productId === 'yearly_2499_99') {
           endDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000) // 365 gün
           planType = 'yearly'
-          amount = 2499.99
+          amount = 1499.99
         } else {
           return new Response(JSON.stringify({ error: 'Invalid product ID' }), {
             status: 400,

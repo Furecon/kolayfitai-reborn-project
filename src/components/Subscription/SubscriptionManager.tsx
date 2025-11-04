@@ -12,7 +12,7 @@ interface SubscriptionData {
   subscriptionValid: boolean
   subscriptionStatus: 'trial' | 'premium' | 'expired'
   remainingDays: number
-  currentPlan?: 'monthly_299_99' | 'yearly_2999_99' | null
+  currentPlan?: 'monthly_249_99' | 'yearly_2499_99' | null
   subscription?: any
 }
 
