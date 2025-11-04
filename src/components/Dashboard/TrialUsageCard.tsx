@@ -6,6 +6,10 @@ import { Progress } from '@/components/ui/progress'
 import { Camera, Sparkles, Crown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
+interface TrialUsageCardProps {
+  onUpgradeClick?: () => void
+}
+
 interface TrialUsage {
   subscriptionStatus: string
   photoAnalysisCount: number
@@ -15,7 +19,7 @@ interface TrialUsage {
   trialEndDate: string | null
 }
 
-export function TrialUsageCard() {
+export function TrialUsageCard({ onUpgradeClick }: TrialUsageCardProps) {
   const { user } = useAuth()
   const [usage, setUsage] = useState<TrialUsage | null>(null)
   const [loading, setLoading] = useState(true)
@@ -102,7 +106,7 @@ export function TrialUsageCard() {
 
         <Button
           className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-          onClick={() => window.location.href = '#subscription'}
+          onClick={onUpgradeClick}
         >
           <Crown className="mr-2 h-4 w-4" />
           Premium'a Geç

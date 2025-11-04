@@ -241,15 +241,15 @@ export function SubscriptionManager() {
             <CardDescription>
               <div className="space-y-1">
                 <div>
-                  <span className="text-2xl font-bold text-primary">249,99 ₺</span>
+                  <span className="text-2xl font-bold text-primary">149,99 ₺</span>
                   <span className="text-muted-foreground">/ay</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Her ay düzenli olarak 249,99 ₺ tahsil edilir.
+                  Her ay düzenli olarak 149,99 ₺ tahsil edilir.
                 </div>
                 {!isPremiumActive && isTrialActive && (
                 <div className="text-xs text-green-600 font-medium">
-                  İlk 3 gün ücretsiz, sonra aylık 249,99 ₺
+                  İlk 3 gün ücretsiz, sonra aylık 149,99 ₺
                 </div>
                 )}
               </div>
@@ -290,18 +290,18 @@ export function SubscriptionManager() {
             <CardDescription>
               <div className="space-y-1">
                 <div>
-                  <span className="text-2xl font-bold text-primary">2.499,99 ₺</span>
+                  <span className="text-2xl font-bold text-primary">1.499,99 ₺</span>
                   <span className="text-muted-foreground">/yıl</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Yılda bir kez 2.499,99 ₺ tahsil edilir (Aylık ortalama 208 ₺).
+                  Yılda bir kez 1.499,99 ₺ tahsil edilir (Aylık ortalama 125 ₺).
                 </div>
                 <div className="text-xs text-green-600 font-medium">
-                  %17 indirim ile yaklaşık 500 ₺ tasarruf
+                  %17 indirim ile yaklaşık 300 ₺ tasarruf
                 </div>
                 {!isPremiumActive && isTrialActive && (
                   <div className="text-xs text-green-600 font-medium">
-                    İlk 3 gün ücretsiz, sonra yıllık 2.499,99 ₺
+                    İlk 3 gün ücretsiz, sonra yıllık 1.499,99 ₺
                   </div>
                 )}
               </div>
@@ -310,7 +310,7 @@ export function SubscriptionManager() {
           <CardContent>
             <ul className="space-y-2 text-sm text-muted-foreground mb-4">
               <li>• Aylık planın tüm özellikleri</li>
-              <li>• %17 indirim ile yaklaşık 500 ₺ tasarruf</li>
+              <li>• %17 indirim ile yaklaşık 300 ₺ tasarruf</li>
               <li>• Öncelikli müşteri desteği</li>
               <li>• Gelişmiş analitikler ve raporlar</li>
               <li>• Özel AI önerileri</li>

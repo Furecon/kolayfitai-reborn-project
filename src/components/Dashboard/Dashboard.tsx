@@ -385,7 +385,7 @@ export function Dashboard() {
       
       {/* Trial Usage Card */}
       <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4">
-        <TrialUsageCard />
+        <TrialUsageCard onUpgradeClick={() => setCurrentView('subscription')} />
       </div>
 
       {/* Quick Action Buttons - Responsive Grid */}

@@ -123,16 +123,16 @@ export class PurchaseService {
         productIdentifier: 'monthly_249_99',
         title: 'KolayFit Premium - Aylık',
         description: 'Aylık premium abonelik',
-        price: '249,99 ₺',
-        priceAmountMicros: 249990000,
+        price: '149,99 ₺',
+        priceAmountMicros: 149990000,
         currencyCode: 'TRY'
       },
       {
         productIdentifier: 'yearly_2499_99',
         title: 'KolayFit Premium - Yıllık',
         description: 'Yıllık premium abonelik (%17 indirim)',
-        price: '2.499,99 ₺',
-        priceAmountMicros: 2499990000,
+        price: '1.499,99 ₺',
+        priceAmountMicros: 1499990000,
         currencyCode: 'TRY'
       }
     ];
