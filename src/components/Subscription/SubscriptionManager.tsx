@@ -5,8 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
-import { Crown, Calendar, TrendingUp, RefreshCw } from 'lucide-react'
+import { Crown, Calendar, TrendingUp, RefreshCw, Sparkles } from 'lucide-react'
 import { purchaseService } from '@/services/PurchaseService'
+import { PaywallButton } from './PaywallButton'
+import { Capacitor } from '@capacitor/core'
 
 interface SubscriptionData {
   subscriptionValid: boolean
@@ -221,6 +223,48 @@ export function SubscriptionManager() {
           </CardContent>
         )}
       </Card>
+
+      {/* RevenueCat Paywall - Native Only */}
+      {Capacitor.isNativePlatform() && !isPremiumActive && (
+        <Card className="relative border-2 border-primary shadow-lg">
+          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+            <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+              <Sparkles className="h-3 w-3 mr-1" />
+              Önerilen
+            </Badge>
+          </div>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-primary" />
+              RevenueCat Premium Paywalls
+            </CardTitle>
+            <CardDescription>
+              Profesyonel satın alma ekranı ile tüm premium özelliklere anında erişin
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2 text-sm">
+              <p className="font-medium">✨ RevenueCat Paywall ile:</p>
+              <ul className="space-y-1 text-muted-foreground pl-4">
+                <li>• Optimize edilmiş satın alma deneyimi</li>
+                <li>• Tüm planları tek ekranda görebilirsiniz</li>
+                <li>• Hızlı ve güvenli ödeme</li>
+                <li>• Ücretsiz deneme ve indirimler otomatik</li>
+              </ul>
+            </div>
+            <PaywallButton
+              className="w-full"
+              onSuccess={checkSubscriptionStatus}
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Premium Planları Gör
+            </PaywallButton>
+            <p className="text-xs text-center text-muted-foreground">
+              veya aşağıdaki planlardan manuel olarak seçim yapabilirsiniz
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Abonelik Planları */}
       <div className="grid gap-4 md:grid-cols-2">

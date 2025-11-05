@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Capacitor } from '@capacitor/core';
+import { paywallService } from './PaywallService';
 
 // RevenueCat Purchases plugin - will be available on native platforms
 let Purchases: any = null;
@@ -79,6 +80,8 @@ export class PurchaseService {
           });
 
           console.log(`✅ RevenueCat configured successfully in ${isDebugMode ? 'SANDBOX' : 'PRODUCTION'} mode`);
+
+          await paywallService.initialize();
         }
       } catch (error) {
         console.error('❌ Failed to configure RevenueCat:', error);
@@ -147,6 +150,55 @@ export class PurchaseService {
         currencyCode: 'TRY'
       }
     ];
+  }
+
+  async purchaseWithPaywall(userId: string): Promise<boolean> {
+    console.log('🎨 Starting purchase with paywall:', { userId });
+
+    const isNative = Capacitor.isNativePlatform();
+
+    if (!isNative) {
+      console.warn('⚠️ Paywalls are only available on native platforms');
+      return false;
+    }
+
+    if (!paywallService.isAvailable()) {
+      console.warn('⚠️ Paywall service not available');
+      return false;
+    }
+
+    try {
+      if (Purchases) {
+        await Purchases.logIn({ appUserID: userId });
+        console.log('✅ User logged in to RevenueCat');
+      }
+
+      const result = await paywallService.presentPaywall();
+
+      if (result.result === 'purchased' || result.result === 'restored') {
+        console.log('✅ Purchase successful via paywall');
+
+        if (result.productIdentifier) {
+          const purchaseInfo = {
+            purchaseToken: userId,
+            orderId: `paywall_${Date.now()}`,
+            productId: result.productIdentifier,
+            purchaseTime: Date.now(),
+            packageName: 'com.kolayfit.app',
+            receipt: JSON.stringify({ source: 'paywall', result })
+          };
+
+          await this.validatePurchase(purchaseInfo, result.productIdentifier, userId);
+        }
+
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('❌ Paywall purchase failed:', error);
+      return false;
+    }
   }
 
   async purchaseProduct(productId: string, userId: string): Promise<boolean> {
