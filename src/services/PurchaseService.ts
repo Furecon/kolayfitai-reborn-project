@@ -70,7 +70,7 @@ export class PurchaseService {
           console.warn('📝 Please visit https://app.revenuecat.com/ to:');
           console.warn('   1. Create a new app');
           console.warn('   2. Get your API key');
-          console.warn('   3. Configure products with IDs: monthly_249_99, yearly_2499_99');
+          console.warn('   3. Configure products with IDs: monthly_premium, yearly_premium');
         } else {
           // Configure RevenueCat
           await Purchases.configure({
@@ -131,7 +131,7 @@ export class PurchaseService {
     console.log('📦 Loading fallback products');
     this.products = [
       {
-        productIdentifier: 'monthly_249_99',
+        productIdentifier: 'monthly_premium',
         title: 'KolayFit Premium - Aylık',
         description: 'Aylık premium abonelik',
         price: '149,99 ₺',
@@ -139,7 +139,7 @@ export class PurchaseService {
         currencyCode: 'TRY'
       },
       {
-        productIdentifier: 'yearly_2499_99',
+        productIdentifier: 'yearly_premium',
         title: 'KolayFit Premium - Yıllık',
         description: 'Yıllık premium abonelik (%17 indirim)',
         price: '1.499,99 ₺',

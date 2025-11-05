@@ -12,7 +12,7 @@ interface SubscriptionData {
   subscriptionValid: boolean
   subscriptionStatus: 'trial' | 'premium' | 'expired'
   remainingDays: number
-  currentPlan?: 'monthly_249_99' | 'yearly_2499_99' | null
+  currentPlan?: 'monthly_premium' | 'yearly_premium' | null
   subscription?: any
 }
 
@@ -169,8 +169,8 @@ export function SubscriptionManager() {
 
   const isTrialActive = subscriptionData.subscriptionStatus === 'trial' && subscriptionData.subscriptionValid
   const isPremiumActive = subscriptionData.subscriptionStatus === 'premium' && subscriptionData.subscriptionValid
-  const isMonthlyPlan = subscriptionData.currentPlan === 'monthly_249_99'
-  const isYearlyPlan = subscriptionData.currentPlan === 'yearly_2499_99'
+  const isMonthlyPlan = subscriptionData.currentPlan === 'monthly_premium'
+  const isYearlyPlan = subscriptionData.currentPlan === 'yearly_premium'
 
   return (
     <div className="space-y-6">
@@ -265,7 +265,7 @@ export function SubscriptionManager() {
             </ul>
             <Button
               className="w-full"
-              onClick={() => purchaseSubscription('monthly_249_99')}
+              onClick={() => purchaseSubscription('monthly_premium')}
               disabled={purchasing || (isPremiumActive && isMonthlyPlan)}
               variant={(isPremiumActive && isMonthlyPlan) ? "secondary" : "default"}
             >
@@ -317,7 +317,7 @@ export function SubscriptionManager() {
             </ul>
             <Button
               className="w-full"
-              onClick={() => purchaseSubscription('yearly_2499_99')}
+              onClick={() => purchaseSubscription('yearly_premium')}
               disabled={purchasing || (isPremiumActive && isYearlyPlan)}
               variant={(isPremiumActive && isYearlyPlan) ? "secondary" : "default"}
             >

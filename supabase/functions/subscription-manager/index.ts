@@ -307,11 +307,11 @@ serve(async (req) => {
         let planType: string
         let amount: number
 
-        if (productId === 'monthly_249_99') {
+        if (productId === 'monthly_premium') {
           endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 gün
           planType = 'monthly'
           amount = 149.99
-        } else if (productId === 'yearly_2499_99') {
+        } else if (productId === 'yearly_premium') {
           endDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000) // 365 gün
           planType = 'yearly'
           amount = 1499.99
@@ -441,7 +441,7 @@ serve(async (req) => {
           subscriptionValid,
           subscriptionStatus: profile?.subscription_status || 'trial',
           remainingDays,
-          currentPlan: subscription?.plan_type ? `${subscription.plan_type === 'monthly' ? 'monthly_249_99' : 'yearly_2499_99'}` : null,
+          currentPlan: subscription?.plan_type ? `${subscription.plan_type === 'monthly' ? 'monthly_premium' : 'yearly_premium'}` : null,
           subscription
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
