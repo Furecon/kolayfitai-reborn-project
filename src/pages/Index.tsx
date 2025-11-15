@@ -8,6 +8,8 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useOAuthRedirect } from '@/hooks/useOAuthRedirect'
 import { useNavigation } from '@/hooks/useNavigation'
+import { RatingDialog } from '@/components/StoreRating/RatingDialog'
+import { TrialExpiredDialog } from '@/components/Subscription/TrialExpiredDialog'
 
 function AppContent() {
   const { user, loading } = useAuth()
@@ -75,6 +77,8 @@ export default function Index() {
   return (
     <AuthProvider>
       <AppContent />
+      <RatingDialog />
+      <TrialExpiredDialog />
     </AuthProvider>
   )
 }
