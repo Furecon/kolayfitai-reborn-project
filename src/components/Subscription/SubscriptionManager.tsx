@@ -181,14 +181,26 @@ export function SubscriptionManager() {
                   İptal durumunda aboneliğiniz mevcut dönem sonuna kadar aktif kalacaktır.
                 </p>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={cancelSubscription}
-                className="w-full"
-              >
-                Abonelik Ayarları (Play Store)
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                {isNative && (
+                  <PaywallButton
+                    variant="default"
+                    size="sm"
+                    onSuccess={checkSubscriptionStatus}
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Aboneliklere Göz At
+                  </PaywallButton>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={cancelSubscription}
+                  className={isNative ? '' : 'col-span-2'}
+                >
+                  Abonelik Ayarları (Play Store)
+                </Button>
+              </div>
             </div>
           </CardContent>
         )}
