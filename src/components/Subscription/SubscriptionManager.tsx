@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
-import { Crown, Calendar, RefreshCw, Sparkles, CheckCircle2, Info } from 'lucide-react'
+import { Crown, Calendar, RefreshCw, Sparkles, CheckCircle2, Info, Settings } from 'lucide-react'
 import { purchaseService } from '@/services/PurchaseService'
+import { customerCenterService } from '@/services/CustomerCenterService'
 import { PaywallButton } from './PaywallButton'
 import { Capacitor } from '@capacitor/core'
 
@@ -63,6 +64,26 @@ export function SubscriptionManager() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const openCustomerCenter = async () => {
+    try {
+      if (customerCenterService.isAvailable()) {
+        // Native: Open RevenueCat Customer Center
+        await customerCenterService.presentCustomerCenter()
+      } else {
+        // Fallback: Open Play Store subscription management
+        const url = customerCenterService.getStoreManagementURL()
+        window.open(url, '_blank')
+      }
+    } catch (error: any) {
+      console.error('Failed to open Customer Center:', error)
+      toast({
+        title: "Hata",
+        description: error.message || "Abonelik yönetimi açılamadı",
+        variant: "destructive"
+      })
     }
   }
 
@@ -182,22 +203,46 @@ export function SubscriptionManager() {
                 </p>
               </div>
               <div className="space-y-2">
-                <PaywallButton
-                  variant="default"
-                  size="sm"
-                  onSuccess={checkSubscriptionStatus}
-                  className="w-full"
-                >
-                  Aboneliklere Göz At
-                </PaywallButton>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={cancelSubscription}
-                  className="w-full"
-                >
-                  Abonelik Ayarları (Play Store)
-                </Button>
+                {isNative && customerCenterService.isAvailable() ? (
+                  <>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={openCustomerCenter}
+                      className="w-full"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Abonelik Yönetimi
+                    </Button>
+                    <PaywallButton
+                      variant="outline"
+                      size="sm"
+                      onSuccess={checkSubscriptionStatus}
+                      className="w-full"
+                    >
+                      Aboneliklere Göz At
+                    </PaywallButton>
+                  </>
+                ) : (
+                  <>
+                    <PaywallButton
+                      variant="default"
+                      size="sm"
+                      onSuccess={checkSubscriptionStatus}
+                      className="w-full"
+                    >
+                      Aboneliklere Göz At
+                    </PaywallButton>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={cancelSubscription}
+                      className="w-full"
+                    >
+                      Abonelik Ayarları (Play Store)
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </CardContent>
