@@ -182,21 +182,18 @@ export function SubscriptionManager() {
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {isNative && (
-                  <PaywallButton
-                    variant="default"
-                    size="sm"
-                    onSuccess={checkSubscriptionStatus}
-                  >
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Aboneliklere Göz At
-                  </PaywallButton>
-                )}
+                <PaywallButton
+                  variant="default"
+                  size="sm"
+                  onSuccess={checkSubscriptionStatus}
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Aboneliklere Göz At
+                </PaywallButton>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={cancelSubscription}
-                  className={isNative ? '' : 'col-span-2'}
                 >
                   Abonelik Ayarları (Play Store)
                 </Button>
