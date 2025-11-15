@@ -188,7 +188,6 @@ export function SubscriptionManager() {
                   onSuccess={checkSubscriptionStatus}
                   className="w-full"
                 >
-                  <Sparkles className="h-4 w-4 mr-2" />
                   Aboneliklere Göz At
                 </PaywallButton>
                 <Button
