@@ -307,11 +307,11 @@ serve(async (req) => {
         let planType: string
         let amount: number
 
-        if (productId === 'monthly_premium') {
+        if (productId === 'monthly_premium' || productId === 'monthly_premium:monthly-premium') {
           endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 gün
           planType = 'monthly'
           amount = 149.99
-        } else if (productId === 'yearly_premium') {
+        } else if (productId === 'yearly_premium' || productId === 'yearly_premium:yearly-premium') {
           endDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000) // 365 gün
           planType = 'yearly'
           amount = 1499.99
