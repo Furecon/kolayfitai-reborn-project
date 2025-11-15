@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/Auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { purchaseService } from '@/services/PurchaseService';
-import { Sparkles } from 'lucide-react';
 
 interface PaywallButtonProps {
   variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'link' | 'destructive';
@@ -77,10 +76,7 @@ export function PaywallButton({
       {isLoading ? (
         'Yükleniyor...'
       ) : (
-        <>
-          <Sparkles className="h-4 w-4 mr-2" />
-          {children || "Premium'a Geç"}
-        </>
+        children || "Premium'a Geç"
       )}
     </Button>
   );
