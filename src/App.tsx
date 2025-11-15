@@ -9,6 +9,8 @@ import { PrivacyPolicy } from '@/components/Legal/PrivacyPolicy'
 import { TermsOfService } from '@/components/Legal/TermsOfService'
 import { ContactUs } from '@/components/Legal/ContactUs'
 import { useOAuthRedirect } from '@/hooks/useOAuthRedirect'
+import { RatingDialog } from '@/components/StoreRating/RatingDialog'
+import { TrialExpiredDialog } from '@/components/Subscription/TrialExpiredDialog'
 import './App.css'
 
 const queryClient = new QueryClient({
@@ -71,13 +73,17 @@ function AppRoutes() {
   useOAuthRedirect()
 
   return (
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/legal/privacy" element={<PrivacyPolicy />} />
-      <Route path="/legal/terms" element={<TermsOfService />} />
-      <Route path="/legal/contact" element={<ContactUs />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/legal/privacy" element={<PrivacyPolicy />} />
+        <Route path="/legal/terms" element={<TermsOfService />} />
+        <Route path="/legal/contact" element={<ContactUs />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <RatingDialog />
+      <TrialExpiredDialog />
+    </>
   )
 }
 
