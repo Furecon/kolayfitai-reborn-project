@@ -7,20 +7,14 @@ import { useAuth } from '@/components/Auth/AuthProvider'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useOAuthRedirect } from '@/hooks/useOAuthRedirect'
-import { useNavigation } from '@/hooks/useNavigation'
 import { RatingDialog } from '@/components/StoreRating/RatingDialog'
 import { TrialExpiredDialog } from '@/components/Subscription/TrialExpiredDialog'
 
 function AppContent() {
   const { user, loading } = useAuth()
-  
+
   // Initialize OAuth redirect handler for mobile deep links
   useOAuthRedirect()
-  
-  // Initialize hardware back button support
-  useNavigation({
-    enableHardwareBackButton: true
-  })
 
   // Fetch user profile to check onboarding status
   const { data: profile, isLoading: profileLoading } = useQuery({

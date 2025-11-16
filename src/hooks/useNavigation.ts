@@ -5,7 +5,7 @@ import { usePlatform } from './usePlatform'
 
 interface UseNavigationOptions {
   enableHardwareBackButton?: boolean
-  customBackHandler?: () => void
+  customBackHandler?: () => boolean | void // Return false to allow app exit
   defaultRoute?: string
 }
 
@@ -37,6 +37,15 @@ export function useNavigation({
   useBackButton({
     onBackButton: () => {
       if (enableHardwareBackButton) {
+        if (customBackHandler) {
+          const result = customBackHandler()
+          // If customBackHandler returns false, allow app exit
+          if (result === false) {
+            return false
+          }
+          // If returns true or void, prevent exit
+          return true
+        }
         goBack()
         return true // Prevent default app exit
       }

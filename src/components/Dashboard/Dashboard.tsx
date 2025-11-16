@@ -36,14 +36,16 @@ export function Dashboard() {
   const [selectedImageForAnalysis, setSelectedImageForAnalysis] = useState<string | null>(null)
 
   // Enhanced navigation with hardware back button support
-  const { goBack } = useNavigation({
+  useNavigation({
     enableHardwareBackButton: true,
     customBackHandler: () => {
       // If we're in a sub-view, go back to dashboard
       if (currentView !== 'dashboard') {
         setCurrentView('dashboard')
+        return true // Prevent app exit
       }
-      // Otherwise let the system handle it (app exit or previous route)
+      // If on dashboard, allow app exit
+      return false
     }
   })
   const [dailyStats, setDailyStats] = useState({

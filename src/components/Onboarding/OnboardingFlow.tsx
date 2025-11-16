@@ -21,8 +21,10 @@ function OnboardingSteps() {
       // Go back to previous onboarding step if possible
       if (currentStep > 1) {
         setCurrentStep(currentStep - 1)
+        return true // Prevent app exit
       }
-      // Otherwise prevent app exit during onboarding
+      // On first step, allow app exit
+      return false
     }
   })
 

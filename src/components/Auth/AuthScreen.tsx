@@ -3,9 +3,19 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { LoginForm } from './LoginForm'
 import { SignUpForm } from './SignUpForm'
+import { useNavigation } from '@/hooks/useNavigation'
 
 export function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true)
+
+  // Allow app exit on auth screen
+  useNavigation({
+    enableHardwareBackButton: true,
+    customBackHandler: () => {
+      // Always allow exit from auth screen
+      return false
+    }
+  })
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
