@@ -223,7 +223,7 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
 }
 
 ÖNEMLI KURALLAR:
-- Tüm besin değerleri gerçekçi sayılar olmalı (0'dan büyük)
+- Çoğu yiyecek için besin değerleri gerçekçi ve 0'dan büyük olmalı. Ancak su, sade kahve, şekersiz çay, soda, mineral suyu, diyet/zero içecekler gibi ürünlerin kalori, protein, karbonhidrat, yağ, lif ve şeker değerleri 0 olabilir.
 - Lif, şeker gram cinsinden, sodyum miligram cinsinden
 - Porsiyon tahminlerinde gerçekçi ol
 - Eğer hiçbir yemeği net tanıyamıyorsan boş detectedFoods array'i döndür
@@ -422,9 +422,28 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
         }
       })
 
-      // Ensure calories is reasonable (at least some calories for detected food)
-      if (food.totalNutrition.calories < 10) {
-        food.totalNutrition.calories = 50 // Default minimum calories
+      const lowerName = (food.name || '').toLowerCase();
+
+      const isZeroCalDrink =
+        lowerName.includes('su') ||
+        lowerName.includes('water') ||
+        lowerName.includes('sade kahve') ||
+        lowerName.includes('black coffee') ||
+        lowerName.includes('americano') ||
+        lowerName.includes('filtre kahve') ||
+        lowerName.includes('çay') ||
+        lowerName.includes('tea') ||
+        lowerName.includes('soda') ||
+        lowerName.includes('maden suyu') ||
+        lowerName.includes('mineral water') ||
+        lowerName.includes('diyet') ||
+        lowerName.includes('zero');
+
+      if (isZeroCalDrink) {
+        ['calories','protein','carbs','fat','fiber','sugar','sodium'].forEach(field => {
+          food.nutritionPer100g[field] = 0;
+          food.totalNutrition[field] = 0;
+        });
       }
     })
 
