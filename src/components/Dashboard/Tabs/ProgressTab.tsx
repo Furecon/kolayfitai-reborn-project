@@ -1,6 +1,14 @@
+import { useEffect } from 'react'
 import ProgressTracker from '../../Profile/ProgressTracker'
+import { useTutorialAutoShow } from '@/context/TutorialContext'
 
 export function ProgressTab() {
+  const { autoShowTutorial } = useTutorialAutoShow()
+
+  useEffect(() => {
+    autoShowTutorial('progress')
+  }, [])
+
   return (
     <div className="pb-20 pt-4">
       <div className="px-3 sm:px-4 lg:px-6 mb-4">
