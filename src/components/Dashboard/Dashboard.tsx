@@ -290,12 +290,14 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 w-full">
       <DashboardHeader
         onCameraClick={() => setCurrentView('meal-selection')}
       />
 
-      {renderTabContent()}
+      <div className="w-full">
+        {renderTabContent()}
+      </div>
 
       <BottomTabNav activeTab={activeTab} onTabChange={setActiveTab} />
 

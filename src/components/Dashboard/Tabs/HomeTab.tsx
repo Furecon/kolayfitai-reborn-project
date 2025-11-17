@@ -31,7 +31,7 @@ export function HomeTab({ dailyStats, onCameraClick, onUpgradeClick }: HomeTabPr
   }, [])
 
   return (
-    <div className="pb-20">
+    <div className="pb-20 w-full">
       <div data-tutorial="calorie-cards">
         <CalorieCards
           {...dailyStats}
@@ -39,8 +39,10 @@ export function HomeTab({ dailyStats, onCameraClick, onUpgradeClick }: HomeTabPr
         />
       </div>
 
-      <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4">
-        <TrialUsageCard onUpgradeClick={onUpgradeClick} />
+      <div className="w-full px-4 sm:px-6 pb-3 sm:pb-4">
+        <div className="max-w-screen-2xl mx-auto">
+          <TrialUsageCard onUpgradeClick={onUpgradeClick} />
+        </div>
       </div>
     </div>
   )

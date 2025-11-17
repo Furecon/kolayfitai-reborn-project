@@ -10,14 +10,18 @@ export function ProgressTab() {
   }, [])
 
   return (
-    <div className="pb-20 pt-4">
-      <div className="px-3 sm:px-4 lg:px-6 mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Gelişim Takibi</h1>
-        <p className="text-sm text-gray-600 mt-1">Kilonuzu ve ilerlemenizi takip edin</p>
+    <div className="pb-20 pt-4 w-full">
+      <div className="w-full px-4 sm:px-6 mb-4">
+        <div className="max-w-screen-2xl mx-auto">
+          <h1 className="text-2xl font-bold text-gray-900">Gelişim Takibi</h1>
+          <p className="text-sm text-gray-600 mt-1">Kilonuzu ve ilerlemenizi takip edin</p>
+        </div>
       </div>
 
-      <div className="px-4">
-        <ProgressTracker />
+      <div className="w-full px-4 sm:px-6">
+        <div className="max-w-screen-2xl mx-auto">
+          <ProgressTracker />
+        </div>
       </div>
     </div>
   )
