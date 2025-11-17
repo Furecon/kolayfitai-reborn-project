@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.51.0'
@@ -8,19 +7,420 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Foods table schema:
-// id, name (Turkish), name_en (English), category
-// calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, sugar_per_100g, sodium_per_100g
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Generate deterministic hash from image URL
+ */
+async function generateImageHash(imageUrl: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(imageUrl)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  return hashHex
+}
+
+/**
+ * Clean JSON string from markdown code blocks and trailing garbage
+ */
+function cleanJsonString(raw: string): string {
+  let cleaned = raw.trim()
+
+  // Remove markdown code blocks
+  if (cleaned.startsWith('```json')) {
+    cleaned = cleaned.replace(/```json\n?/, '').replace(/\n?```$/, '')
+  }
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/```\n?/, '').replace(/\n?```$/, '')
+  }
+
+  // Find last valid ] and cut everything after
+  const lastBracket = cleaned.lastIndexOf(']')
+  if (lastBracket !== -1) {
+    const afterBracket = cleaned.substring(lastBracket + 1).trim()
+    if (afterBracket.startsWith('}')) {
+      // This is likely valid JSON object ending
+      const lastBrace = cleaned.lastIndexOf('}')
+      if (lastBrace > lastBracket) {
+        cleaned = cleaned.substring(0, lastBrace + 1)
+      }
+    }
+  }
+
+  return cleaned.trim()
+}
+
+/**
+ * Parse portion to normalized grams
+ */
+function normalizePortionToGrams(estimatedAmount: string, portionType: string): number {
+  const numMatch = estimatedAmount.match(/(\d+(?:\.\d+)?)/);
+  const numValue = numMatch ? parseFloat(numMatch[1]) : 1;
+
+  switch (portionType.toLowerCase()) {
+    case 'gram':
+      return numValue;
+    case 'ml':
+      return numValue; // 1ml ≈ 1g for most liquids
+    case 'bardak':
+    case 'kase':
+      return numValue * 200;
+    case 'şişe':
+      return numValue * 500;
+    case 'kutu':
+      return numValue * 330;
+    case 'dilim':
+      return numValue * 30;
+    case 'adet':
+      return numValue * 100; // default
+    case 'porsiyon':
+      return numValue * 150; // default
+    default:
+      return 100; // fallback
+  }
+}
+
+/**
+ * Lookup food in database with Turkish/English name matching
+ */
+async function lookupFoodInDatabase(
+  supabaseClient: any,
+  nameTr: string,
+  nameEn: string | null
+): Promise<any> {
+  console.log(`Looking up food: TR="${nameTr}", EN="${nameEn}"`)
+
+  // Build search conditions
+  const searchConditions: string[] = []
+
+  if (nameTr) {
+    const escapedTr = nameTr.toLowerCase().trim()
+    searchConditions.push(`name_tr.ilike.%${escapedTr}%`)
+  }
+
+  if (nameEn) {
+    const escapedEn = nameEn.toLowerCase().trim()
+    searchConditions.push(`name_en.ilike.%${escapedEn}%`)
+    searchConditions.push(`name.ilike.%${escapedEn}%`)
+  }
+
+  if (searchConditions.length === 0) {
+    return null
+  }
+
+  const { data, error } = await supabaseClient
+    .from('foods')
+    .select('*')
+    .or(searchConditions.join(','))
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Database lookup error:', error)
+    return null
+  }
+
+  if (data) {
+    console.log(`Found food in DB: ${data.name_tr || data.name}`)
+  }
+
+  return data
+}
+
+/**
+ * Calculate nutrition from database food entry
+ */
+function calculateNutritionFromDB(dbFood: any, normalizedGrams: number) {
+  const nutritionPer100g = {
+    calories: parseFloat(dbFood.calories_per_100g || 0),
+    protein: parseFloat(dbFood.protein_per_100g || 0),
+    carbs: parseFloat(dbFood.carbs_per_100g || 0),
+    fat: parseFloat(dbFood.fat_per_100g || 0),
+    fiber: parseFloat(dbFood.fiber_per_100g || 0),
+    sugar: parseFloat(dbFood.sugar_per_100g || 0),
+    sodium: parseFloat(dbFood.sodium_per_100g || 0)
+  }
+
+  const factor = normalizedGrams / 100
+  const totalNutrition = {
+    calories: Math.round(nutritionPer100g.calories * factor),
+    protein: Math.round(nutritionPer100g.protein * factor * 10) / 10,
+    carbs: Math.round(nutritionPer100g.carbs * factor * 10) / 10,
+    fat: Math.round(nutritionPer100g.fat * factor * 10) / 10,
+    fiber: Math.round(nutritionPer100g.fiber * factor * 10) / 10,
+    sugar: Math.round(nutritionPer100g.sugar * factor * 10) / 10,
+    sodium: Math.round(nutritionPer100g.sodium * factor)
+  }
+
+  return { nutritionPer100g, totalNutrition }
+}
+
+/**
+ * Add new food to database automatically (learning system)
+ */
+async function autoAddFoodToDatabase(
+  supabaseClient: any,
+  foodItem: any,
+  imageHash: string,
+  confidence: number
+): Promise<boolean> {
+  try {
+    console.log(`Auto-adding new food to DB: ${foodItem.name}`)
+
+    const nameTr = foodItem.name
+    const nameEn = foodItem.nameEn || foodItem.name
+    const name = nameEn || nameTr
+
+    // Extract nutrition per 100g from AI
+    const nutritionPer100g = foodItem.nutritionPer100g || {}
+
+    // Validation: reasonable calorie range
+    const calories = nutritionPer100g.calories || 0
+    if (calories < 0 || calories > 2000) {
+      console.log('Calories out of reasonable range, skipping auto-add')
+      return false
+    }
+
+    // Insert into foods table
+    const { error: insertError } = await supabaseClient
+      .from('foods')
+      .insert({
+        name: name,
+        name_en: nameEn,
+        name_tr: nameTr,
+        calories_per_100g: nutritionPer100g.calories || 0,
+        protein_per_100g: nutritionPer100g.protein || 0,
+        carbs_per_100g: nutritionPer100g.carbs || 0,
+        fat_per_100g: nutritionPer100g.fat || 0,
+        fiber_per_100g: nutritionPer100g.fiber || 0,
+        sugar_per_100g: nutritionPer100g.sugar || 0,
+        sodium_per_100g: nutritionPer100g.sodium || 0,
+        category: 'Diğer',
+        is_turkish_cuisine: false,
+        created_at: new Date().toISOString()
+      })
+
+    if (insertError) {
+      console.error('Error auto-adding food to DB:', insertError)
+      return false
+    }
+
+    console.log(`Successfully auto-added: ${nameTr}`)
+
+    // Log to ai_food_candidates
+    const { error: candidateError } = await supabaseClient
+      .from('ai_food_candidates')
+      .insert({
+        name_tr: nameTr,
+        name_en: nameEn,
+        image_hash: imageHash,
+        ai_nutrition: nutritionPer100g,
+        ai_confidence: confidence,
+        occurrence_count: 1
+      })
+
+    if (candidateError) {
+      console.log('Could not log to ai_food_candidates:', candidateError)
+    }
+
+    return true
+  } catch (err) {
+    console.error('Exception in autoAddFoodToDatabase:', err)
+    return false
+  }
+}
+
+/**
+ * Call OpenAI Vision API
+ */
+async function analyzeImageWithAI(
+  imageUrl: string,
+  mealType: string | null,
+  detailsPrompt: string,
+  openaiApiKey: string,
+  model: string = 'gpt-4o-mini'
+): Promise<any> {
+  console.log(`Calling OpenAI with model: ${model}`)
+
+  const systemPrompt = `Sen Türk mutfağı ve beslenme konusunda uzman bir yapay zeka asistanısın. Yemek fotoğraflarını analiz ederek yiyecek/içecekleri tespit ediyorsun.
+
+ÖNEMLİ: Tüm yemek adlarını **Türk kullanıcılar için en doğal Türkçe isim** olarak ver:
+- "Greek yogurt" deme, "süzme yoğurt" de
+- "Skimmed milk" → "yağsız süt"
+- "Yogurt, plain, nonfat" → "yağsız yoğurt"
+- "Club soda" → "soda"
+- "Soy milk, unsweetened" → "şekersiz soya sütü"
+- "Red delicious apple" → "kırmızı elma"
+- "Cottage cheese" → "lor peyniri"
+- "Ground beef" → "kıyma"
+
+FOTOĞRAF KALİTESİ DEĞERLENDİRMESİ:
+Gerekirse analysisErrors'a ekle:
+- "Fotoğraf çok karanlık - daha iyi ışıkta tekrar çekin"
+- "Fotoğraf bulanık - daha net bir fotoğraf çekin"
+- "Fotoğrafta yemek görünmüyor"
+- "Porsiyon miktarı belirlenemiyor"`
+
+  const userPrompt = `Bu yemek fotoğrafını analiz et. Türkçe yemek adları kullan, gerçekçi porsiyon tahminleri yap.
+
+${detailsPrompt}
+
+Sadece geçerli bir JSON objesi döndür:
+
+{
+  "detectedFoods": [
+    {
+      "name": "Yemek adı (Türkçe)",
+      "nameEn": "Food name (English, opsiyonel)",
+      "estimatedAmount": "Miktar (örn: 1 porsiyon, 150g, 250ml)",
+      "portionType": "gram|ml|bardak|şişe|kutu|adet|porsiyon|dilim|kase",
+      "normalizedPortionGrams": sayı,
+      "nutritionPer100g": {
+        "calories": sayı,
+        "protein": sayı,
+        "carbs": sayı,
+        "fat": sayı,
+        "fiber": sayı,
+        "sugar": sayı,
+        "sodium": sayı
+      },
+      "totalNutrition": {
+        "calories": sayı,
+        "protein": sayı,
+        "carbs": sayı,
+        "fat": sayı,
+        "fiber": sayı,
+        "sugar": sayı,
+        "sodium": sayı
+      }
+    }
+  ],
+  "mealType": "${mealType || 'öğün'}",
+  "confidence": 0.1_ile_1_arası,
+  "suggestions": "Türkçe kısa öneri (max 2 cümle)",
+  "analysisErrors": []
+}
+
+BESİN KURALLARI:
+- Çoğu yiyecek makroları 0'dan büyük
+- Ancak su, sade kahve, şekersiz çay, soda, maden suyu, diyet içecekler: 0 kalori/makro olabilir
+- Sodyum mg, lif ve şeker gr cinsinden
+- İçeceklerde 1ml ≈ 1g`
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openaiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: userPrompt },
+            { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } }
+          ]
+        }
+      ],
+      max_tokens: 1500,
+      temperature: 0.2,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('OpenAI API error:', response.status, errorText)
+    throw new Error(`OpenAI API error: ${response.status}`)
+  }
+
+  const data = await response.json()
+  const content = data.choices[0]?.message?.content
+
+  if (!content) {
+    throw new Error('No content received from OpenAI')
+  }
+
+  console.log('Raw AI response:', content.substring(0, 200) + '...')
+
+  // Clean and parse JSON
+  const cleanedJson = cleanJsonString(content)
+  const parsed = JSON.parse(cleanedJson)
+
+  return parsed
+}
+
+/**
+ * Read cache from database
+ */
+async function getCachedAnalysis(
+  supabaseClient: any,
+  imageHash: string
+): Promise<any | null> {
+  const { data, error } = await supabaseClient
+    .from('photo_analysis_cache')
+    .select('result, created_at')
+    .eq('image_hash', imageHash)
+    .maybeSingle()
+
+  if (error || !data) {
+    return null
+  }
+
+  // Check if cache is not too old (30 days)
+  const cacheAge = Date.now() - new Date(data.created_at).getTime()
+  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000
+
+  if (cacheAge > thirtyDaysMs) {
+    console.log('Cache expired, ignoring')
+    return null
+  }
+
+  console.log('Cache hit!')
+  return data.result
+}
+
+/**
+ * Save analysis result to cache
+ */
+async function saveCacheAnalysis(
+  supabaseClient: any,
+  imageHash: string,
+  result: any
+): Promise<void> {
+  const { error } = await supabaseClient
+    .from('photo_analysis_cache')
+    .insert({
+      image_hash: imageHash,
+      result: result
+    })
+
+  if (error) {
+    console.error('Error saving cache:', error)
+  } else {
+    console.log('Analysis cached successfully')
+  }
+}
+
+// ============================================================================
+// MAIN HANDLER
+// ============================================================================
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log('Analyze-food function called')
+    console.log('=== Analyze-food function called ===')
 
+    // 1. Authorization
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       throw new Error('No authorization header')
@@ -37,10 +437,11 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
+    // 2. Parse request body
     const requestData = await req.json()
     const { imageUrl, mealType, analysisType, detailsData } = requestData
 
-    // Check trial limits before processing
+    // 3. Trial & subscription check
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('subscription_status, trial_photo_analysis_count, trial_photo_analysis_limit')
@@ -52,7 +453,6 @@ serve(async (req) => {
       throw new Error('Failed to fetch user profile')
     }
 
-    // Check if user has reached trial limit
     if (profile.subscription_status === 'trial') {
       if (profile.trial_photo_analysis_count >= profile.trial_photo_analysis_limit) {
         return new Response(
@@ -68,46 +468,36 @@ serve(async (req) => {
       }
     }
 
-    // Input validation
+    // 4. Input validation
     if (!imageUrl || typeof imageUrl !== 'string') {
       throw new Error('Valid image URL is required')
     }
-
-    // Validate image URL format
     if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('data:')) {
       throw new Error('Invalid image URL format')
     }
-
-    // Validate mealType if provided
     if (mealType && !['breakfast', 'lunch', 'dinner', 'snack'].includes(mealType)) {
       throw new Error('Invalid meal type')
     }
-
-    // Validate analysisType if provided
     if (analysisType && !['quick', 'detailed'].includes(analysisType)) {
       throw new Error('Invalid analysis type')
     }
 
-    // Validate detailsData structure if provided
-    if (detailsData && typeof detailsData !== 'object') {
-      throw new Error('Invalid details data format')
+    console.log('Request validated:', { mealType, analysisType })
+
+    // 5. Generate image hash
+    const imageHash = await generateImageHash(imageUrl)
+    console.log('Image hash:', imageHash)
+
+    // 6. Check cache
+    const cachedResult = await getCachedAnalysis(supabaseClient, imageHash)
+    if (cachedResult) {
+      console.log('Returning cached result')
+      return new Response(JSON.stringify(cachedResult), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    console.log('Request data validated:', {
-      imageUrlLength: imageUrl.length,
-      mealType,
-      analysisType,
-      hasDetailsData: !!detailsData,
-      imageUrlPrefix: imageUrl.substring(0, 50)
-    })
-
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
-    if (!openaiApiKey) {
-      console.error('OpenAI API key not configured')
-      throw new Error('OpenAI API key not configured')
-    }
-
-    // Build detailed prompt based on analysis type
+    // 7. Build details prompt
     let detailsPrompt = ''
     if (analysisType === 'detailed' && detailsData) {
       const cookingMethodText = detailsData.cookingMethod === 'unsure'
@@ -115,477 +505,122 @@ serve(async (req) => {
         : detailsData.cookingMethod
 
       detailsPrompt = `
-
 ÖNEMLI EK BİLGİLER:
 - Yemek kaynağı: ${detailsData.foodSource === 'homemade' ? 'Ev yapımı' : 'Paketli/hazır'}
 - Pişirme yöntemi: ${cookingMethodText}
 - Tüketilen miktar: ${detailsData.consumedAmount}
 - Yemek türü: ${detailsData.mealType === 'single' ? 'Tek tip yemek' : 'Karışık tabak'}
-${detailsData.hiddenIngredients ? `- Gizli malzemeler/ekstralar: ${detailsData.hiddenIngredients}` : ''}
-
-Bu bilgileri kullanarak daha doğru sınıflandırma ve porsiyon tahmini yap.`
+${detailsData.hiddenIngredients ? `- Gizli malzemeler: ${detailsData.hiddenIngredients}` : ''}`
     }
 
-    console.log('Making request to OpenAI API...')
-
-    let useModel = 'gpt-4o-mini'
-    let needsUpgrade = false
-
-    if (analysisType === 'quick') {
-      console.log('Stage 1: Using gpt-4o-mini for quick analysis')
-    } else {
-      console.log('Using gpt-4o-mini for detailed analysis (user requested)')
-      useModel = 'gpt-4o-mini'
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
+    if (!openaiApiKey) {
+      throw new Error('OpenAI API key not configured')
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: useModel,
-        messages: [
-          {
-            role: 'system',
-            content: `Sen Türk mutfağı konusunda uzman bir yapay zeka asistanısın. Yemek fotoğraflarını analiz ederek yiyecekleri/içecekleri tespit ediyorsun. Türkçe yemek adlarını tercih et ve gerçekçi porsiyon tahminleri yap.
+    // 8. Call AI (gpt-4o-mini)
+    let aiResult = await analyzeImageWithAI(
+      imageUrl,
+      mealType,
+      detailsPrompt,
+      openaiApiKey,
+      'gpt-4o-mini'
+    )
 
-GÖREVIN: Sadece yemek/içecekleri TANIMLA ve sınıflandır. Besin değerlerini hesaplama, bunlar ayrı bir veri tabanından gelecek.
-
-FOTOĞRAF KALİTESİ DEĞERLENDİRMESİ:
-Fotoğraf kalitesini değerlendir ve gerekirse analysisErrors alanına şu hata mesajlarından uygun olanları ekle:
-- "Fotoğraf çok karanlık - daha iyi ışıkta tekrar çekin"
-- "Fotoğraf bulanık - daha net bir fotoğraf çekin"
-- "Fotoğrafta yemek görünmüyor - yemeği net gösterecek şekilde çekin"
-- "Tabak veya kap net görünmüyor - tüm yemeği gösteren açı seçin"
-- "Yemekler net olarak tanımlanamıyor - daha yakından çekin"
-- "Porsiyon miktarı belirlenemiyor - standart tabak/kap kullanın"
-- "Paketli ürün net görünmüyor - barkod okuyucu kullanın"
-- "Renk algısı yetersiz - doğal ışıkta çekin"`
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `Bu yemek fotoğrafını analiz et ve içindeki yiyecek/içecekleri tespit et. Mümkün olduğunca Türkçe yemek adları kullan ve gerçekçi porsiyon tahminleri yap.
-
-İÇECEKLER İÇİN ÖZEL TALİMATLAR:
-- İçecekler için kap boyutuna dikkat et (çay bardağı ~100ml, su bardağı ~200-250ml, kupa ~250-300ml)
-- Şişe boyutları: 330ml (küçük), 500ml (orta), 1L (büyük)
-- Kutular: genellikle 330ml
-- Sıvı hacmine odaklan, ağırlık değil (1ml ≈ 1g çoğu içecek için)
-- İçeceklerde eklenmiş malzemeleri (şeker, süt, bal, limon, krema) mutlaka tespit et ve modifiers olarak ekle
-
-MODİFİER TESPİTİ ÖNEMLİ:
-- Eğer çay/kahve yanında şeker küpleri görüyorsan, bunları modifiers array'ine ekle
-- Süt/krema eklenmiş içecekleri tespit et
-- Ballı süt, limonlu çay gibi kombinasyonları yakala
-- Her modifier için tahmin edilen miktarı belirt (örn: "2 adet" şeker, "50ml" süt)
-
-${detailsPrompt}
-
-Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
-
-{
-  "detectedItems": [
-    {
-      "name": "Yemek/içecek adı (Türkçe)",
-      "nameEn": "Food/drink name (English)",
-      "estimatedAmount": "Miktar ve birim (örn: 1 porsiyon, 150g, 250ml, 1 bardak, 2 adet)",
-      "portionType": "gram|ml|cl|bardak|kupa|şişe|kutu|adet|porsiyon|kaşık",
-      "category": "drink|food|soup|dessert|snack|other",
-      "isDrink": true_veya_false,
-      "modifiers": [
-        {
-          "type": "sugar|honey|milk|cream|lemon|syrup|other",
-          "name": "Modifier adı (Türkçe, örn: Küp şeker, Bal, Süt)",
-          "nameEn": "Modifier name (English)",
-          "estimatedAmount": "Miktar (örn: 2 adet, 50ml, 1 kaşık)",
-          "portionType": "adet|ml|gram|kaşık"
-        }
-      ]
+    // Validate AI response
+    if (!aiResult.detectedFoods || !Array.isArray(aiResult.detectedFoods)) {
+      aiResult.detectedFoods = []
     }
-  ],
-  "mealType": "${mealType || 'öğün'}",
-  "confidence": 0_ile_1_arası_sayı,
-  "suggestions": "Türkçe kısa öneriler (maksimum 2 cümle)",
-  "analysisErrors": ["fotoğraf kalitesi sorunları varsa buraya ekle"]
-}
-
-ÖNEMLI KURALLAR:
-- Her öğe için name, nameEn, estimatedAmount, portionType, category, isDrink alanlarını doldur
-- İçeceklerde modifiers array'ini mutlaka kontrol et ve varsa ekle
-- Porsiyon tahminlerinde gerçekçi ol
-- Eğer hiçbir yemeği net tanıyamıyorsan boş detectedItems array'i döndür
-- Confidence değeri 0.1-1.0 arasında olmalı
-- Sadece JSON döndür, başka açıklama yapma
-- BESİN DEĞERLERİ HESAPLAMA, sadece tanımla ve sınıflandır`
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: imageUrl,
-                  detail: 'high'
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 1500,
-        temperature: 0.2,
-      }),
-    })
-
-    console.log('OpenAI API response status:', response.status)
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('OpenAI API error:', response.status, errorText)
-      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`)
-    }
-
-    const data = await response.json()
-    console.log('OpenAI response received:', {
-      hasChoices: !!data.choices,
-      choicesLength: data.choices?.length
-    })
-
-    const content = data.choices[0]?.message?.content
-    if (!content) {
-      console.error('No content received from OpenAI')
-      throw new Error('No content received from OpenAI')
-    }
-
-    console.log('Raw content from OpenAI:', content.substring(0, 200) + '...')
-
-    // Clean the response to extract JSON
-    let jsonStr = content.trim()
-    if (jsonStr.startsWith('```json')) {
-      jsonStr = jsonStr.replace(/```json\n?/, '').replace(/\n?```$/, '')
-    }
-    if (jsonStr.startsWith('```')) {
-      jsonStr = jsonStr.replace(/```\n?/, '').replace(/\n?```$/, '')
-    }
-
-    let aiResult
-    try {
-      aiResult = JSON.parse(jsonStr)
-      console.log('Successfully parsed JSON result:', {
-        detectedItemsCount: aiResult.detectedItems?.length || 0,
-        confidence: aiResult.confidence
-      })
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError)
-      console.error('Raw content that failed to parse:', content)
-      throw new Error('Invalid JSON response from AI')
-    }
-
-    // Validate and fix the response structure
-    if (!aiResult.detectedItems || !Array.isArray(aiResult.detectedItems)) {
-      console.error('Invalid response structure: missing detectedItems array')
-      aiResult.detectedItems = []
-    }
-
-    // Set default confidence if missing
     if (typeof aiResult.confidence !== 'number') {
       aiResult.confidence = 0.7
     }
-
-    // Ensure confidence is between 0 and 1
     if (aiResult.confidence > 1) {
       aiResult.confidence = aiResult.confidence / 100
     }
 
+    // 9. Upgrade to gpt-4o if needed
     if (analysisType === 'quick' && aiResult.confidence < 0.6) {
-      console.log('Stage 1 confidence too low, considering upgrade to gpt-4o')
-      needsUpgrade = true
-    }
-
-    if (needsUpgrade && analysisType === 'quick') {
-      console.log('Stage 2: Upgrading to gpt-4o for better accuracy')
-
-      const upgradeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: `Sen Türk mutfağı konusunda uzman bir yapay zeka asistanısın. Yemek fotoğraflarını analiz ederek yiyecekleri/içecekleri tespit ediyorsun. Türkçe yemek adlarını tercih et ve gerçekçi porsiyon tahminleri yap.
-
-GÖREVIN: Sadece yemek/içecekleri TANIMLA ve sınıflandır. Besin değerlerini hesaplama, bunlar ayrı bir veri tabanından gelecek.`
-            },
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: `Bu yemek fotoğrafını daha detaylı analiz et. İlk analiz belirsiz sonuçlar verdi, daha yüksek doğrulukta tespit yap.
-
-${detailsPrompt}
-
-Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
-                },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: imageUrl,
-                    detail: 'high'
-                  }
-                }
-              ]
-            }
-          ],
-          max_tokens: 1500,
-          temperature: 0.2,
-        }),
-      })
-
-      if (upgradeResponse.ok) {
-        const upgradeData = await upgradeResponse.json()
-        const upgradeContent = upgradeData.choices[0]?.message?.content
-
-        if (upgradeContent) {
-          let upgradeJsonStr = upgradeContent.trim()
-          if (upgradeJsonStr.startsWith('```json')) {
-            upgradeJsonStr = upgradeJsonStr.replace(/```json\n?/, '').replace(/\n?```$/, '')
-          }
-          if (upgradeJsonStr.startsWith('```')) {
-            upgradeJsonStr = upgradeJsonStr.replace(/```\n?/, '').replace(/\n?```$/, '')
-          }
-
-          try {
-            const upgradeResult = JSON.parse(upgradeJsonStr)
-            if (upgradeResult.detectedItems && upgradeResult.detectedItems.length > 0) {
-              console.log('Stage 2 successful, using upgraded results')
-              aiResult = upgradeResult
-            }
-          } catch (e) {
-            console.log('Stage 2 parse error, keeping stage 1 results')
-          }
+      console.log('Low confidence, upgrading to gpt-4o')
+      try {
+        const upgradeResult = await analyzeImageWithAI(
+          imageUrl,
+          mealType,
+          detailsPrompt,
+          openaiApiKey,
+          'gpt-4o'
+        )
+        if (upgradeResult.detectedFoods && upgradeResult.detectedFoods.length > 0) {
+          console.log('Upgrade successful, using gpt-4o result')
+          aiResult = upgradeResult
         }
+      } catch (upgradeError) {
+        console.log('Upgrade failed, keeping gpt-4o-mini result:', upgradeError)
       }
     }
 
-    // Helper function to estimate grams from portion info
-    const estimateGrams = (item: any, defaultGrams: number = 100): number => {
-      const amount = item.estimatedAmount || ''
-      const portionType = item.portionType || ''
+    // 10. Process each food: match with DB or auto-add
+    const processedFoods: any[] = []
 
-      // Extract numeric value from amount string
-      const numMatch = amount.match(/(\d+(?:\.\d+)?)/);
-      const numValue = numMatch ? parseFloat(numMatch[1]) : 1;
+    for (const foodItem of aiResult.detectedFoods) {
+      console.log(`\n--- Processing: ${foodItem.name} ---`)
 
-      if (portionType === 'gram') {
-        return numValue;
-      } else if (portionType === 'ml' || portionType === 'cl') {
-        // For drinks: 1ml ≈ 1g
-        return portionType === 'cl' ? numValue * 10 : numValue;
-      } else if (portionType === 'bardak' || portionType === 'kupa') {
-        // Standard glass/cup for drinks
-        return numValue * 200;
-      } else if (portionType === 'şişe') {
-        // Assume 500ml bottle
-        return numValue * 500;
-      } else if (portionType === 'kutu') {
-        // Assume 330ml can
-        return numValue * 330;
-      } else if (portionType === 'kaşık') {
-        // Tablespoon ~10g
-        return numValue * 10;
-      } else if (portionType === 'adet' || portionType === 'porsiyon') {
-        // Use default portion grams
-        return numValue * defaultGrams;
-      }
+      // Normalize portion to grams
+      const normalizedGrams = foodItem.normalizedPortionGrams ||
+        normalizePortionToGrams(foodItem.estimatedAmount, foodItem.portionType)
 
-      // Fallback to default
-      return defaultGrams;
-    };
+      console.log(`Normalized portion: ${normalizedGrams}g`)
 
-    // Helper function to lookup food in database
-    const lookupFood = async (name: string, nameEn: string) => {
-      // First try Turkish name
-      let { data: foodData, error } = await supabaseClient
-        .from('foods')
-        .select('*')
-        .ilike('name', `%${name}%`)
-        .limit(1)
-        .maybeSingle();
+      // Try to find in database
+      const dbFood = await lookupFoodInDatabase(
+        supabaseClient,
+        foodItem.name,
+        foodItem.nameEn
+      )
 
-      if (!foodData && nameEn) {
-        // Try English name
-        const result = await supabaseClient
-          .from('foods')
-          .select('*')
-          .ilike('name_en', `%${nameEn}%`)
-          .limit(1)
-          .maybeSingle();
+      let finalFood: any
 
-        foodData = result.data;
-        error = result.error;
-      }
+      if (dbFood) {
+        // Use database nutrition
+        console.log('Using database nutrition')
+        const { nutritionPer100g, totalNutrition } = calculateNutritionFromDB(dbFood, normalizedGrams)
 
-      if (error) {
-        console.error('Food lookup error:', error);
-      }
+        finalFood = {
+          name: dbFood.name_tr || dbFood.name,
+          nameEn: dbFood.name_en || dbFood.name,
+          estimatedAmount: foodItem.estimatedAmount,
+          portionType: foodItem.portionType,
+          nutritionPer100g,
+          totalNutrition
+        }
+      } else {
+        // Not in database - use AI nutrition as fallback
+        console.log('Food not in database, using AI nutrition')
 
-      return foodData;
-    };
-
-    // Process detected items and fetch nutrition from database
-    const detectedFoods: any[] = [];
-
-    for (const item of aiResult.detectedItems) {
-      console.log('Processing item:', item.name);
-
-      const foodData = await lookupFood(item.name, item.nameEn);
-
-      if (!foodData) {
-        console.log('Food not found in DB:', item.name);
-        // Create item with zero nutrition
-        detectedFoods.push({
-          name: item.name,
-          nameEn: item.nameEn || item.name,
-          estimatedAmount: item.estimatedAmount || '1 porsiyon',
-          portionType: item.portionType || 'porsiyon',
-          nutritionPer100g: {
-            calories: 0,
-            protein: 0,
-            carbs: 0,
-            fat: 0,
-            fiber: 0,
-            sugar: 0,
-            sodium: 0
-          },
-          totalNutrition: {
-            calories: 0,
-            protein: 0,
-            carbs: 0,
-            fat: 0,
-            fiber: 0,
-            sugar: 0,
-            sodium: 0
-          }
-        });
-        continue;
-      }
-
-      // Calculate total grams (default 100g as no default_portion_grams column)
-      const totalGrams = estimateGrams(item, 100);
-
-      // Build nutrition from database
-      const nutritionPer100g = {
-        calories: foodData.calories_per_100g || 0,
-        protein: foodData.protein_per_100g || 0,
-        carbs: foodData.carbs_per_100g || 0,
-        fat: foodData.fat_per_100g || 0,
-        fiber: foodData.fiber_per_100g || 0,
-        sugar: foodData.sugar_per_100g || 0,
-        sodium: foodData.sodium_per_100g || 0
-      };
-
-      // Calculate total nutrition
-      const totalNutrition = {
-        calories: Math.round((nutritionPer100g.calories * totalGrams) / 100),
-        protein: Math.round((nutritionPer100g.protein * totalGrams) / 100 * 10) / 10,
-        carbs: Math.round((nutritionPer100g.carbs * totalGrams) / 100 * 10) / 10,
-        fat: Math.round((nutritionPer100g.fat * totalGrams) / 100 * 10) / 10,
-        fiber: Math.round((nutritionPer100g.fiber * totalGrams) / 100 * 10) / 10,
-        sugar: Math.round((nutritionPer100g.sugar * totalGrams) / 100 * 10) / 10,
-        sodium: Math.round((nutritionPer100g.sodium * totalGrams) / 100)
-      };
-
-      const foodItem = {
-        name: item.name,
-        nameEn: item.nameEn || item.name,
-        estimatedAmount: item.estimatedAmount || '1 porsiyon',
-        portionType: item.portionType || 'porsiyon',
-        nutritionPer100g,
-        totalNutrition
-      };
-
-      // Process modifiers for drinks
-      if (item.isDrink && item.modifiers && Array.isArray(item.modifiers)) {
-        let modifierDescriptions: string[] = [];
-
-        for (const modifier of item.modifiers) {
-          const modifierFood = await lookupFood(modifier.name, modifier.nameEn);
-
-          if (modifierFood) {
-            const modifierGrams = estimateGrams(modifier, 10);
-
-            // Add modifier nutrition to drink
-            const modifierCalories = Math.round((modifierFood.calories_per_100g * modifierGrams) / 100);
-            const modifierProtein = Math.round((modifierFood.protein_per_100g * modifierGrams) / 100 * 10) / 10;
-            const modifierCarbs = Math.round((modifierFood.carbs_per_100g * modifierGrams) / 100 * 10) / 10;
-            const modifierFat = Math.round((modifierFood.fat_per_100g * modifierGrams) / 100 * 10) / 10;
-            const modifierFiber = Math.round((modifierFood.fiber_per_100g * modifierGrams) / 100 * 10) / 10;
-            const modifierSugar = Math.round((modifierFood.sugar_per_100g * modifierGrams) / 100 * 10) / 10;
-            const modifierSodium = Math.round((modifierFood.sodium_per_100g * modifierGrams) / 100);
-
-            foodItem.totalNutrition.calories += modifierCalories;
-            foodItem.totalNutrition.protein += modifierProtein;
-            foodItem.totalNutrition.carbs += modifierCarbs;
-            foodItem.totalNutrition.fat += modifierFat;
-            foodItem.totalNutrition.fiber += modifierFiber;
-            foodItem.totalNutrition.sugar += modifierSugar;
-            foodItem.totalNutrition.sodium += modifierSodium;
-
-            // Track modifier for name update
-            if (modifier.type === 'sugar') {
-              modifierDescriptions.push('şekerli');
-            } else if (modifier.type === 'honey') {
-              modifierDescriptions.push('ballı');
-            } else if (modifier.type === 'milk') {
-              modifierDescriptions.push('sütlü');
-            } else if (modifier.type === 'cream') {
-              modifierDescriptions.push('kremalı');
-            } else if (modifier.type === 'lemon') {
-              modifierDescriptions.push('limonlu');
-            } else if (modifier.type === 'syrup') {
-              modifierDescriptions.push('şuruplu');
-            }
-          }
+        finalFood = {
+          name: foodItem.name,
+          nameEn: foodItem.nameEn || foodItem.name,
+          estimatedAmount: foodItem.estimatedAmount,
+          portionType: foodItem.portionType,
+          nutritionPer100g: foodItem.nutritionPer100g || {},
+          totalNutrition: foodItem.totalNutrition || {}
         }
 
-        // Update drink name with modifiers
-        if (modifierDescriptions.length > 0) {
-          const lowerName = foodItem.name.toLowerCase();
-          if (lowerName.includes('çay') || lowerName.includes('tea')) {
-            foodItem.name = modifierDescriptions.length === 1
-              ? `${modifierDescriptions[0].charAt(0).toUpperCase() + modifierDescriptions[0].slice(1)} çay`
-              : `${modifierDescriptions.join(' ve ')} çay`;
-          } else if (lowerName.includes('kahve') || lowerName.includes('coffee')) {
-            foodItem.name = modifierDescriptions.length === 1
-              ? `${modifierDescriptions[0].charAt(0).toUpperCase() + modifierDescriptions[0].slice(1)} kahve`
-              : `${modifierDescriptions.join(' ve ')} kahve`;
-          } else if (lowerName.includes('süt') || lowerName.includes('milk')) {
-            foodItem.name = `${modifierDescriptions.join(' ve ')} süt`;
-          } else {
-            foodItem.name = `${foodItem.name} (${modifierDescriptions.join(', ')})`;
-          }
-
-          // Update amount description
-          if (item.modifiers.length > 0) {
-            const modifierText = item.modifiers.map((m: any) => m.estimatedAmount).join(', ');
-            foodItem.estimatedAmount = `${foodItem.estimatedAmount} + ${modifierText}`;
+        // Auto-add to database if confidence is high
+        if (aiResult.confidence >= 0.8) {
+          const added = await autoAddFoodToDatabase(
+            supabaseClient,
+            foodItem,
+            imageHash,
+            aiResult.confidence
+          )
+          if (added) {
+            console.log('Food auto-added to database')
           }
         }
       }
 
-      detectedFoods.push(foodItem);
-    }
-
-    // Handle zero-calorie drinks
-    detectedFoods.forEach((food: any) => {
-      const lowerName = (food.name || '').toLowerCase();
-
+      // Handle zero-calorie drinks
+      const lowerName = finalFood.name.toLowerCase()
       const isZeroCalDrink =
         lowerName.includes('su') ||
         lowerName.includes('water') ||
@@ -595,34 +630,41 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
         lowerName.includes('plain tea') ||
         lowerName.includes('soda') ||
         lowerName.includes('maden suyu') ||
-        lowerName.includes('mineral water') ||
+        lowerName.includes('mineral') ||
         lowerName.includes('diyet') ||
-        lowerName.includes('zero');
+        lowerName.includes('zero')
 
       if (isZeroCalDrink) {
-        ['calories','protein','carbs','fat','fiber','sugar','sodium'].forEach(field => {
-          food.nutritionPer100g[field] = 0;
-          food.totalNutrition[field] = 0;
-        });
+        console.log('Zero-calorie drink detected')
+        const fields = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium']
+        fields.forEach(field => {
+          finalFood.nutritionPer100g[field] = 0
+          finalFood.totalNutrition[field] = 0
+        })
       }
-    });
 
-    // Build final response in the format frontend expects
+      processedFoods.push(finalFood)
+    }
+
+    // 11. Build final response
     const analysisResult = {
-      detectedFoods,
+      detectedFoods: processedFoods,
       mealType: aiResult.mealType || mealType || 'öğün',
       confidence: aiResult.confidence,
       suggestions: aiResult.suggestions || 'Yemek analizi tamamlandı. Besin değerlerini kontrol ediniz.',
       analysisErrors: aiResult.analysisErrors || []
-    };
+    }
 
-    console.log('Analysis result validated successfully:', {
-      detectedFoodsCount: analysisResult.detectedFoods.length,
+    console.log('Analysis complete:', {
+      foodCount: processedFoods.length,
       confidence: analysisResult.confidence,
-      totalCalories: analysisResult.detectedFoods.reduce((sum: number, food: any) => sum + (food.totalNutrition?.calories || 0), 0)
+      totalCalories: processedFoods.reduce((sum, f) => sum + (f.totalNutrition?.calories || 0), 0)
     })
 
-    // Increment photo analysis count for trial users
+    // 12. Save to cache
+    await saveCacheAnalysis(supabaseClient, imageHash, analysisResult)
+
+    // 13. Increment trial count
     if (profile.subscription_status === 'trial') {
       const { error: updateError } = await supabaseClient
         .from('profiles')
@@ -635,10 +677,11 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
       if (updateError) {
         console.error('Failed to update trial count:', updateError)
       } else {
-        console.log('Trial photo analysis count incremented:', profile.trial_photo_analysis_count + 1)
+        console.log('Trial count incremented:', profile.trial_photo_analysis_count + 1)
       }
     }
 
+    // 14. Return response
     return new Response(JSON.stringify(analysisResult), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
@@ -646,12 +689,10 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
   } catch (error) {
     console.error('Error in analyze-food function:', error)
 
-    // Sanitize error message to avoid exposing sensitive information
     const sanitizedError = error instanceof Error ?
-      (error.message.includes('API') ? 'Service temporarily unavailable' : 'Analysis failed') :
+      (error.message.includes('API') ? 'Service temporarily unavailable' : error.message) :
       'Unexpected error occurred'
 
-    // Return a structured error response that the frontend can handle
     const errorResponse = {
       error: sanitizedError,
       detectedFoods: [],
@@ -662,7 +703,7 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
     return new Response(
       JSON.stringify(errorResponse),
       {
-        status: 200, // Return 200 so frontend can handle the error gracefully
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
