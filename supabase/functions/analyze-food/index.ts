@@ -8,6 +8,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Foods table schema:
+// id, name_tr, name_en, category, default_portion_grams
+// calories_100g, protein_100g, carbs_100g, fat_100g, fiber_100g, sugar_100g, sodium_100g
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -119,7 +123,7 @@ serve(async (req) => {
 - Yemek türü: ${detailsData.mealType === 'single' ? 'Tek tip yemek' : 'Karışık tabak'}
 ${detailsData.hiddenIngredients ? `- Gizli malzemeler/ekstralar: ${detailsData.hiddenIngredients}` : ''}
 
-Bu bilgileri kullanarak daha doğru besin değeri hesaplama yap. Pişirme yöntemi belirsizse fotoğraftan tahmin et.`
+Bu bilgileri kullanarak daha doğru sınıflandırma ve porsiyon tahmini yap.`
     }
 
     console.log('Making request to OpenAI API...')
@@ -145,18 +149,9 @@ Bu bilgileri kullanarak daha doğru besin değeri hesaplama yap. Pişirme yönte
         messages: [
           {
             role: 'system',
-            content: `Sen Türk mutfağı ve beslenme konusunda uzman bir yapay zeka asistanısın. Yemek fotoğraflarını analiz ederek doğru besin değerlerini hesaplıyorsun. Türkçe yemek adlarını tercih et ve gerçekçi porsiyon tahminleri yap.
+            content: `Sen Türk mutfağı konusunda uzman bir yapay zeka asistanısın. Yemek fotoğraflarını analiz ederek yiyecekleri/içecekleri tespit ediyorsun. Türkçe yemek adlarını tercih et ve gerçekçi porsiyon tahminleri yap.
 
-ÖNEMLI: Tüm besin değerlerini eksiksiz hesapla:
-- Kalori (kcal)
-- Protein (g)
-- Karbonhidrat (g)
-- Yağ (g)
-- Lif (g)
-- Şeker (g)
-- Sodyum (mg)
-
-Pişirme yöntemi belirsizse fotoğraftan tahmin et ve açıkla.
+GÖREVIN: Sadece yemek/içecekleri TANIMLA ve sınıflandır. Besin değerlerini hesaplama, bunlar ayrı bir veri tabanından gelecek.
 
 FOTOĞRAF KALİTESİ DEĞERLENDİRMESİ:
 Fotoğraf kalitesini değerlendir ve gerekirse analysisErrors alanına şu hata mesajlarından uygun olanları ekle:
@@ -174,46 +169,43 @@ Fotoğraf kalitesini değerlendir ve gerekirse analysisErrors alanına şu hata 
             content: [
               {
                 type: 'text',
-                text: `Bu yemek fotoğrafını analiz et ve besin değerlerini hesapla. Mümkün olduğunca Türkçe yemek adları kullan ve gerçekçi porsiyon tahminleri yap.
+                text: `Bu yemek fotoğrafını analiz et ve içindeki yiyecek/içecekleri tespit et. Mümkün olduğunca Türkçe yemek adları kullan ve gerçekçi porsiyon tahminleri yap.
 
 İÇECEKLER İÇİN ÖZEL TALİMATLAR:
-- İçecekler için kap boyutuna dikkat et (çay bardağı ~100ml, su bardağı ~200-250ml)
+- İçecekler için kap boyutuna dikkat et (çay bardağı ~100ml, su bardağı ~200-250ml, kupa ~250-300ml)
 - Şişe boyutları: 330ml (küçük), 500ml (orta), 1L (büyük)
 - Kutular: genellikle 330ml
-- Şekerli vs şekersiz içecekleri ayırt et (özellikle çay/kahve)
-- Alkollü içecekler için bira (~330-500ml), şarap (~150ml), rakı vb. belirt
 - Sıvı hacmine odaklan, ağırlık değil (1ml ≈ 1g çoğu içecek için)
-- İçecek kalorilerinin gerçekçi olmasına dikkat et (su=0, diyet içecek≈0-5, normal gazlı içecek≈40-50 per 100ml)
+- İçeceklerde eklenmiş malzemeleri (şeker, süt, bal, limon, krema) mutlaka tespit et ve modifiers olarak ekle
+
+MODİFİER TESPİTİ ÖNEMLİ:
+- Eğer çay/kahve yanında şeker küpleri görüyorsan, bunları modifiers array'ine ekle
+- Süt/krema eklenmiş içecekleri tespit et
+- Ballı süt, limonlu çay gibi kombinasyonları yakala
+- Her modifier için tahmin edilen miktarı belirt (örn: "2 adet" şeker, "50ml" süt)
 
 ${detailsPrompt}
 
 Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
 
 {
-  "detectedFoods": [
+  "detectedItems": [
     {
-      "name": "Yemek adı (Türkçe)",
-      "nameEn": "Food name (English)",
-              "estimatedAmount": "Miktar ve birim (örn: 1 porsiyon, 100g, 1 adet, 250ml, 1 bardak)",
-              "portionType": "gram|ml|cl|bardak|şişe|kutu|adet|porsiyon|kaşık",
-              "nutritionPer100g": {
-        "calories": sayı,
-        "protein": sayı,
-        "carbs": sayı,
-        "fat": sayı,
-        "fiber": sayı,
-        "sugar": sayı,
-        "sodium": sayı
-      },
-      "totalNutrition": {
-        "calories": sayı,
-        "protein": sayı,
-        "carbs": sayı,
-        "fat": sayı,
-        "fiber": sayı,
-        "sugar": sayı,
-        "sodium": sayı
-      }
+      "name": "Yemek/içecek adı (Türkçe)",
+      "nameEn": "Food/drink name (English)",
+      "estimatedAmount": "Miktar ve birim (örn: 1 porsiyon, 150g, 250ml, 1 bardak, 2 adet)",
+      "portionType": "gram|ml|cl|bardak|kupa|şişe|kutu|adet|porsiyon|kaşık",
+      "category": "drink|food|soup|dessert|snack|other",
+      "isDrink": true_veya_false,
+      "modifiers": [
+        {
+          "type": "sugar|honey|milk|cream|lemon|syrup|other",
+          "name": "Modifier adı (Türkçe, örn: Küp şeker, Bal, Süt)",
+          "nameEn": "Modifier name (English)",
+          "estimatedAmount": "Miktar (örn: 2 adet, 50ml, 1 kaşık)",
+          "portionType": "adet|ml|gram|kaşık"
+        }
+      ]
     }
   ],
   "mealType": "${mealType || 'öğün'}",
@@ -223,14 +215,13 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
 }
 
 ÖNEMLI KURALLAR:
-- Çoğu yiyecek için besin değerleri gerçekçi ve 0'dan büyük olmalı. Ancak su, sade kahve, şekersiz çay, soda, maden suyu, mineral su, diyet/zero içecekler gibi ürünlerde kalori, protein, karbonhidrat, yağ, lif ve şeker değerleri 0 olabilir.
-- Lif, şeker gram cinsinden, sodyum miligram cinsinden
+- Her öğe için name, nameEn, estimatedAmount, portionType, category, isDrink alanlarını doldur
+- İçeceklerde modifiers array'ini mutlaka kontrol et ve varsa ekle
 - Porsiyon tahminlerinde gerçekçi ol
-- Eğer hiçbir yemeği net tanıyamıyorsan boş detectedFoods array'i döndür
+- Eğer hiçbir yemeği net tanıyamıyorsan boş detectedItems array'i döndür
 - Confidence değeri 0.1-1.0 arasında olmalı
-- Sodyum değeri özellikle dikkatli hesapla (tuz, işlenmiş gıdalar)
-- Şeker değeri doğal ve eklenmiş şekeri içermeli
-- Sadece JSON döndür, başka açıklama yapma`
+- Sadece JSON döndür, başka açıklama yapma
+- BESİN DEĞERLERİ HESAPLAMA, sadece tanımla ve sınıflandır`
               },
               {
                 type: 'image_url',
@@ -278,12 +269,12 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
       jsonStr = jsonStr.replace(/```\n?/, '').replace(/\n?```$/, '')
     }
 
-    let analysisResult
+    let aiResult
     try {
-      analysisResult = JSON.parse(jsonStr)
+      aiResult = JSON.parse(jsonStr)
       console.log('Successfully parsed JSON result:', {
-        detectedFoodsCount: analysisResult.detectedFoods?.length || 0,
-        confidence: analysisResult.confidence
+        detectedItemsCount: aiResult.detectedItems?.length || 0,
+        confidence: aiResult.confidence
       })
     } catch (parseError) {
       console.error('JSON parse error:', parseError)
@@ -292,22 +283,22 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
     }
 
     // Validate and fix the response structure
-    if (!analysisResult.detectedFoods || !Array.isArray(analysisResult.detectedFoods)) {
-      console.error('Invalid response structure: missing detectedFoods array')
-      analysisResult.detectedFoods = []
+    if (!aiResult.detectedItems || !Array.isArray(aiResult.detectedItems)) {
+      console.error('Invalid response structure: missing detectedItems array')
+      aiResult.detectedItems = []
     }
 
     // Set default confidence if missing
-    if (typeof analysisResult.confidence !== 'number') {
-      analysisResult.confidence = 0.7
+    if (typeof aiResult.confidence !== 'number') {
+      aiResult.confidence = 0.7
     }
 
     // Ensure confidence is between 0 and 1
-    if (analysisResult.confidence > 1) {
-      analysisResult.confidence = analysisResult.confidence / 100
+    if (aiResult.confidence > 1) {
+      aiResult.confidence = aiResult.confidence / 100
     }
 
-    if (analysisType === 'quick' && analysisResult.confidence < 0.6) {
+    if (analysisType === 'quick' && aiResult.confidence < 0.6) {
       console.log('Stage 1 confidence too low, considering upgrade to gpt-4o')
       needsUpgrade = true
     }
@@ -326,18 +317,9 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
           messages: [
             {
               role: 'system',
-              content: `Sen Türk mutfağı ve beslenme konusunda uzman bir yapay zeka asistanısın. Yemek fotoğraflarını analiz ederek doğru besin değerlerini hesaplıyorsun. Türkçe yemek adlarını tercih et ve gerçekçi porsiyon tahminleri yap.
+              content: `Sen Türk mutfağı konusunda uzman bir yapay zeka asistanısın. Yemek fotoğraflarını analiz ederek yiyecekleri/içecekleri tespit ediyorsun. Türkçe yemek adlarını tercih et ve gerçekçi porsiyon tahminleri yap.
 
-ÖNEMLI: Tüm besin değerlerini eksiksiz hesapla:
-- Kalori (kcal)
-- Protein (g)
-- Karbonhidrat (g)
-- Yağ (g)
-- Lif (g)
-- Şeker (g)
-- Sodyum (mg)
-
-Pişirme yöntemi belirsizse fotoğraftan tahmin et ve açıkla.`
+GÖREVIN: Sadece yemek/içecekleri TANIMLA ve sınıflandır. Besin değerlerini hesaplama, bunlar ayrı bir veri tabanından gelecek.`
             },
             {
               role: 'user',
@@ -380,9 +362,9 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
 
           try {
             const upgradeResult = JSON.parse(upgradeJsonStr)
-            if (upgradeResult.detectedFoods && upgradeResult.detectedFoods.length > 0) {
+            if (upgradeResult.detectedItems && upgradeResult.detectedItems.length > 0) {
               console.log('Stage 2 successful, using upgraded results')
-              analysisResult = upgradeResult
+              aiResult = upgradeResult
             }
           } catch (e) {
             console.log('Stage 2 parse error, keeping stage 1 results')
@@ -391,37 +373,217 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
       }
     }
 
-    // Validate and fix nutrition data for each food
-    analysisResult.detectedFoods.forEach((food: any, index: number) => {
-      if (!food.name) {
-        food.name = `Yemek ${index + 1}`
-      }
-      if (!food.nameEn) {
-        food.nameEn = food.name
-      }
-      if (!food.estimatedAmount) {
-        food.estimatedAmount = '1 porsiyon'
+    // Helper function to estimate grams from portion info
+    const estimateGrams = (item: any, defaultGrams: number = 100): number => {
+      const amount = item.estimatedAmount || ''
+      const portionType = item.portionType || ''
+
+      // Extract numeric value from amount string
+      const numMatch = amount.match(/(\d+(?:\.\d+)?)/);
+      const numValue = numMatch ? parseFloat(numMatch[1]) : 1;
+
+      if (portionType === 'gram') {
+        return numValue;
+      } else if (portionType === 'ml' || portionType === 'cl') {
+        // For drinks: 1ml ≈ 1g
+        return portionType === 'cl' ? numValue * 10 : numValue;
+      } else if (portionType === 'bardak' || portionType === 'kupa') {
+        // Standard glass/cup for drinks
+        return numValue * 200;
+      } else if (portionType === 'şişe') {
+        // Assume 500ml bottle
+        return numValue * 500;
+      } else if (portionType === 'kutu') {
+        // Assume 330ml can
+        return numValue * 330;
+      } else if (portionType === 'kaşık') {
+        // Tablespoon ~10g
+        return numValue * 10;
+      } else if (portionType === 'adet' || portionType === 'porsiyon') {
+        // Use default portion grams
+        return numValue * defaultGrams;
       }
 
-      // Ensure nutrition objects exist
-      if (!food.nutritionPer100g) {
-        food.nutritionPer100g = {}
-      }
-      if (!food.totalNutrition) {
-        food.totalNutrition = {}
+      // Fallback to default
+      return defaultGrams;
+    };
+
+    // Helper function to lookup food in database
+    const lookupFood = async (name: string, nameEn: string) => {
+      // First try Turkish name
+      let { data: foodData, error } = await supabaseClient
+        .from('foods')
+        .select('*')
+        .ilike('name_tr', `%${name}%`)
+        .limit(1)
+        .maybeSingle();
+
+      if (!foodData && nameEn) {
+        // Try English name
+        const result = await supabaseClient
+          .from('foods')
+          .select('*')
+          .ilike('name_en', `%${nameEn}%`)
+          .limit(1)
+          .maybeSingle();
+
+        foodData = result.data;
+        error = result.error;
       }
 
-      // Ensure all required nutrition fields are present with valid numbers
-      const requiredFields = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium']
-      requiredFields.forEach(field => {
-        if (typeof food.nutritionPer100g[field] !== 'number' || food.nutritionPer100g[field] < 0) {
-          food.nutritionPer100g[field] = 0
+      if (error) {
+        console.error('Food lookup error:', error);
+      }
+
+      return foodData;
+    };
+
+    // Process detected items and fetch nutrition from database
+    const detectedFoods: any[] = [];
+
+    for (const item of aiResult.detectedItems) {
+      console.log('Processing item:', item.name);
+
+      const foodData = await lookupFood(item.name, item.nameEn);
+
+      if (!foodData) {
+        console.log('Food not found in DB:', item.name);
+        // Create item with zero nutrition
+        detectedFoods.push({
+          name: item.name,
+          nameEn: item.nameEn || item.name,
+          estimatedAmount: item.estimatedAmount || '1 porsiyon',
+          portionType: item.portionType || 'porsiyon',
+          nutritionPer100g: {
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+            fiber: 0,
+            sugar: 0,
+            sodium: 0
+          },
+          totalNutrition: {
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+            fiber: 0,
+            sugar: 0,
+            sodium: 0
+          }
+        });
+        continue;
+      }
+
+      // Calculate total grams
+      const totalGrams = estimateGrams(item, foodData.default_portion_grams || 100);
+
+      // Build nutrition from database
+      const nutritionPer100g = {
+        calories: foodData.calories_100g || 0,
+        protein: foodData.protein_100g || 0,
+        carbs: foodData.carbs_100g || 0,
+        fat: foodData.fat_100g || 0,
+        fiber: foodData.fiber_100g || 0,
+        sugar: foodData.sugar_100g || 0,
+        sodium: foodData.sodium_100g || 0
+      };
+
+      // Calculate total nutrition
+      const totalNutrition = {
+        calories: Math.round((nutritionPer100g.calories * totalGrams) / 100),
+        protein: Math.round((nutritionPer100g.protein * totalGrams) / 100 * 10) / 10,
+        carbs: Math.round((nutritionPer100g.carbs * totalGrams) / 100 * 10) / 10,
+        fat: Math.round((nutritionPer100g.fat * totalGrams) / 100 * 10) / 10,
+        fiber: Math.round((nutritionPer100g.fiber * totalGrams) / 100 * 10) / 10,
+        sugar: Math.round((nutritionPer100g.sugar * totalGrams) / 100 * 10) / 10,
+        sodium: Math.round((nutritionPer100g.sodium * totalGrams) / 100)
+      };
+
+      const foodItem = {
+        name: item.name,
+        nameEn: item.nameEn || item.name,
+        estimatedAmount: item.estimatedAmount || '1 porsiyon',
+        portionType: item.portionType || 'porsiyon',
+        nutritionPer100g,
+        totalNutrition
+      };
+
+      // Process modifiers for drinks
+      if (item.isDrink && item.modifiers && Array.isArray(item.modifiers)) {
+        let modifierDescriptions: string[] = [];
+
+        for (const modifier of item.modifiers) {
+          const modifierFood = await lookupFood(modifier.name, modifier.nameEn);
+
+          if (modifierFood) {
+            const modifierGrams = estimateGrams(modifier, modifierFood.default_portion_grams || 10);
+
+            // Add modifier nutrition to drink
+            const modifierCalories = Math.round((modifierFood.calories_100g * modifierGrams) / 100);
+            const modifierProtein = Math.round((modifierFood.protein_100g * modifierGrams) / 100 * 10) / 10;
+            const modifierCarbs = Math.round((modifierFood.carbs_100g * modifierGrams) / 100 * 10) / 10;
+            const modifierFat = Math.round((modifierFood.fat_100g * modifierGrams) / 100 * 10) / 10;
+            const modifierFiber = Math.round((modifierFood.fiber_100g * modifierGrams) / 100 * 10) / 10;
+            const modifierSugar = Math.round((modifierFood.sugar_100g * modifierGrams) / 100 * 10) / 10;
+            const modifierSodium = Math.round((modifierFood.sodium_100g * modifierGrams) / 100);
+
+            foodItem.totalNutrition.calories += modifierCalories;
+            foodItem.totalNutrition.protein += modifierProtein;
+            foodItem.totalNutrition.carbs += modifierCarbs;
+            foodItem.totalNutrition.fat += modifierFat;
+            foodItem.totalNutrition.fiber += modifierFiber;
+            foodItem.totalNutrition.sugar += modifierSugar;
+            foodItem.totalNutrition.sodium += modifierSodium;
+
+            // Track modifier for name update
+            if (modifier.type === 'sugar') {
+              modifierDescriptions.push('şekerli');
+            } else if (modifier.type === 'honey') {
+              modifierDescriptions.push('ballı');
+            } else if (modifier.type === 'milk') {
+              modifierDescriptions.push('sütlü');
+            } else if (modifier.type === 'cream') {
+              modifierDescriptions.push('kremalı');
+            } else if (modifier.type === 'lemon') {
+              modifierDescriptions.push('limonlu');
+            } else if (modifier.type === 'syrup') {
+              modifierDescriptions.push('şuruplu');
+            }
+          }
         }
-        if (typeof food.totalNutrition[field] !== 'number' || food.totalNutrition[field] < 0) {
-          food.totalNutrition[field] = 0
-        }
-      })
 
+        // Update drink name with modifiers
+        if (modifierDescriptions.length > 0) {
+          const lowerName = foodItem.name.toLowerCase();
+          if (lowerName.includes('çay') || lowerName.includes('tea')) {
+            foodItem.name = modifierDescriptions.length === 1
+              ? `${modifierDescriptions[0].charAt(0).toUpperCase() + modifierDescriptions[0].slice(1)} çay`
+              : `${modifierDescriptions.join(' ve ')} çay`;
+          } else if (lowerName.includes('kahve') || lowerName.includes('coffee')) {
+            foodItem.name = modifierDescriptions.length === 1
+              ? `${modifierDescriptions[0].charAt(0).toUpperCase() + modifierDescriptions[0].slice(1)} kahve`
+              : `${modifierDescriptions.join(' ve ')} kahve`;
+          } else if (lowerName.includes('süt') || lowerName.includes('milk')) {
+            foodItem.name = `${modifierDescriptions.join(' ve ')} süt`;
+          } else {
+            foodItem.name = `${foodItem.name} (${modifierDescriptions.join(', ')})`;
+          }
+
+          // Update amount description
+          if (item.modifiers.length > 0) {
+            const modifierText = item.modifiers.map((m: any) => m.estimatedAmount).join(', ');
+            foodItem.estimatedAmount = `${foodItem.estimatedAmount} + ${modifierText}`;
+          }
+        }
+      }
+
+      detectedFoods.push(foodItem);
+    }
+
+    // Handle zero-calorie drinks
+    detectedFoods.forEach((food: any) => {
       const lowerName = (food.name || '').toLowerCase();
 
       const isZeroCalDrink =
@@ -429,10 +591,8 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
         lowerName.includes('water') ||
         lowerName.includes('sade kahve') ||
         lowerName.includes('black coffee') ||
-        lowerName.includes('americano') ||
-        lowerName.includes('filtre kahve') ||
-        lowerName.includes('çay') ||
-        lowerName.includes('tea') ||
+        lowerName.includes('sade çay') ||
+        lowerName.includes('plain tea') ||
         lowerName.includes('soda') ||
         lowerName.includes('maden suyu') ||
         lowerName.includes('mineral water') ||
@@ -445,90 +605,16 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
           food.totalNutrition[field] = 0;
         });
       }
-    })
+    });
 
-    // Drink + Sweetener merging logic
-    try {
-      if (analysisResult.detectedFoods && Array.isArray(analysisResult.detectedFoods)) {
-        const drinkKeywords = ['çay', 'tea', 'kahve', 'coffee', 'americano', 'latte', 'espresso', 'cappuccino'];
-        const sweetenerKeywords = ['küp şeker', 'küp seker', 'şeker', 'seker', 'sugar', 'bal', 'honey', 'şurup', 'syrup'];
-
-        const drinkIndexes: number[] = [];
-        const sweetenerIndexes: number[] = [];
-
-        analysisResult.detectedFoods.forEach((food: any, idx: number) => {
-          const lowerName = (food.name || '').toLowerCase();
-
-          const isDrink = drinkKeywords.some((kw) => lowerName.includes(kw));
-          const isSweetener = sweetenerKeywords.some((kw) => lowerName.includes(kw));
-
-          if (isDrink) {
-            drinkIndexes.push(idx);
-          }
-          if (isSweetener) {
-            sweetenerIndexes.push(idx);
-          }
-        });
-
-        // Şu an için sadece tek içecek + en az bir tatlandırıcı durumunu birleştir
-        if (drinkIndexes.length === 1 && sweetenerIndexes.length > 0) {
-          const drinkIndex = drinkIndexes[0];
-          const drink = analysisResult.detectedFoods[drinkIndex];
-
-          const requiredFields = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium'];
-
-          // Tatlandırıcıların besin değerlerini içeceğe ekle
-          sweetenerIndexes.forEach((sweetIdx) => {
-            const sweet = analysisResult.detectedFoods[sweetIdx];
-            requiredFields.forEach((field) => {
-              const drinkVal = drink.totalNutrition?.[field] || 0;
-              const sweetVal = sweet?.totalNutrition?.[field] || 0;
-              if (!drink.totalNutrition) {
-                drink.totalNutrition = {};
-              }
-              drink.totalNutrition[field] = drinkVal + sweetVal;
-            });
-          });
-
-          // İçeceğin adını güncelle (Şekerli çay, Şekerli kahve vb.)
-          const drinkNameLower = (drink.name || '').toLowerCase();
-          if (drinkNameLower.includes('çay') || drinkNameLower.includes('tea')) {
-            drink.name = 'Şekerli çay';
-          } else if (
-            drinkNameLower.includes('kahve') ||
-            drinkNameLower.includes('coffee') ||
-            drinkNameLower.includes('americano') ||
-            drinkNameLower.includes('latte') ||
-            drinkNameLower.includes('espresso')
-          ) {
-            drink.name = 'Şekerli kahve';
-          } else {
-            drink.name = `${drink.name || 'İçecek'} (şekerli)`;
-          }
-
-          // Miktar bilgisini güncelle (örn: "1 bardak + 2 adet şeker")
-          const sweetenerCount = sweetenerIndexes.length;
-          if (sweetenerCount > 0) {
-            const sweetenerText = `${sweetenerCount} adet şeker/tatlandırıcı`;
-            if (drink.estimatedAmount && typeof drink.estimatedAmount === 'string') {
-              drink.estimatedAmount = `${drink.estimatedAmount} + ${sweetenerText}`;
-            } else {
-              drink.estimatedAmount = sweetenerText;
-            }
-          }
-
-          // Tatlandırıcıları listeden çıkar (sadece içecek kartı kalsın)
-          analysisResult.detectedFoods = analysisResult.detectedFoods.filter((_: any, idx: number) => !sweetenerIndexes.includes(idx));
-        }
-      }
-    } catch (mergeError) {
-      console.log('Drink-sweetener merge skipped due to error:', mergeError);
-    }
-
-    // Set default suggestions if missing
-    if (!analysisResult.suggestions) {
-      analysisResult.suggestions = 'Yemek analizi tamamlandı. Besin değerlerini kontrol ediniz.'
-    }
+    // Build final response in the format frontend expects
+    const analysisResult = {
+      detectedFoods,
+      mealType: aiResult.mealType || mealType || 'öğün',
+      confidence: aiResult.confidence,
+      suggestions: aiResult.suggestions || 'Yemek analizi tamamlandı. Besin değerlerini kontrol ediniz.',
+      analysisErrors: aiResult.analysisErrors || []
+    };
 
     console.log('Analysis result validated successfully:', {
       detectedFoodsCount: analysisResult.detectedFoods.length,
