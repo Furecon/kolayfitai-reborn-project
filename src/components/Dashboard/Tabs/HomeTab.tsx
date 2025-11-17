@@ -42,17 +42,6 @@ export function HomeTab({ dailyStats, onCameraClick, onUpgradeClick }: HomeTabPr
       <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4">
         <TrialUsageCard onUpgradeClick={onUpgradeClick} />
       </div>
-
-      <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4">
-        <Button
-          onClick={onCameraClick}
-          className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-lg font-semibold shadow-lg"
-          data-tutorial="add-meal-button-home"
-        >
-          <Camera className="h-6 w-6 mr-3" />
-          Öğün Ekle
-        </Button>
-      </div>
     </div>
   )
 }

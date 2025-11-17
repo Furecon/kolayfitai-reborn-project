@@ -56,7 +56,7 @@ export function Dashboard() {
   const [profile, setProfile] = useState<any>(null)
   
   // Tutorial context
-  const { isVisible: tutorialVisible, currentScreen, completeTutorial, hideTutorial } = useTutorial()
+  const { isVisible: tutorialVisible, currentScreen, completeTutorial, hideTutorial, disableTutorialsPermanently } = useTutorial()
   const { autoShowTutorial } = useTutorialAutoShow()
 
   useEffect(() => {
@@ -304,6 +304,7 @@ export function Dashboard() {
         currentScreen={currentScreen}
         onComplete={handleTutorialComplete}
         onClose={handleTutorialClose}
+        onDontShowAgain={disableTutorialsPermanently}
       />
     </div>
   )
