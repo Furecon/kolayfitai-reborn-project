@@ -9,8 +9,8 @@ const corsHeaders = {
 }
 
 // Foods table schema:
-// id, name_tr, name_en, category, default_portion_grams
-// calories_100g, protein_100g, carbs_100g, fat_100g, fiber_100g, sugar_100g, sodium_100g
+// id, name (Turkish), name_en (English), category
+// calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, sugar_per_100g, sodium_per_100g
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -414,7 +414,7 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
       let { data: foodData, error } = await supabaseClient
         .from('foods')
         .select('*')
-        .ilike('name_tr', `%${name}%`)
+        .ilike('name', `%${name}%`)
         .limit(1)
         .maybeSingle();
 
@@ -476,18 +476,18 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
         continue;
       }
 
-      // Calculate total grams
-      const totalGrams = estimateGrams(item, foodData.default_portion_grams || 100);
+      // Calculate total grams (default 100g as no default_portion_grams column)
+      const totalGrams = estimateGrams(item, 100);
 
       // Build nutrition from database
       const nutritionPer100g = {
-        calories: foodData.calories_100g || 0,
-        protein: foodData.protein_100g || 0,
-        carbs: foodData.carbs_100g || 0,
-        fat: foodData.fat_100g || 0,
-        fiber: foodData.fiber_100g || 0,
-        sugar: foodData.sugar_100g || 0,
-        sodium: foodData.sodium_100g || 0
+        calories: foodData.calories_per_100g || 0,
+        protein: foodData.protein_per_100g || 0,
+        carbs: foodData.carbs_per_100g || 0,
+        fat: foodData.fat_per_100g || 0,
+        fiber: foodData.fiber_per_100g || 0,
+        sugar: foodData.sugar_per_100g || 0,
+        sodium: foodData.sodium_per_100g || 0
       };
 
       // Calculate total nutrition
@@ -518,16 +518,16 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
           const modifierFood = await lookupFood(modifier.name, modifier.nameEn);
 
           if (modifierFood) {
-            const modifierGrams = estimateGrams(modifier, modifierFood.default_portion_grams || 10);
+            const modifierGrams = estimateGrams(modifier, 10);
 
             // Add modifier nutrition to drink
-            const modifierCalories = Math.round((modifierFood.calories_100g * modifierGrams) / 100);
-            const modifierProtein = Math.round((modifierFood.protein_100g * modifierGrams) / 100 * 10) / 10;
-            const modifierCarbs = Math.round((modifierFood.carbs_100g * modifierGrams) / 100 * 10) / 10;
-            const modifierFat = Math.round((modifierFood.fat_100g * modifierGrams) / 100 * 10) / 10;
-            const modifierFiber = Math.round((modifierFood.fiber_100g * modifierGrams) / 100 * 10) / 10;
-            const modifierSugar = Math.round((modifierFood.sugar_100g * modifierGrams) / 100 * 10) / 10;
-            const modifierSodium = Math.round((modifierFood.sodium_100g * modifierGrams) / 100);
+            const modifierCalories = Math.round((modifierFood.calories_per_100g * modifierGrams) / 100);
+            const modifierProtein = Math.round((modifierFood.protein_per_100g * modifierGrams) / 100 * 10) / 10;
+            const modifierCarbs = Math.round((modifierFood.carbs_per_100g * modifierGrams) / 100 * 10) / 10;
+            const modifierFat = Math.round((modifierFood.fat_per_100g * modifierGrams) / 100 * 10) / 10;
+            const modifierFiber = Math.round((modifierFood.fiber_per_100g * modifierGrams) / 100 * 10) / 10;
+            const modifierSugar = Math.round((modifierFood.sugar_per_100g * modifierGrams) / 100 * 10) / 10;
+            const modifierSodium = Math.round((modifierFood.sodium_per_100g * modifierGrams) / 100);
 
             foodItem.totalNutrition.calories += modifierCalories;
             foodItem.totalNutrition.protein += modifierProtein;
