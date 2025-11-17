@@ -63,33 +63,33 @@ serve(async (req) => {
         )
       }
     }
-    
+
     // Input validation
     if (!imageUrl || typeof imageUrl !== 'string') {
       throw new Error('Valid image URL is required')
     }
-    
+
     // Validate image URL format
     if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('data:')) {
       throw new Error('Invalid image URL format')
     }
-    
+
     // Validate mealType if provided
     if (mealType && !['breakfast', 'lunch', 'dinner', 'snack'].includes(mealType)) {
       throw new Error('Invalid meal type')
     }
-    
+
     // Validate analysisType if provided
     if (analysisType && !['quick', 'detailed'].includes(analysisType)) {
       throw new Error('Invalid analysis type')
     }
-    
+
     // Validate detailsData structure if provided
     if (detailsData && typeof detailsData !== 'object') {
       throw new Error('Invalid details data format')
     }
-    
-    console.log('Request data validated:', { 
+
+    console.log('Request data validated:', {
       imageUrlLength: imageUrl.length,
       mealType,
       analysisType,
@@ -106,10 +106,10 @@ serve(async (req) => {
     // Build detailed prompt based on analysis type
     let detailsPrompt = ''
     if (analysisType === 'detailed' && detailsData) {
-      const cookingMethodText = detailsData.cookingMethod === 'unsure' 
-        ? 'Pişirme yöntemi belirsiz - fotoğraftan tahmin et' 
+      const cookingMethodText = detailsData.cookingMethod === 'unsure'
+        ? 'Pişirme yöntemi belirsiz - fotoğraftan tahmin et'
         : detailsData.cookingMethod
-      
+
       detailsPrompt = `
 
 ÖNEMLI EK BİLGİLER:
@@ -150,7 +150,7 @@ Bu bilgileri kullanarak daha doğru besin değeri hesaplama yap. Pişirme yönte
 ÖNEMLI: Tüm besin değerlerini eksiksiz hesapla:
 - Kalori (kcal)
 - Protein (g)
-- Karbonhidrat (g) 
+- Karbonhidrat (g)
 - Yağ (g)
 - Lif (g)
 - Şeker (g)
@@ -193,7 +193,7 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
   "detectedFoods": [
     {
       "name": "Yemek adı (Türkçe)",
-      "nameEn": "Food name (English)", 
+      "nameEn": "Food name (English)",
               "estimatedAmount": "Miktar ve birim (örn: 1 porsiyon, 100g, 1 adet, 250ml, 1 bardak)",
               "portionType": "gram|ml|cl|bardak|şişe|kutu|adet|porsiyon|kaşık",
               "nutritionPer100g": {
@@ -223,7 +223,7 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
 }
 
 ÖNEMLI KURALLAR:
-- Çoğu yiyecek için besin değerleri gerçekçi ve 0'dan büyük olmalı. Ancak su, sade kahve, şekersiz çay, soda, mineral suyu, diyet/zero içecekler gibi ürünlerin kalori, protein, karbonhidrat, yağ, lif ve şeker değerleri 0 olabilir.
+- Çoğu yiyecek için besin değerleri gerçekçi ve 0'dan büyük olmalı. Ancak su, sade kahve, şekersiz çay, soda, maden suyu, mineral su, diyet/zero içecekler gibi ürünlerde kalori, protein, karbonhidrat, yağ, lif ve şeker değerleri 0 olabilir.
 - Lif, şeker gram cinsinden, sodyum miligram cinsinden
 - Porsiyon tahminlerinde gerçekçi ol
 - Eğer hiçbir yemeği net tanıyamıyorsan boş detectedFoods array'i döndür
@@ -248,7 +248,7 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
     })
 
     console.log('OpenAI API response status:', response.status)
-    
+
     if (!response.ok) {
       const errorText = await response.text()
       console.error('OpenAI API error:', response.status, errorText)
@@ -256,9 +256,9 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
     }
 
     const data = await response.json()
-    console.log('OpenAI response received:', { 
+    console.log('OpenAI response received:', {
       hasChoices: !!data.choices,
-      choicesLength: data.choices?.length 
+      choicesLength: data.choices?.length
     })
 
     const content = data.choices[0]?.message?.content
@@ -402,7 +402,7 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
       if (!food.estimatedAmount) {
         food.estimatedAmount = '1 porsiyon'
       }
-      
+
       // Ensure nutrition objects exist
       if (!food.nutritionPer100g) {
         food.nutritionPer100g = {}
@@ -410,7 +410,7 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
       if (!food.totalNutrition) {
         food.totalNutrition = {}
       }
-      
+
       // Ensure all required nutrition fields are present with valid numbers
       const requiredFields = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium']
       requiredFields.forEach(field => {
@@ -447,6 +447,84 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
       }
     })
 
+    // Drink + Sweetener merging logic
+    try {
+      if (analysisResult.detectedFoods && Array.isArray(analysisResult.detectedFoods)) {
+        const drinkKeywords = ['çay', 'tea', 'kahve', 'coffee', 'americano', 'latte', 'espresso', 'cappuccino'];
+        const sweetenerKeywords = ['küp şeker', 'küp seker', 'şeker', 'seker', 'sugar', 'bal', 'honey', 'şurup', 'syrup'];
+
+        const drinkIndexes: number[] = [];
+        const sweetenerIndexes: number[] = [];
+
+        analysisResult.detectedFoods.forEach((food: any, idx: number) => {
+          const lowerName = (food.name || '').toLowerCase();
+
+          const isDrink = drinkKeywords.some((kw) => lowerName.includes(kw));
+          const isSweetener = sweetenerKeywords.some((kw) => lowerName.includes(kw));
+
+          if (isDrink) {
+            drinkIndexes.push(idx);
+          }
+          if (isSweetener) {
+            sweetenerIndexes.push(idx);
+          }
+        });
+
+        // Şu an için sadece tek içecek + en az bir tatlandırıcı durumunu birleştir
+        if (drinkIndexes.length === 1 && sweetenerIndexes.length > 0) {
+          const drinkIndex = drinkIndexes[0];
+          const drink = analysisResult.detectedFoods[drinkIndex];
+
+          const requiredFields = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium'];
+
+          // Tatlandırıcıların besin değerlerini içeceğe ekle
+          sweetenerIndexes.forEach((sweetIdx) => {
+            const sweet = analysisResult.detectedFoods[sweetIdx];
+            requiredFields.forEach((field) => {
+              const drinkVal = drink.totalNutrition?.[field] || 0;
+              const sweetVal = sweet?.totalNutrition?.[field] || 0;
+              if (!drink.totalNutrition) {
+                drink.totalNutrition = {};
+              }
+              drink.totalNutrition[field] = drinkVal + sweetVal;
+            });
+          });
+
+          // İçeceğin adını güncelle (Şekerli çay, Şekerli kahve vb.)
+          const drinkNameLower = (drink.name || '').toLowerCase();
+          if (drinkNameLower.includes('çay') || drinkNameLower.includes('tea')) {
+            drink.name = 'Şekerli çay';
+          } else if (
+            drinkNameLower.includes('kahve') ||
+            drinkNameLower.includes('coffee') ||
+            drinkNameLower.includes('americano') ||
+            drinkNameLower.includes('latte') ||
+            drinkNameLower.includes('espresso')
+          ) {
+            drink.name = 'Şekerli kahve';
+          } else {
+            drink.name = `${drink.name || 'İçecek'} (şekerli)`;
+          }
+
+          // Miktar bilgisini güncelle (örn: "1 bardak + 2 adet şeker")
+          const sweetenerCount = sweetenerIndexes.length;
+          if (sweetenerCount > 0) {
+            const sweetenerText = `${sweetenerCount} adet şeker/tatlandırıcı`;
+            if (drink.estimatedAmount && typeof drink.estimatedAmount === 'string') {
+              drink.estimatedAmount = `${drink.estimatedAmount} + ${sweetenerText}`;
+            } else {
+              drink.estimatedAmount = sweetenerText;
+            }
+          }
+
+          // Tatlandırıcıları listeden çıkar (sadece içecek kartı kalsın)
+          analysisResult.detectedFoods = analysisResult.detectedFoods.filter((_: any, idx: number) => !sweetenerIndexes.includes(idx));
+        }
+      }
+    } catch (mergeError) {
+      console.log('Drink-sweetener merge skipped due to error:', mergeError);
+    }
+
     // Set default suggestions if missing
     if (!analysisResult.suggestions) {
       analysisResult.suggestions = 'Yemek analizi tamamlandı. Besin değerlerini kontrol ediniz.'
@@ -481,12 +559,12 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
 
   } catch (error) {
     console.error('Error in analyze-food function:', error)
-    
+
     // Sanitize error message to avoid exposing sensitive information
-    const sanitizedError = error instanceof Error ? 
+    const sanitizedError = error instanceof Error ?
       (error.message.includes('API') ? 'Service temporarily unavailable' : 'Analysis failed') :
       'Unexpected error occurred'
-    
+
     // Return a structured error response that the frontend can handle
     const errorResponse = {
       error: sanitizedError,
@@ -494,7 +572,7 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme.`
       confidence: 0,
       suggestions: "Görüntü analizi sırasında hata oluştu. Lütfen manuel olarak yemek bilgilerini girin veya tekrar deneyin."
     }
-    
+
     return new Response(
       JSON.stringify(errorResponse),
       {
