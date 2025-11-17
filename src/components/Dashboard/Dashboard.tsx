@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigation } from '@/hooks/useNavigation'
 import { DashboardHeader } from './DashboardHeader'
-import { CalorieCards } from './CalorieCards'
-import { MealsList } from './MealsList'
-import { AIInsights } from './AIInsights'
-import { HistoryMeals } from './HistoryMeals'
 import { MealMethodSelection } from './MealMethodSelection'
 import { TutorialOverlay } from '../Tutorial/TutorialOverlay'
 import { useTutorial, useTutorialAutoShow } from '@/context/TutorialContext'
@@ -12,27 +8,21 @@ import FoodAnalysis from '../FoodAnalysis'
 import ManualFoodEntry from '../FoodAnalysis/ManualFoodEntry'
 import { FileImageSelector } from '../FoodAnalysis/FileImageSelector'
 import { ImageCropEditor } from '../FoodAnalysis/ImageCropEditor'
-import ProfileSetup from '../Profile/ProfileSetup'
-import ProgressTracker from '../Profile/ProgressTracker'
-import { ContactPage } from '../Support/ContactPage'
-import { ResourcesPage } from '../Support/ResourcesPage'
-import { PoliciesPage } from '../Support/PoliciesPage'
-import { FAQPage } from '../Support/FAQPage'
-
-import { MealSuggestions } from '../MealSuggestions/MealSuggestions'
-import { FavoriteMeals } from '../MealSuggestions/FavoriteMeals'
-import { SubscriptionManager } from '../Subscription/SubscriptionManager'
-import { TrialUsageCard } from './TrialUsageCard'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
-import { Button } from '@/components/ui/button'
-import { Sparkles, Heart, TrendingUp, ArrowLeft } from 'lucide-react'
+import { BottomTabNav, TabType } from '../Navigation/BottomTabNav'
+import { HomeTab } from './Tabs/HomeTab'
+import { AIInsightsTab } from './Tabs/AIInsightsTab'
+import { ProgressTab } from './Tabs/ProgressTab'
+import { MealsTab } from './Tabs/MealsTab'
+import { SettingsTab } from './Tabs/SettingsTab'
 
-type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'file-image' | 'crop-image' | 'profile' | 'progress' | 'suggestions' | 'favorites' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
+type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'file-image' | 'crop-image'
 
 export function Dashboard() {
   const { user } = useAuth()
   const [currentView, setCurrentView] = useState<View>('dashboard')
+  const [activeTab, setActiveTab] = useState<TabType>('home')
   const [selectedImageForAnalysis, setSelectedImageForAnalysis] = useState<string | null>(null)
 
   // Enhanced navigation with hardware back button support
@@ -176,6 +166,7 @@ export function Dashboard() {
   const handleMealAdded = () => {
     setRefreshTrigger(prev => prev + 1)
     setCurrentView('dashboard')
+    setActiveTab('home')
   }
 
   const handleTutorialComplete = () => {
@@ -264,184 +255,55 @@ export function Dashboard() {
     )
   }
 
-  if (currentView === 'profile') {
-    return (
-      <div className="min-h-screen bg-white">
-        <ProfileSetup
-          onBack={() => {
-            setRefreshTrigger(prev => prev + 1)
-            setCurrentView('dashboard')
-          }}
-        />
-      </div>
-    )
-  }
 
-  if (currentView === 'progress') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="border-b border-gray-200 bg-white px-3 sm:px-4 py-3 sm:py-4">
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setRefreshTrigger(prev => prev + 1)
-              setCurrentView('dashboard')
-            }}
-            className="text-gray-600 h-10"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Geri
-          </Button>
-          <h1 className="text-xl font-semibold mt-2">Gelişim Takibi</h1>
-        </div>
-        <div className="p-4">
-          <ProgressTracker />
-        </div>
-      </div>
-    )
-  }
-
-  if (currentView === 'contact') {
-    return (
-      <ContactPage onBack={() => setCurrentView('dashboard')} />
-    )
-  }
-
-  if (currentView === 'resources') {
-    return (
-      <ResourcesPage onBack={() => setCurrentView('dashboard')} />
-    )
-  }
-
-  if (currentView === 'policies') {
-    return (
-      <PoliciesPage onBack={() => setCurrentView('dashboard')} />
-    )
-  }
-
-  if (currentView === 'faq') {
-    return (
-      <FAQPage onBack={() => setCurrentView('dashboard')} />
-    )
-  }
-
-  if (currentView === 'suggestions') {
-    return (
-      <MealSuggestions
-        onBack={() => setCurrentView('dashboard')}
-        onMealAdded={handleMealAdded}
-        dailyStats={dailyStats}
-      />
-    )
-  }
-
-  if (currentView === 'favorites') {
-    return (
-      <FavoriteMeals
-        onBack={() => setCurrentView('dashboard')}
-        onMealAdded={handleMealAdded}
-      />
-    )
-  }
-
-  if (currentView === 'subscription') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="border-b border-gray-200 bg-white px-3 sm:px-4 py-3 sm:py-4">
-          <Button
-            variant="ghost"
-            onClick={() => setCurrentView('dashboard')}
-            className="text-gray-600 h-10"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Geri
-          </Button>
-          <h1 className="text-xl font-semibold mt-2">Abonelik Yönetimi</h1>
-        </div>
-        <div className="p-4">
-          <SubscriptionManager />
-        </div>
-      </div>
-    )
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'home':
+        return (
+          <HomeTab
+            dailyStats={dailyStats}
+            onCameraClick={() => setCurrentView('meal-selection')}
+            onUpgradeClick={() => setActiveTab('settings')}
+          />
+        )
+      case 'ai-insights':
+        return <AIInsightsTab dailyStats={dailyStats} />
+      case 'progress':
+        return <ProgressTab />
+      case 'meals':
+        return (
+          <MealsTab
+            onAddMeal={() => setCurrentView('meal-selection')}
+            refreshTrigger={refreshTrigger}
+            dailyStats={dailyStats}
+          />
+        )
+      case 'settings':
+        return (
+          <SettingsTab
+            onRefreshNeeded={() => setRefreshTrigger(prev => prev + 1)}
+          />
+        )
+      default:
+        return null
+    }
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader
         onCameraClick={() => setCurrentView('meal-selection')}
-        onProfileClick={() => setCurrentView('profile')}
-        onContactClick={() => setCurrentView('contact')}
-        onResourcesClick={() => setCurrentView('resources')}
-        onPoliciesClick={() => setCurrentView('policies')}
-        onFAQClick={() => setCurrentView('faq')}
-        onSubscriptionClick={() => setCurrentView('subscription')}
-        
+        onProfileClick={() => setActiveTab('settings')}
+        onContactClick={() => setActiveTab('settings')}
+        onResourcesClick={() => setActiveTab('settings')}
+        onPoliciesClick={() => setActiveTab('settings')}
+        onFAQClick={() => setActiveTab('settings')}
+        onSubscriptionClick={() => setActiveTab('settings')}
       />
-      
-      <div data-tutorial="calorie-cards">
-        <CalorieCards 
-          {...dailyStats} 
-          onCameraClick={() => setCurrentView('meal-selection')}
-        />
-      </div>
-      
-      {/* Trial Usage Card */}
-      <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4">
-        <TrialUsageCard onUpgradeClick={() => setCurrentView('subscription')} />
-      </div>
 
-      {/* Quick Action Buttons - Responsive Grid */}
-      <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <Button
-            onClick={() => setCurrentView('suggestions')}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-3 h-auto min-h-[4rem] sm:min-h-[3.5rem]"
-          >
-            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
-            <div className="text-left min-w-0">
-              <div className="font-semibold text-sm sm:text-base">Ai Önerileri</div>
-              <div className="text-xs opacity-90 truncate">Kişisel öğün önerileri</div>
-            </div>
-          </Button>
-          
-          <Button
-            onClick={() => setCurrentView('favorites')}
-            variant="outline"
-            className="py-3 h-auto min-h-[4rem] sm:min-h-[3.5rem] border-pink-200 hover:bg-pink-50"
-          >
-            <Heart className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-pink-500 flex-shrink-0" />
-            <div className="text-left min-w-0">
-              <div className="font-semibold text-sm sm:text-base">Favorilerim</div>
-              <div className="text-xs text-gray-500 truncate">Sevdiğim tarifler</div>
-            </div>
-          </Button>
+      {renderTabContent()}
 
-          <Button
-            onClick={() => setCurrentView('progress')}
-            variant="outline"
-            className="py-3 h-auto min-h-[4rem] sm:min-h-[3.5rem] border-blue-200 hover:bg-blue-50 sm:col-span-2 lg:col-span-1"
-          >
-            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-500 flex-shrink-0" />
-            <div className="text-left min-w-0">
-              <div className="font-semibold text-sm sm:text-base">Gelişim Takibi</div>
-              <div className="text-xs text-gray-500 truncate">AI değerlendirmeleri</div>
-            </div>
-          </Button>
-        </div>
-      </div>
-      
-      <div data-tutorial="meal-history">
-        <MealsList
-          onAddMeal={() => setCurrentView('meal-selection')}
-          refreshTrigger={refreshTrigger}
-        />
-      </div>
-
-      <div data-tutorial="macro-charts">
-        <AIInsights dailyStats={dailyStats} />
-      </div>
-      
-      <HistoryMeals />
+      <BottomTabNav activeTab={activeTab} onTabChange={setActiveTab} />
 
       <TutorialOverlay
         isVisible={tutorialVisible}
