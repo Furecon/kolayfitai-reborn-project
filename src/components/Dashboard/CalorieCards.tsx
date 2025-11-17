@@ -41,9 +41,9 @@ export function CalorieCards({
         <Card className="bg-white border-gray-200 w-full">
           <CardContent className="p-4 sm:p-6">
             <h2 className="text-lg sm:text-xl font-bold text-center text-black mb-4 sm:mb-6">Günlük İlerleme</h2>
-          
-          {/* Kalori - Büyük ve üstte tek başına */}
-          <div className="flex justify-center mb-6 sm:mb-8">
+
+          {/* Kalori - Büyük ve üstte ortada tek başına */}
+          <div className="flex justify-center mb-4 sm:mb-6">
             <CircularMacroChart
               current={totalCalories}
               goal={goalCalories}
@@ -54,9 +54,9 @@ export function CalorieCards({
               size="large"
             />
           </div>
-          
-          {/* Makrolar - Alt kısımda responsive grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+
+          {/* Makrolar - Üçgen formasyonunda yan yana */}
+          <div className="flex justify-center items-center gap-2 sm:gap-4 md:gap-6 lg:gap-8 flex-wrap">
             {/* Protein */}
             <div className="flex justify-center">
               <CircularMacroChart
@@ -69,7 +69,7 @@ export function CalorieCards({
                 size="normal"
               />
             </div>
-            
+
             {/* Karbonhidrat */}
             <div className="flex justify-center">
               <CircularMacroChart
@@ -82,7 +82,7 @@ export function CalorieCards({
                 size="normal"
               />
             </div>
-            
+
             {/* Yağ */}
             <div className="flex justify-center">
               <CircularMacroChart
@@ -110,25 +110,25 @@ export function CalorieCards({
           </Button>
         </div>
 
-        {/* Additional Nutrition Info - Responsive grid */}
+        {/* Additional Nutrition Info - Yuvarlaklar yan yana */}
         <Card className="bg-white border-gray-200 w-full">
           <CardContent className="p-4 sm:p-6">
             <h3 className="text-base sm:text-lg font-semibold text-black mb-3 sm:mb-4 text-center">Diğer Besin Değerleri</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+            <div className="flex justify-center items-center gap-4 sm:gap-6 md:gap-8 flex-wrap">
               <div className="text-center">
-                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-purple-100 rounded-full mb-2">
+                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 bg-purple-100 rounded-full mb-2">
                   <span className="text-lg sm:text-xl font-bold text-purple-600">{totalFiber.toFixed(1)}</span>
                 </div>
                 <div className="text-xs sm:text-sm text-gray-600">Lif (g)</div>
               </div>
               <div className="text-center">
-                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-pink-100 rounded-full mb-2">
+                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 bg-pink-100 rounded-full mb-2">
                   <span className="text-lg sm:text-xl font-bold text-pink-600">{totalSugar.toFixed(1)}</span>
                 </div>
                 <div className="text-xs sm:text-sm text-gray-600">Şeker (g)</div>
               </div>
               <div className="text-center">
-                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-red-100 rounded-full mb-2">
+                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 bg-red-100 rounded-full mb-2">
                   <span className="text-sm sm:text-lg font-bold text-red-600">{Math.round(totalSodium)}</span>
                 </div>
                 <div className="text-xs sm:text-sm text-gray-600">Sodyum (mg)</div>
