@@ -235,22 +235,12 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
         throw error
       }
 
-      // Get previous assessment for comparison
-      const { data: previousAssessment } = await supabase
-        .from('ai_assessments')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
       // Trigger AI assessment
       try {
         console.log('Triggering AI assessment...')
         const { data: assessmentData, error: assessmentError } = await supabase.functions.invoke('profile-assessment', {
-          body: { 
-            profileData: updateData,
-            previousAssessment: previousAssessment
+          body: {
+            userId: user.id
           }
         })
 
