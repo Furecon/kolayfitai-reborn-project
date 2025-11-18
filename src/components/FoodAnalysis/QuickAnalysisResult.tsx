@@ -3,10 +3,11 @@ import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
-import { Loader as Loader2, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Expand, Zap, Droplets, Database } from 'lucide-react'
+import { Loader as Loader2, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Expand, Zap, Droplets, Database, Edit } from 'lucide-react'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { AnalysisCacheService } from '@/services/analysisCacheService'
 import { TrialLimitModal } from './TrialLimitModal'
+import { useAuth } from '@/components/Auth/AuthProvider'
 
 interface FoodItem {
   name: string
@@ -54,6 +55,7 @@ export default function QuickAnalysisResult({
   onUpgradeClick
 }: QuickAnalysisResultProps) {
   const { toast } = useToast()
+  const { user } = useAuth()
   const [detectedFoods, setDetectedFoods] = useState<FoodItem[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [hasAnalyzed, setHasAnalyzed] = useState(false)
@@ -62,6 +64,11 @@ export default function QuickAnalysisResult({
   const [suggestions, setSuggestions] = useState<string>('')
   const [fromCache, setFromCache] = useState(false)
   const [showTrialLimitModal, setShowTrialLimitModal] = useState(false)
+  const [selectedMealType, setSelectedMealType] = useState<string>('snack')
+  const [isSaving, setIsSaving] = useState(false)
+  const [editingFoodIndex, setEditingFoodIndex] = useState<number | null>(null)
+  const [editFoodName, setEditFoodName] = useState<string>('')
+  const [isLookingUpFood, setIsLookingUpFood] = useState(false)
 
   useEffect(() => {
     if (capturedImage && !hasAnalyzed) {
@@ -178,9 +185,71 @@ export default function QuickAnalysisResult({
     }
   }
 
-  const handleSave = () => {
-    if (detectedFoods.length > 0) {
+  const handleSaveMeal = async () => {
+    if (detectedFoods.length === 0) return
+
+    setIsSaving(true)
+    try {
+      const totalNutrition = detectedFoods.reduce((total, food) => ({
+        totalCalories: total.totalCalories + (food.totalNutrition?.calories || 0),
+        totalProtein: total.totalProtein + (food.totalNutrition?.protein || 0),
+        totalCarbs: total.totalCarbs + (food.totalNutrition?.carbs || 0),
+        totalFat: total.totalFat + (food.totalNutrition?.fat || 0),
+        totalFiber: total.totalFiber + (food.totalNutrition?.fiber || 0),
+        totalSugar: total.totalSugar + (food.totalNutrition?.sugar || 0),
+        totalSodium: total.totalSodium + (food.totalNutrition?.sodium || 0)
+      }), { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0, totalFiber: 0, totalSugar: 0, totalSodium: 0 })
+
+      if (!user?.id) {
+        throw new Error('User not authenticated')
+      }
+
+      const mealData = {
+        user_id: user.id,
+        meal_type: selectedMealType,
+        food_items: detectedFoods.map(food => ({
+          name: food.name,
+          nameEn: food.nameEn || food.name,
+          estimatedAmount: food.estimatedAmount,
+          nutritionPer100g: food.nutritionPer100g,
+          totalNutrition: food.totalNutrition
+        })),
+        total_calories: totalNutrition.totalCalories,
+        total_protein: totalNutrition.totalProtein,
+        total_carbs: totalNutrition.totalCarbs,
+        total_fat: totalNutrition.totalFat,
+        total_fiber: totalNutrition.totalFiber,
+        total_sugar: totalNutrition.totalSugar,
+        total_sodium: totalNutrition.totalSodium,
+        photo_url: capturedImage,
+        date: new Date().toISOString().split('T')[0]
+      }
+
+      const { error } = await supabase
+        .from('meal_logs')
+        .insert([mealData])
+
+      if (error) {
+        console.error('Error saving meal:', error)
+        throw error
+      }
+
+      toast({
+        title: "Başarılı!",
+        description: "Öğün kaydedildi."
+      })
+
+      // Call the original onSave callback to trigger parent component updates
       onSave(detectedFoods)
+    } catch (error) {
+      console.error('Failed to save meal:', error)
+      toast({
+        title: "Hata",
+        description: "Öğün kaydedilirken hata oluştu.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -191,6 +260,82 @@ export default function QuickAnalysisResult({
     setConfidence(0)
     setSuggestions('')
     onRetry()
+  }
+
+  const handleEditFood = (index: number) => {
+    setEditingFoodIndex(index)
+    setEditFoodName(detectedFoods[index].name)
+  }
+
+  const handleCancelEdit = () => {
+    setEditingFoodIndex(null)
+    setEditFoodName('')
+  }
+
+  const handleLookupFood = async () => {
+    if (!editFoodName.trim() || editingFoodIndex === null) return
+
+    setIsLookingUpFood(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('lookup-food-by-name', {
+        body: {
+          foodName: editFoodName.trim(),
+          locale: 'tr-TR'
+        }
+      })
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      if (data && data.food) {
+        // Update the food item with new data
+        const updatedFoods = [...detectedFoods]
+        const originalFood = updatedFoods[editingFoodIndex]
+
+        // Parse amount from original estimatedAmount (e.g., "100 gram" -> 100)
+        const amountMatch = originalFood.estimatedAmount.match(/(\d+\.?\d*)/)
+        const amount = amountMatch ? parseFloat(amountMatch[1]) : 100
+
+        // Calculate total nutrition based on amount
+        const multiplier = amount / 100
+        updatedFoods[editingFoodIndex] = {
+          name: data.food.name_tr,
+          nameEn: data.food.name_en,
+          estimatedAmount: originalFood.estimatedAmount,
+          nutritionPer100g: data.food.nutritionPer100g,
+          totalNutrition: {
+            calories: data.food.nutritionPer100g.calories * multiplier,
+            protein: data.food.nutritionPer100g.protein * multiplier,
+            carbs: data.food.nutritionPer100g.carbs * multiplier,
+            fat: data.food.nutritionPer100g.fat * multiplier,
+            fiber: data.food.nutritionPer100g.fiber * multiplier,
+            sugar: data.food.nutritionPer100g.sugar * multiplier,
+            sodium: data.food.nutritionPer100g.sodium * multiplier
+          }
+        }
+
+        setDetectedFoods(updatedFoods)
+
+        toast({
+          title: data.foundInDb ? "Veritabanından Bulundu!" : "AI ile Oluşturuldu!",
+          description: data.foundInDb
+            ? "Yemek veritabanımızda bulundu"
+            : "Besin değerleri AI ile araştırıldı ve kaydedildi"
+        })
+
+        handleCancelEdit()
+      }
+    } catch (error: any) {
+      console.error('Lookup food error:', error)
+      toast({
+        title: "Arama Hatası",
+        description: error.message || "Yemek bilgisi bulunamadı",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLookingUpFood(false)
+    }
   }
 
   const getConfidenceColor = (confidence: number) => {
@@ -407,14 +552,24 @@ export default function QuickAnalysisResult({
         {detectedFoods.map((food, index) => (
           <div key={index} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
             <div className="flex justify-between items-start mb-4">
-              <div>
+              <div className="flex-1">
                 <h4 className="text-lg font-semibold text-gray-900">{food.name}</h4>
                 <p className="text-sm text-gray-500">{food.estimatedAmount}</p>
               </div>
-              <div className="text-right">
-                <p className="text-xl font-bold text-green-600">
-                  {Math.round(food.totalNutrition.calories)} kcal
-                </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleEditFood(index)}
+                  className="h-8 px-2"
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
+                <div className="text-right">
+                  <p className="text-xl font-bold text-green-600">
+                    {Math.round(food.totalNutrition.calories)} kcal
+                  </p>
+                </div>
               </div>
             </div>
             
@@ -449,13 +604,44 @@ export default function QuickAnalysisResult({
         ))}
       </div>
 
+      {/* Meal Type Selection */}
+      <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+        <h4 className="font-medium text-gray-900 text-center">
+          Bu analizi hangi öğüne kaydetmek istiyorsunuz?
+        </h4>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {[
+            { value: 'breakfast', label: 'Kahvaltı', emoji: '🌅' },
+            { value: 'lunch', label: 'Öğle Yemeği', emoji: '☀️' },
+            { value: 'dinner', label: 'Akşam Yemeği', emoji: '🌙' },
+            { value: 'snack', label: 'Atıştırmalık', emoji: '🍎' },
+            { value: 'drink', label: 'İçecek', emoji: '🥤' },
+          ].map((option) => (
+            <button
+              key={option.value}
+              onClick={() => setSelectedMealType(option.value)}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                selectedMealType === option.value
+                  ? 'border-green-500 bg-green-50 text-green-700'
+                  : 'border-gray-200 hover:border-gray-300 text-gray-700'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-2xl">{option.emoji}</span>
+                <span className="text-xs font-medium">{option.label}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="space-y-3">
         <Button
-          onClick={handleSave}
-          disabled={loading || detectedFoods.length === 0}
+          onClick={handleSaveMeal}
+          disabled={isSaving || detectedFoods.length === 0}
           className="w-full bg-green-500 hover:bg-green-600 text-white py-4 text-lg font-semibold"
         >
-          {loading ? (
+          {isSaving ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin mr-2" />
               Kaydediliyor...
@@ -463,11 +649,11 @@ export default function QuickAnalysisResult({
           ) : (
             <>
               <CheckCircle className="h-5 w-5 mr-2" />
-              Devam Et
+              Öğünü Kaydet
             </>
           )}
         </Button>
-        
+
         <Button
           onClick={handleRetry}
           variant="outline"
@@ -476,6 +662,62 @@ export default function QuickAnalysisResult({
           📷 Yeni Fotoğraf
         </Button>
       </div>
+
+      {/* Food Edit Dialog */}
+      <Dialog open={editingFoodIndex !== null} onOpenChange={(open) => !open && handleCancelEdit()}>
+        <DialogContent className="sm:max-w-md">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Yemeği Düzelt</h3>
+              <p className="text-sm text-gray-600">
+                AI yanlış tanıdıysa, doğru yemek adını yazın
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Yemek / İçecek Adı
+              </label>
+              <input
+                type="text"
+                value={editFoodName}
+                onChange={(e) => setEditFoodName(e.target.value)}
+                placeholder="Örn: Nescafe 2'si 1 arada, domates çorbası..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                disabled={isLookingUpFood}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleLookupFood}
+                disabled={isLookingUpFood || !editFoodName.trim()}
+                className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+              >
+                {isLookingUpFood ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Aranıyor...
+                  </>
+                ) : (
+                  'Ara ve Güncelle'
+                )}
+              </Button>
+              <Button
+                onClick={handleCancelEdit}
+                variant="outline"
+                disabled={isLookingUpFood}
+              >
+                İptal
+              </Button>
+            </div>
+
+            <div className="text-xs text-gray-500 mt-2">
+              💡 Önce veritabanımızda arayacağız. Bulamazsak AI ile besin değerlerini araştıracağız.
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <TrialLimitModal
         isOpen={showTrialLimitModal}
