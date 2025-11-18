@@ -140,6 +140,9 @@ export function HistoryMeals() {
       case 'atıştırmalık':
       case 'snack':
         return '🍎'
+      case 'içecek':
+      case 'drink':
+        return '🥤'
       default:
         return '🍽️'
     }
@@ -151,10 +154,12 @@ export function HistoryMeals() {
       'lunch': 'Öğle Yemeği',
       'dinner': 'Akşam Yemeği',
       'snack': 'Atıştırmalık',
+      'drink': 'İçecek',
       'kahvaltı': 'Kahvaltı',
       'öğle': 'Öğle Yemeği',
       'akşam': 'Akşam Yemeği',
-      'atıştırmalık': 'Atıştırmalık'
+      'atıştırmalık': 'Atıştırmalık',
+      'içecek': 'İçecek'
     }
     return translations[mealType.toLowerCase() as keyof typeof translations] || mealType
   }
@@ -274,6 +279,7 @@ export function HistoryMeals() {
                   <SelectItem value="öğle">Öğle Yemeği</SelectItem>
                   <SelectItem value="akşam">Akşam Yemeği</SelectItem>
                   <SelectItem value="atıştırmalık">Atıştırmalık</SelectItem>
+                  <SelectItem value="içecek">İçecek</SelectItem>
                 </SelectContent>
               </Select>
             </div>

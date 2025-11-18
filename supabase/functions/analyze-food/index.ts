@@ -506,7 +506,7 @@ serve(async (req) => {
     if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('data:')) {
       throw new Error('Invalid image URL format')
     }
-    if (mealType && !['breakfast', 'lunch', 'dinner', 'snack'].includes(mealType)) {
+    if (mealType && !['breakfast', 'lunch', 'dinner', 'snack', 'drink', 'kahvaltı', 'öğle', 'akşam', 'atıştırmalık', 'içecek'].includes(mealType)) {
       throw new Error('Invalid meal type')
     }
     if (analysisType && !['quick', 'detailed'].includes(analysisType)) {

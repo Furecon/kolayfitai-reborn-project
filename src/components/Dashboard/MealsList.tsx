@@ -74,6 +74,8 @@ export function MealsList({ onAddMeal, refreshTrigger }: MealsListProps) {
         return '🌙'
       case 'atıştırmalık':
         return '🍎'
+      case 'içecek':
+        return '🥤'
       default:
         return '🍽️'
     }
@@ -92,10 +94,12 @@ export function MealsList({ onAddMeal, refreshTrigger }: MealsListProps) {
       'lunch': 'Öğle Yemeği',
       'dinner': 'Akşam Yemeği',
       'snack': 'Atıştırmalık',
+      'drink': 'İçecek',
       'kahvaltı': 'Kahvaltı',
       'öğle': 'Öğle Yemeği',
       'akşam': 'Akşam Yemeği',
-      'atıştırmalık': 'Atıştırmalık'
+      'atıştırmalık': 'Atıştırmalık',
+      'içecek': 'İçecek'
     }
     return translations[mealType.toLowerCase() as keyof typeof translations] || mealType
   }

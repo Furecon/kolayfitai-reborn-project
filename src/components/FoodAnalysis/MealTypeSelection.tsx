@@ -46,6 +46,7 @@ export default function MealTypeSelection({ onSubmit, onBack, loading }: MealTyp
                   <SelectItem value="öğle">Öğle Yemeği</SelectItem>
                   <SelectItem value="akşam">Akşam Yemeği</SelectItem>
                   <SelectItem value="atıştırmalık">Atıştırmalık</SelectItem>
+                  <SelectItem value="içecek">İçecek</SelectItem>
                 </SelectContent>
               </Select>
             </div>
