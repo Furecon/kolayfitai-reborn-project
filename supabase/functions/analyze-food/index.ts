@@ -417,7 +417,7 @@ async function getCachedAnalysis(
 }
 
 /**
- * Save analysis result to cache
+ * Save analysis result to cache (using upsert to avoid duplicate key errors)
  */
 async function saveCacheAnalysis(
   supabaseClient: any,
@@ -426,15 +426,21 @@ async function saveCacheAnalysis(
 ): Promise<void> {
   const { error } = await supabaseClient
     .from('photo_analysis_cache')
-    .insert({
-      image_hash: imageHash,
-      result: result
-    })
+    .upsert(
+      {
+        image_hash: imageHash,
+        result: result,
+        created_at: new Date().toISOString()
+      },
+      {
+        onConflict: 'image_hash'
+      }
+    )
 
   if (error) {
     console.error('Error saving cache:', error)
   } else {
-    console.log('Analysis cached successfully')
+    console.log('Analysis cached successfully (upserted)')
   }
 }
 

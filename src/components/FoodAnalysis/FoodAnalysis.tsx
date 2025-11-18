@@ -162,7 +162,7 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
 
       const mealData = {
         user_id: user.user.id,
-        meal_type: finalMealType.toLowerCase(),
+        meal_type: finalMealType,
         food_items: foods.map(food => ({
           name: food.name,
           nameEn: food.nameEn || food.name,

@@ -13,7 +13,7 @@ interface MealTypeSelectionProps {
 }
 
 export default function MealTypeSelection({ onSubmit, onBack, loading }: MealTypeSelectionProps) {
-  const [selectedMealType, setSelectedMealType] = useState('kahvaltı')
+  const [selectedMealType, setSelectedMealType] = useState('breakfast')
 
   return (
     <div className="min-h-screen bg-white p-4">
@@ -42,11 +42,11 @@ export default function MealTypeSelection({ onSubmit, onBack, loading }: MealTyp
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="kahvaltı">Kahvaltı</SelectItem>
-                  <SelectItem value="öğle">Öğle Yemeği</SelectItem>
-                  <SelectItem value="akşam">Akşam Yemeği</SelectItem>
-                  <SelectItem value="atıştırmalık">Atıştırmalık</SelectItem>
-                  <SelectItem value="içecek">İçecek</SelectItem>
+                  <SelectItem value="breakfast">Kahvaltı</SelectItem>
+                  <SelectItem value="lunch">Öğle Yemeği</SelectItem>
+                  <SelectItem value="dinner">Akşam Yemeği</SelectItem>
+                  <SelectItem value="snack">Atıştırmalık</SelectItem>
+                  <SelectItem value="drink">İçecek</SelectItem>
                 </SelectContent>
               </Select>
             </div>
