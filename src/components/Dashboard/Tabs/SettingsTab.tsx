@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,6 +21,7 @@ import { ContactPage } from '../../Support/ContactPage'
 import { ResourcesPage } from '../../Support/ResourcesPage'
 import { PoliciesPage } from '../../Support/PoliciesPage'
 import { FAQPage } from '../../Support/FAQPage'
+import { useTutorialAutoShow } from '@/context/TutorialContext'
 
 type SettingsView = 'main' | 'profile' | 'subscription' | 'contact' | 'resources' | 'policies' | 'faq'
 
@@ -31,6 +32,13 @@ interface SettingsTabProps {
 export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
   const { toast } = useToast()
   const [currentView, setCurrentView] = useState<SettingsView>('main')
+  const { autoShowTutorial } = useTutorialAutoShow()
+
+  useEffect(() => {
+    if (currentView === 'main') {
+      autoShowTutorial('settings')
+    }
+  }, [currentView])
 
   const handleLogout = async () => {
     try {
