@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigation } from '@/hooks/useNavigation'
 import { DashboardHeader } from './DashboardHeader'
 import { MealMethodSelection } from './MealMethodSelection'
-import { TutorialOverlay } from '../Tutorial/TutorialOverlay'
-import { useTutorial, useTutorialAutoShow } from '@/context/TutorialContext'
 import FoodAnalysis from '../FoodAnalysis'
 import ManualFoodEntry from '../FoodAnalysis/ManualFoodEntry'
 import { FileImageSelector } from '../FoodAnalysis/FileImageSelector'
@@ -54,10 +52,6 @@ export function Dashboard() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   
   const [profile, setProfile] = useState<any>(null)
-  
-  // Tutorial context
-  const { isVisible: tutorialVisible, currentScreen, completeTutorial, hideTutorial, disableTutorialsPermanently } = useTutorial()
-  const { autoShowTutorial } = useTutorialAutoShow()
 
   useEffect(() => {
     if (user) {
@@ -66,22 +60,12 @@ export function Dashboard() {
     }
   }, [user, refreshTrigger])
 
-  // Auto-show tutorial for new users (only once when profile is first loaded)
-  useEffect(() => {
-    if (profile && currentView === 'dashboard' && user) {
-      // Check if tutorials are not disabled and haven't been seen yet
-      if (!profile.tutorials_disabled && !profile.tutorial_seen) {
-        autoShowTutorial('dashboard')
-      }
-    }
-  }, [profile?.tutorial_seen, profile?.tutorials_disabled, currentView])
-
   const fetchProfile = async () => {
     if (!user) return
 
     const { data } = await supabase
       .from('profiles')
-      .select('tutorials_completed')
+      .select('user_id')
       .eq('user_id', user.id)
       .single()
 
@@ -168,20 +152,6 @@ export function Dashboard() {
     setActiveTab('home')
   }
 
-  const handleTutorialComplete = () => {
-    if (currentScreen) {
-      completeTutorial(currentScreen)
-    }
-  }
-
-  const handleTutorialClose = () => {
-    hideTutorial()
-  }
-
-  const handleShowTutorial = () => {
-    const tutorial = useTutorial()
-    tutorial.showTutorial('dashboard')
-  }
 
   if (currentView === 'meal-selection') {
     return (
@@ -299,14 +269,6 @@ export function Dashboard() {
       </div>
 
       <BottomTabNav activeTab={activeTab} onTabChange={setActiveTab} />
-
-      <TutorialOverlay
-        isVisible={tutorialVisible}
-        currentScreen={currentScreen}
-        onComplete={handleTutorialComplete}
-        onClose={handleTutorialClose}
-        onDontShowAgain={disableTutorialsPermanently}
-      />
     </div>
   )
 }

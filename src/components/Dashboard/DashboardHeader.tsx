@@ -28,7 +28,6 @@ export function DashboardHeader({
             <Button
               onClick={onCameraClick}
               className="bg-green-600 hover:bg-green-700 text-white h-9 sm:h-11 px-3 sm:px-5 shadow-md"
-              data-tutorial="camera-button"
             >
               <Plus className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2" />
               <span className="hidden sm:inline font-medium">Öğün Ekle</span>

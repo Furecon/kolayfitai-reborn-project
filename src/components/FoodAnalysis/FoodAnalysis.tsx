@@ -3,8 +3,6 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { useNavigation } from '@/hooks/useNavigation'
-import { useTutorial, useTutorialAutoShow } from '@/context/TutorialContext'
-import { TutorialOverlay } from '../Tutorial/TutorialOverlay'
 import AnalysisTypeSelection from './AnalysisTypeSelection'
 import MealTypeSelection from './MealTypeSelection'
 import QuickAnalysisResult from './QuickAnalysisResult'
@@ -35,10 +33,6 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
   const [detectedFoods, setDetectedFoods] = useState<any[]>([])
   const [finalMealType, setFinalMealType] = useState<string>('')
   const [detailedFormData, setDetailedFormData] = useState<any>(null)
-  
-  // Tutorial context
-  const { isVisible: tutorialVisible, currentScreen, completeTutorial, hideTutorial, disableTutorialsPermanently } = useTutorial()
-  const { autoShowTutorial } = useTutorialAutoShow()
 
   // Enhanced navigation with hardware back button support
   const { goBack } = useNavigation({
@@ -48,26 +42,6 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
     }
   })
 
-  // Auto-show tutorial for new users
-  useEffect(() => {
-    if (currentStep === 'camera') {
-      autoShowTutorial('food_analysis')
-    } else if (currentStep === 'analysis-type') {
-      autoShowTutorial('photo_recognition')
-    } else if (currentStep === 'detailed-form') {
-      autoShowTutorial('detailed_analysis')
-    }
-  }, [currentStep, autoShowTutorial])
-
-  const handleTutorialComplete = () => {
-    if (currentScreen) {
-      completeTutorial(currentScreen)
-    }
-  }
-
-  const handleTutorialClose = () => {
-    hideTutorial()
-  }
 
   const handleImageCaptured = async (imageUrl: string) => {
     console.log('Image captured:', imageUrl.substring(0, 50) + '...')
@@ -376,14 +350,6 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
           />
         )}
       </div>
-
-      <TutorialOverlay
-        isVisible={tutorialVisible}
-        currentScreen={currentScreen}
-        onComplete={handleTutorialComplete}
-        onClose={handleTutorialClose}
-        onDontShowAgain={disableTutorialsPermanently}
-      />
     </div>
   )
 }

@@ -157,7 +157,6 @@ export function MealsList({ onAddMeal, refreshTrigger }: MealsListProps) {
               onClick={onAddMeal}
               className="bg-green-500 hover:bg-green-600 text-white h-9 sm:h-10"
               size="sm"
-              data-tutorial="add-meal-button"
             >
               <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
               <span className="text-sm">Öğün Ekle</span>

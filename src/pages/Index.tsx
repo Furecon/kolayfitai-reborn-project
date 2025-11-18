@@ -2,7 +2,6 @@ import { AuthProvider } from '@/components/Auth/AuthProvider'
 import { AuthScreen } from '@/components/Auth/AuthScreen'
 import { Dashboard } from '@/components/Dashboard/Dashboard'
 import { OnboardingFlow } from '@/components/Onboarding/OnboardingFlow'
-import { TutorialProvider } from '@/context/TutorialContext'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
@@ -24,7 +23,7 @@ function AppContent() {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('onboarding_completed, tutorials_completed')
+        .select('onboarding_completed')
         .eq('user_id', user.id)
         .order('updated_at', { ascending: false })
         .limit(1)
@@ -60,11 +59,7 @@ function AppContent() {
     return <OnboardingFlow />
   }
 
-  return (
-    <TutorialProvider>
-      <Dashboard />
-    </TutorialProvider>
-  )
+  return <Dashboard />
 }
 
 export default function Index() {

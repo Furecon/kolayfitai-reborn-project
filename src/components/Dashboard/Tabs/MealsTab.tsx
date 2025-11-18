@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { MealsList } from '../MealsList'
 import { HistoryMeals } from '../HistoryMeals'
 import { Button } from '@/components/ui/button'
 import { Sparkles, Heart, Camera } from 'lucide-react'
 import { MealSuggestions } from '../../MealSuggestions/MealSuggestions'
 import { FavoriteMeals } from '../../MealSuggestions/FavoriteMeals'
-import { useTutorialAutoShow } from '@/context/TutorialContext'
 
 interface MealsTabProps {
   onAddMeal: () => void
@@ -26,13 +25,6 @@ type MealsView = 'today' | 'suggestions' | 'favorites'
 
 export function MealsTab({ onAddMeal, refreshTrigger, dailyStats }: MealsTabProps) {
   const [currentView, setCurrentView] = useState<MealsView>('today')
-  const { autoShowTutorial } = useTutorialAutoShow()
-
-  useEffect(() => {
-    if (currentView === 'today') {
-      autoShowTutorial('meals')
-    }
-  }, [currentView])
 
   const handleMealAdded = () => {
     setCurrentView('today')
@@ -75,7 +67,6 @@ export function MealsTab({ onAddMeal, refreshTrigger, dailyStats }: MealsTabProp
         <Button
           onClick={onAddMeal}
           className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-lg font-semibold shadow-lg mb-4"
-          data-tutorial="add-meal-button-meals"
         >
           <Camera className="h-6 w-6 mr-3" />
           Öğün Ekle
@@ -108,7 +99,7 @@ export function MealsTab({ onAddMeal, refreshTrigger, dailyStats }: MealsTabProp
         </div>
       </div>
 
-      <div data-tutorial="meal-history">
+      <div>
         <MealsList
           onAddMeal={onAddMeal}
           refreshTrigger={refreshTrigger}

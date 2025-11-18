@@ -323,7 +323,7 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-tutorial="body-info">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Ad Soyad</Label>
                 <Input
@@ -408,7 +408,7 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
               </div>
             </div>
 
-            <div className="space-y-2" data-tutorial="goal-settings">
+            <div className="space-y-2">
               <Label htmlFor="diet_goal">Hedef</Label>
               <Select value={profile.diet_goal || ''} onValueChange={(value) => setProfile({ ...profile, diet_goal: value })}>
                 <SelectTrigger className="border-gray-300">
@@ -426,7 +426,6 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
               type="submit"
               className="w-full bg-green-500 hover:bg-green-600 text-white"
               disabled={loading}
-              data-tutorial="save-profile"
             >
               {loading ? 'Kaydediliyor...' : 'Profili Kaydet'}
             </Button>

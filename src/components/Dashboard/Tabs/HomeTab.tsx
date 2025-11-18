@@ -1,9 +1,5 @@
-import { useEffect } from 'react'
 import { CalorieCards } from '../CalorieCards'
 import { TrialUsageCard } from '../TrialUsageCard'
-import { Button } from '@/components/ui/button'
-import { Plus, Camera } from 'lucide-react'
-import { useTutorialAutoShow } from '@/context/TutorialContext'
 
 interface HomeTabProps {
   dailyStats: {
@@ -24,15 +20,9 @@ interface HomeTabProps {
 }
 
 export function HomeTab({ dailyStats, onCameraClick, onUpgradeClick }: HomeTabProps) {
-  const { autoShowTutorial } = useTutorialAutoShow()
-
-  useEffect(() => {
-    autoShowTutorial('home')
-  }, [])
-
   return (
     <div className="pb-20 w-full">
-      <div data-tutorial="calorie-cards">
+      <div>
         <CalorieCards
           {...dailyStats}
           onCameraClick={onCameraClick}
