@@ -58,7 +58,7 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
 
   if (currentView === 'profile') {
     return (
-      <div className="pb-20">
+      <div className="pb-20 w-full">
         <ProfileSetup
           onBack={() => {
             setCurrentView('main')
@@ -71,20 +71,24 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
 
   if (currentView === 'subscription') {
     return (
-      <div className="pb-20 pt-4">
-        <div className="border-b border-gray-200 bg-white px-3 sm:px-4 py-3 sm:py-4 mb-4">
-          <Button
-            variant="ghost"
-            onClick={() => setCurrentView('main')}
-            className="text-gray-600 h-10"
-          >
-            <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
-            Geri
-          </Button>
-          <h1 className="text-xl font-semibold mt-2">Abonelik Yönetimi</h1>
+      <div className="pb-20 pt-4 w-full">
+        <div className="border-b border-gray-200 bg-white px-4 sm:px-6 py-3 sm:py-4 mb-4 w-full">
+          <div className="max-w-screen-2xl mx-auto">
+            <Button
+              variant="ghost"
+              onClick={() => setCurrentView('main')}
+              className="text-gray-600 h-10"
+            >
+              <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
+              Geri
+            </Button>
+            <h1 className="text-xl font-semibold mt-2">Abonelik Yönetimi</h1>
+          </div>
         </div>
-        <div className="p-4">
-          <SubscriptionManager />
+        <div className="w-full px-4 sm:px-6">
+          <div className="max-w-screen-2xl mx-auto">
+            <SubscriptionManager />
+          </div>
         </div>
       </div>
     )
@@ -92,7 +96,7 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
 
   if (currentView === 'contact') {
     return (
-      <div className="pb-20">
+      <div className="pb-20 w-full">
         <ContactPage onBack={() => setCurrentView('main')} />
       </div>
     )
@@ -100,7 +104,7 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
 
   if (currentView === 'resources') {
     return (
-      <div className="pb-20">
+      <div className="pb-20 w-full">
         <ResourcesPage onBack={() => setCurrentView('main')} />
       </div>
     )
@@ -108,7 +112,7 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
 
   if (currentView === 'policies') {
     return (
-      <div className="pb-20">
+      <div className="pb-20 w-full">
         <PoliciesPage onBack={() => setCurrentView('main')} />
       </div>
     )
@@ -116,20 +120,23 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
 
   if (currentView === 'faq') {
     return (
-      <div className="pb-20">
+      <div className="pb-20 w-full">
         <FAQPage onBack={() => setCurrentView('main')} />
       </div>
     )
   }
 
   return (
-    <div className="pb-20 pt-4">
-      <div className="px-3 sm:px-4 lg:px-6 mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Ayarlar</h1>
-        <p className="text-sm text-gray-600 mt-1">Hesap ve uygulama ayarları</p>
+    <div className="pb-20 pt-4 w-full">
+      <div className="w-full px-4 sm:px-6 mb-4">
+        <div className="max-w-screen-2xl mx-auto">
+          <h1 className="text-2xl font-bold text-gray-900">Ayarlar</h1>
+          <p className="text-sm text-gray-600 mt-1">Hesap ve uygulama ayarları</p>
+        </div>
       </div>
 
-      <div className="px-3 sm:px-4 lg:px-6 space-y-4">
+      <div className="w-full px-4 sm:px-6 space-y-4">
+        <div className="max-w-screen-2xl mx-auto space-y-4">
         <Card>
           <CardContent className="p-0">
             <button
@@ -258,18 +265,19 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <Button
-              onClick={handleLogout}
-              variant="destructive"
-              className="w-full"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Çıkış Yap
-            </Button>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardContent className="p-4">
+              <Button
+                onClick={handleLogout}
+                variant="destructive"
+                className="w-full"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Çıkış Yap
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

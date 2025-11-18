@@ -14,6 +14,8 @@ interface TutorialContextType {
   isTutorialSeen: boolean
   markTutorialAsSeen: () => void
   showTutorialManually: (screen: TutorialScreen) => void
+  disableTutorialsPermanently: () => void
+  areTutorialsDisabled: boolean
 }
 
 const TutorialContext = createContext<TutorialContextType | undefined>(undefined)
@@ -39,6 +41,7 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     profile_setup: false
   })
   const [isTutorialSeen, setIsTutorialSeen] = useState(false)
+  const [areTutorialsDisabled, setAreTutorialsDisabled] = useState(false)
 
   // Fetch user's tutorial completion status
   useEffect(() => {
@@ -53,7 +56,7 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('tutorials_completed, tutorial_seen')
+        .select('tutorials_completed, tutorial_seen, tutorials_disabled')
         .eq('user_id', user.id)
         .single()
 
@@ -61,6 +64,7 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
 
       // Set tutorial seen status
       setIsTutorialSeen(data?.tutorial_seen || false)
+      setAreTutorialsDisabled(data?.tutorials_disabled || false)
 
       if (data?.tutorials_completed && typeof data.tutorials_completed === 'object' && !Array.isArray(data.tutorials_completed)) {
         const tutorials = data.tutorials_completed as Record<string, any>
@@ -149,9 +153,31 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     setIsVisible(true)
   }
 
-  // Auto-show tutorial for new users on specific screens (only if not completed and not seen)
+  const disableTutorialsPermanently = async () => {
+    if (!user) return
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          tutorials_disabled: true,
+          tutorial_seen: true
+        })
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      setAreTutorialsDisabled(true)
+      setIsTutorialSeen(true)
+      hideTutorial()
+    } catch (error) {
+      console.error('Error disabling tutorials:', error)
+    }
+  }
+
+  // Auto-show tutorial for new users on specific screens (only if not completed, not seen, and not disabled)
   const autoShowTutorial = (screen: TutorialScreen) => {
-    if (!isTutorialCompleted(screen) && !isTutorialSeen && user && !isVisible) {
+    if (!isTutorialCompleted(screen) && !isTutorialSeen && !areTutorialsDisabled && user && !isVisible) {
       // Small delay to ensure DOM is ready and components are rendered
       setTimeout(() => {
         // Check if target elements exist before showing tutorial
@@ -178,7 +204,9 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     tutorialsCompleted,
     isTutorialSeen,
     markTutorialAsSeen,
-    showTutorialManually
+    showTutorialManually,
+    disableTutorialsPermanently,
+    areTutorialsDisabled
   }
 
   // Expose autoShowTutorial to the context
