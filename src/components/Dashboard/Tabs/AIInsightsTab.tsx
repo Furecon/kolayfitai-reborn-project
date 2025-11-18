@@ -1,6 +1,4 @@
-import { useEffect } from 'react'
 import { AIInsights } from '../AIInsights'
-import { useTutorialAutoShow } from '@/context/TutorialContext'
 
 interface AIInsightsTabProps {
   dailyStats: {
@@ -16,12 +14,6 @@ interface AIInsightsTabProps {
 }
 
 export function AIInsightsTab({ dailyStats }: AIInsightsTabProps) {
-  const { autoShowTutorial } = useTutorialAutoShow()
-
-  useEffect(() => {
-    autoShowTutorial('ai-insights')
-  }, [])
-
   return (
     <div className="pb-20 pt-4">
       <div className="px-3 sm:px-4 lg:px-6 mb-4">

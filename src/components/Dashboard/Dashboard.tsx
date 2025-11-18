@@ -293,6 +293,12 @@ export function Dashboard() {
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader
         onCameraClick={() => setCurrentView('meal-selection')}
+        onProfileClick={() => setActiveTab('settings')}
+        onContactClick={() => setActiveTab('settings')}
+        onResourcesClick={() => setActiveTab('settings')}
+        onPoliciesClick={() => setActiveTab('settings')}
+        onFAQClick={() => setActiveTab('settings')}
+        onSubscriptionClick={() => setActiveTab('settings')}
       />
 
       {renderTabContent()}

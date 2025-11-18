@@ -6,7 +6,7 @@ export interface TutorialStep {
   position: 'top' | 'bottom' | 'left' | 'right'
 }
 
-export type TutorialScreen = 'dashboard' | 'home' | 'ai-insights' | 'progress' | 'meals' | 'settings' | 'food_analysis' | 'photo_recognition' | 'detailed_analysis' | 'profile_setup'
+export type TutorialScreen = 'dashboard' | 'food_analysis' | 'photo_recognition' | 'detailed_analysis' | 'profile_setup'
 
 export const tutorials: Record<TutorialScreen, TutorialStep[]> = {
   dashboard: [
@@ -14,7 +14,7 @@ export const tutorials: Record<TutorialScreen, TutorialStep[]> = {
       id: 'add-meal-button',
       title: '🍽️ Öğün Eklemeye Başlayın',
       description: 'Buraya tıklayın! Yemeğinizin fotoğrafını çekin veya ismini yazın - AI hemen analiz edecek. Sadece 10 saniye sürer!',
-      targetSelector: '[data-tutorial="camera-button"]',
+      targetSelector: '[data-tutorial="add-meal-button"]',
       position: 'bottom'
     },
     {
@@ -37,147 +37,6 @@ export const tutorials: Record<TutorialScreen, TutorialStep[]> = {
       description: 'Tüm öğünleriniz burada! İstediğiniz öğüne tıklayarak düzenleyebilir veya silebilirsiniz.',
       targetSelector: '[data-tutorial="meal-history"]',
       position: 'top'
-    }
-  ],
-
-  home: [
-    {
-      id: 'home-header',
-      title: '🏠 Ana Sayfa',
-      description: 'Hoş geldiniz! Ana sayfanızda günlük kalori ve makro takibinizi kolayca görebilirsiniz.',
-      targetSelector: '[data-tutorial="calorie-cards"]',
-      position: 'bottom'
-    },
-    {
-      id: 'add-meal-button-home',
-      title: '➕ Hızlı Öğün Ekleme',
-      description: 'Bu butona tıklayarak hızlıca yeni bir öğün ekleyebilirsiniz. Fotoğraf çekin veya manuel olarak girin!',
-      targetSelector: '[data-tutorial="add-meal-button-home"]',
-      position: 'top'
-    },
-    {
-      id: 'macro-charts',
-      title: '📊 Makro Takibi',
-      description: 'Protein, karbonhidrat ve yağ oranlarınızı renkli grafiklerle takip edin. Hedefinize ne kadar yakınsınız?',
-      targetSelector: '[data-tutorial="macro-charts"]',
-      position: 'top'
-    }
-  ],
-
-  'ai-insights': [
-    {
-      id: 'ai-insights-intro',
-      title: '🧠 AI Analiz',
-      description: 'Yapay zeka destekli öneriler ve analizlerle beslenme alışkanlıklarınızı iyileştirin!',
-      targetSelector: 'body',
-      position: 'bottom'
-    },
-    {
-      id: 'daily-analysis',
-      title: '📈 Günlük Analiz',
-      description: 'AI, günlük beslenmenizi analiz eder ve size özel öneriler sunar. Eksiklerinizi ve güçlü yönlerinizi öğrenin.',
-      targetSelector: 'body',
-      position: 'bottom'
-    },
-    {
-      id: 'smart-tips',
-      title: '💡 Akıllı İpuçları',
-      description: 'Hedeflerinize ulaşmanız için kişiselleştirilmiş ipuçları alın. Her gün yeni öneriler!',
-      targetSelector: 'body',
-      position: 'bottom'
-    }
-  ],
-
-  progress: [
-    {
-      id: 'progress-intro',
-      title: '📊 Gelişim Takibi',
-      description: 'Hedeflerinize doğru ilerlemenizi grafik ve istatistiklerle takip edin!',
-      targetSelector: 'body',
-      position: 'bottom'
-    },
-    {
-      id: 'weight-tracking',
-      title: '⚖️ Kilo Takibi',
-      description: 'Kilo değişimlerinizi görsel grafiklerle izleyin. Trend analizi ile gelişiminizi değerlendirin.',
-      targetSelector: 'body',
-      position: 'bottom'
-    },
-    {
-      id: 'weekly-stats',
-      title: '📅 Haftalık İstatistikler',
-      description: 'Haftalık ortalamalarınızı görün. Hangi günler daha başarılıydı? Nerede gelişebilirsiniz?',
-      targetSelector: 'body',
-      position: 'bottom'
-    }
-  ],
-
-  meals: [
-    {
-      id: 'meals-intro',
-      title: '🍽️ Öğünler Sayfası',
-      description: 'Tüm öğünlerinizi yönetin, favorilerinize ekleyin ve AI önerilerinden faydalanın!',
-      targetSelector: 'body',
-      position: 'bottom'
-    },
-    {
-      id: 'add-meal-button-meals',
-      title: '➕ Öğün Ekle',
-      description: 'Buradan hızlıca yeni öğün ekleyebilirsiniz. Fotoğraf çekin veya manuel olarak girin!',
-      targetSelector: '[data-tutorial="add-meal-button-meals"]',
-      position: 'top'
-    },
-    {
-      id: 'meal-suggestions',
-      title: '✨ AI Önerileri',
-      description: 'Hedeflerinize uygun kişiselleştirilmiş öğün önerileri alın. AI sizin için en uygun tarifleri seçer!',
-      targetSelector: 'body',
-      position: 'bottom'
-    },
-    {
-      id: 'favorites',
-      title: '❤️ Favorilerim',
-      description: 'Sevdiğiniz tarifleri favorilere ekleyin, bir daha aradığınızda kolayca bulun!',
-      targetSelector: 'body',
-      position: 'bottom'
-    },
-    {
-      id: 'meal-history',
-      title: '📝 Öğün Geçmişi',
-      description: 'Bugün ve geçmiş günlerde yediğiniz öğünleri görüntüleyin, düzenleyin veya silin.',
-      targetSelector: '[data-tutorial="meal-history"]',
-      position: 'top'
-    }
-  ],
-
-  settings: [
-    {
-      id: 'settings-intro',
-      title: '⚙️ Ayarlar',
-      description: 'Profilinizi düzenleyin, hedeflerinizi güncelleyin ve uygulamayı kendinize göre özelleştirin!',
-      targetSelector: 'body',
-      position: 'bottom'
-    },
-    {
-      id: 'profile-settings',
-      title: '👤 Profil Bilgileri',
-      description: 'Kilo, boy, yaş gibi bilgilerinizi güncel tutun. Doğru bilgiler, daha doğru kalori hesabı demek!',
-      targetSelector: 'body',
-      position: 'bottom'
-    },
-    {
-      id: 'goals',
-      title: '🎯 Günlük Hedefler',
-      description: 'Kalori ve makro hedeflerinizi belirleyin. Kilo verme, kilo alma veya kilo koruma - seçim sizin!',
-      targetSelector: 'body',
-      position: 'bottom'
-    },
-    {
-      id: 'subscription',
-      title: '👑 Abonelik',
-      description: 'Premium özelliklerden faydalanın! Sınırsız analiz, detaylı raporlar ve daha fazlası...',
-      targetSelector: 'body',
-      position: 'bottom'
     }
   ],
 

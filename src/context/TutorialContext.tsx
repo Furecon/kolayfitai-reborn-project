@@ -28,11 +28,6 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   const [currentScreen, setCurrentScreen] = useState<TutorialScreen | null>(null)
   const [tutorialsCompleted, setTutorialsCompleted] = useState<Record<TutorialScreen, boolean>>({
     dashboard: false,
-    home: false,
-    'ai-insights': false,
-    progress: false,
-    meals: false,
-    settings: false,
     food_analysis: false,
     photo_recognition: false,
     detailed_analysis: false,
@@ -66,11 +61,6 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
         const tutorials = data.tutorials_completed as Record<string, any>
         setTutorialsCompleted({
           dashboard: tutorials.dashboard || false,
-          home: tutorials.home || false,
-          'ai-insights': tutorials['ai-insights'] || false,
-          progress: tutorials.progress || false,
-          meals: tutorials.meals || false,
-          settings: tutorials.settings || false,
           food_analysis: tutorials.food_analysis || false,
           photo_recognition: tutorials.photo_recognition || false,
           detailed_analysis: tutorials.detailed_analysis || false,
