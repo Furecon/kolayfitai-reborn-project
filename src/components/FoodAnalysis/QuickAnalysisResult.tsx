@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
-import { Loader as Loader2, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Expand, Zap, Droplets, Database, Edit } from 'lucide-react'
+import { Loader as Loader2, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Expand, Zap, Droplets, Edit } from 'lucide-react'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { TrialLimitModal } from './TrialLimitModal'
 import { useAuth } from '@/components/Auth/AuthProvider'
@@ -475,12 +475,6 @@ export default function QuickAnalysisResult({
         <p className="text-gray-600">
           {detectedFoods.length} yemek tespit edildi
         </p>
-        {fromCache && (
-          <div className="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-            <Database className="h-3 w-3" />
-            Önbellekten yüklendi
-          </div>
-        )}
       </div>
 
       {/* Captured Image Display */}
