@@ -154,32 +154,32 @@ Deno.serve(async (req: Request) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    // 7. Call OpenAI for food research
-    const systemPrompt = `Sen bir besin uzmanısın. Kullanıcının verdiği yiyecek/içecek için 100g/100ml başına ortalama besin değerlerini araştır ve JSON formatında döndür.
+    // 7. Call OpenAI for food research with enhanced intelligence
+    const systemPrompt = `Sen profesyonel bir besin uzmanısın. Kullanıcının verdiği yiyecek/içecek için 100g/100ml başına besin değerlerini tahmin edeceksin.
 
-KURALLAR:
-- Türkçe yaz
-- Türk kullanıcılar için doğal Türkçe adlar kullan
-- Güvenilir kaynaklar referans al (USDA, uluslararası besin veri tabanları)
-- Sadece JSON döndür, başka metin yazma
+ÖNEMLİ TALİMATLAR:
+- Marka adı + ürün tipi üzerinden muhakeme yap
+  Örnek: "Nescafe 2'si 1 arada" → şekerli, süt tozu içeren hazır kahve tozu
+  Örnek: "Ülker çikolatalı gofret" → çikolatalı gofret sınıfı ortalaması
+- Türkiye'de satılan yaygın markalı ürünlere öncelik ver
+- Değerler MUTLAKA 100g / 100ml bazlı olmalı
+- Paket üzerindeki besin tablosuna mümkün olduğunca yakın değerler tahmin et
+- Türkçe doğal isimler kullan
+- Sadece JSON döndür, açıklama yapma
 - Su, sade kahve, şekersiz çay, diet/zero içecekler için kalori 0 olabilir
 - Değerler gerçekçi olmalı (100g'da 5000 kcal gibi saçma değerler yok)
 - Sodyum mg, lif ve şeker gram cinsinden`;
 
-    const userPrompt = `Kullanıcı şu yiyeceği giriyor:
+    const userPrompt = `Kullanıcı şu ürünü girdi: "${cleanedFoodName}"
 
-"${cleanedFoodName}"
+Türkiye'de satılan tipik ürünlere göre, bu ürün için 100 g başına besin değerlerini tahmin et.
 
-Görevin:
-1. Bu yiyeceğin Türkçe adını doğal bir şekilde normalize et
-2. İngilizce adını da ver
-3. 100 gram veya 100 ml başına ortalama besin değerlerini tahmini olarak hesapla
+Eğer marka adı varsa (Nescafe, Ülker, Torku, vb.), o markanın tipik ürün değerlerini baz al.
 
-JSON formatı:
+JSON formatı (SADECE bu JSON'ı döndür):
 {
-  "name_tr": "Türkçe ad",
-  "name_en": "English name",
-  "unit": "g" veya "ml",
+  "name_tr": "Türkçe normalize edilmiş ad",
+  "name_en": "English normalized name",
   "nutritionPer100g": {
     "calories": sayı,
     "protein": sayı,
@@ -187,20 +187,21 @@ JSON formatı:
     "fat": sayı,
     "fiber": sayı,
     "sugar": sayı,
-    "sodium": sayı (mg cinsinden)
+    "sodium": sayı (mg)
   },
-  "is_drink": true veya false,
-  "notes": "Kısa açıklama, max 1-2 cümle"
+  "is_drink": true veya false
 }`;
 
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Try gpt-o1 first, fallback to gpt-4 if needed
+    let modelToUse = 'o1';
+    let openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: modelToUse,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -210,9 +211,31 @@ JSON formatı:
       }),
     });
 
+    // Fallback to gpt-4 if o1 fails
+    if (!openaiResponse.ok) {
+      console.log('o1 failed, falling back to gpt-4');
+      modelToUse = 'gpt-4';
+      openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: modelToUse,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.3,
+          max_tokens: 500,
+        }),
+      });
+    }
+
     if (!openaiResponse.ok) {
       const errorText = await openaiResponse.text();
-      console.error('OpenAI API error:', errorText);
+      console.error(`OpenAI API error with model ${modelToUse}:`, errorText);
       throw new Error('AI research failed');
     }
 
@@ -222,6 +245,8 @@ JSON formatı:
     if (!aiContent) {
       throw new Error('No response from AI');
     }
+
+    console.log(`AI research completed using model: ${modelToUse}`);
 
     // Parse AI response
     let aiResult;
