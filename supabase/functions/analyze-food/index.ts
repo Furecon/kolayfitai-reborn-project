@@ -12,15 +12,46 @@ const corsHeaders = {
 // ============================================================================
 
 /**
- * Generate deterministic hash from image URL
+ * Generate deterministic hash from image content (not URL)
  */
 async function generateImageHash(imageUrl: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(imageUrl)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-  return hashHex
+  try {
+    // 1) If data URL (data:image/...), decode base64 content and hash it
+    if (imageUrl.startsWith('data:')) {
+      const base64Part = imageUrl.split(',')[1] || '';
+      const binary = atob(base64Part);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex;
+    }
+
+    // 2) Normal http/https URL: fetch image and hash content bytes
+    const resp = await fetch(imageUrl);
+    if (resp.ok) {
+      const arrayBuffer = await resp.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex;
+    } else {
+      console.warn('Failed to fetch image for hashing, status:', resp.status);
+    }
+  } catch (err) {
+    console.error('Error while hashing image content, falling back to URL hash:', err);
+  }
+
+  // 3) Fallback: if fetch/parse fails, hash URL as before (safe fallback)
+  const encoder = new TextEncoder();
+  const data = encoder.encode(imageUrl);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
 }
 
 /**
