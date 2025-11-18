@@ -69,13 +69,12 @@ export function Dashboard() {
   // Auto-show tutorial for new users (only once when profile is first loaded)
   useEffect(() => {
     if (profile && currentView === 'dashboard' && user) {
-      // Check if tutorial hasn't been seen yet
-      const tutorialSeen = profile.tutorials_completed?.tutorial_seen
-      if (!tutorialSeen) {
+      // Check if tutorials are not disabled and haven't been seen yet
+      if (!profile.tutorials_disabled && !profile.tutorial_seen) {
         autoShowTutorial('dashboard')
       }
     }
-  }, [profile?.tutorials_completed?.tutorial_seen, currentView]) // Only depend on tutorial_seen status
+  }, [profile?.tutorial_seen, profile?.tutorials_disabled, currentView])
 
   const fetchProfile = async () => {
     if (!user) return
