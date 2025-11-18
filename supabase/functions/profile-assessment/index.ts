@@ -21,7 +21,33 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { profileData, previousAssessment } = await req.json();
+    const { userId } = await req.json();
+
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    console.log('Fetching profile data for user:', userId);
+
+    // Fetch user profile
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (profileError || !profileData) {
+      throw new Error('Failed to fetch user profile');
+    }
+
+    // Fetch previous assessment if exists
+    const { data: previousAssessment } = await supabase
+      .from('ai_assessments')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
 
     console.log('Request data validated:', {
       hasProfileData: !!profileData,
@@ -78,7 +104,7 @@ JSON formatında yanıt ver:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o-mini',
         messages: [
           { 
             role: 'system', 
