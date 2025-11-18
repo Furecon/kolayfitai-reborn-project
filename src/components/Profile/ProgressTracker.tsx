@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { Button } from '@/components/ui/button'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { supabase } from '@/integrations/supabase/client'
-import { Calendar, TrendingUp, Target, MessageCircle } from 'lucide-react'
+import { Calendar, TrendingUp, Target, MessageCircle, Sparkles } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 
 interface Assessment {
   id: string
@@ -18,8 +20,10 @@ interface Assessment {
 
 export default function ProgressTracker() {
   const { user } = useAuth()
+  const { toast } = useToast()
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
+  const [generating, setGenerating] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -68,6 +72,35 @@ export default function ProgressTracker() {
     })
   }
 
+  const generateNewAssessment = async () => {
+    if (!user) return
+
+    setGenerating(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('profile-assessment', {
+        body: { userId: user.id }
+      })
+
+      if (error) throw error
+
+      toast({
+        title: "Değerlendirme Tamamlandı!",
+        description: "Yeni AI değerlendirmeniz başarıyla oluşturuldu.",
+      })
+
+      await fetchAssessments()
+    } catch (error: any) {
+      console.error('Error generating assessment:', error)
+      toast({
+        title: "Hata",
+        description: error.message || "Değerlendirme oluşturulurken bir hata oluştu.",
+        variant: "destructive"
+      })
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -81,6 +114,39 @@ export default function ProgressTracker() {
 
   return (
     <div className="space-y-6">
+      {/* New Assessment Button */}
+      <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-1">
+                Yeni AI Değerlendirmesi
+              </h3>
+              <p className="text-sm text-gray-600">
+                İlerlemenizi analiz edin ve kişiselleştirilmiş öneriler alın
+              </p>
+            </div>
+            <Button
+              onClick={generateNewAssessment}
+              disabled={generating}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {generating ? (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2 animate-spin" />
+                  Oluşturuluyor...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Değerlendir
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Latest Assessment Summary */}
       {latestAssessment && (
         <Card>
