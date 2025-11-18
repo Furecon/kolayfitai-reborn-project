@@ -37,7 +37,7 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
   const [detailedFormData, setDetailedFormData] = useState<any>(null)
   
   // Tutorial context
-  const { isVisible: tutorialVisible, currentScreen, completeTutorial, hideTutorial } = useTutorial()
+  const { isVisible: tutorialVisible, currentScreen, completeTutorial, hideTutorial, disableTutorialsPermanently } = useTutorial()
   const { autoShowTutorial } = useTutorialAutoShow()
 
   // Enhanced navigation with hardware back button support
@@ -382,6 +382,7 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
         currentScreen={currentScreen}
         onComplete={handleTutorialComplete}
         onClose={handleTutorialClose}
+        onDontShowAgain={disableTutorialsPermanently}
       />
     </div>
   )
