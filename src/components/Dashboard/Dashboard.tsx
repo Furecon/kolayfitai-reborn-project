@@ -56,7 +56,7 @@ export function Dashboard() {
   const [profile, setProfile] = useState<any>(null)
   
   // Tutorial context
-  const { isVisible: tutorialVisible, currentScreen, completeTutorial, hideTutorial, disableTutorialsPermanently } = useTutorial()
+  const { isVisible: tutorialVisible, currentScreen, completeTutorial, hideTutorial } = useTutorial()
   const { autoShowTutorial } = useTutorialAutoShow()
 
   useEffect(() => {
@@ -290,14 +290,12 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 w-full">
+    <div className="min-h-screen bg-gray-50">
       <DashboardHeader
         onCameraClick={() => setCurrentView('meal-selection')}
       />
 
-      <div className="w-full">
-        {renderTabContent()}
-      </div>
+      {renderTabContent()}
 
       <BottomTabNav activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -306,7 +304,6 @@ export function Dashboard() {
         currentScreen={currentScreen}
         onComplete={handleTutorialComplete}
         onClose={handleTutorialClose}
-        onDontShowAgain={disableTutorialsPermanently}
       />
     </div>
   )

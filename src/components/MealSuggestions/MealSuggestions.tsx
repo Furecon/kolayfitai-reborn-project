@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Clock, Users, ChefHat, Heart, Plus, ArrowLeft, Loader2 } from 'lucide-react'
+import { Clock, Users, ChefHat, Heart, Plus, ArrowLeft } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { useToast } from '@/hooks/use-toast'
@@ -256,40 +256,14 @@ export function MealSuggestions({ onBack, onMealAdded, dailyStats }: MealSuggest
                         disabled={loading}
                         className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
                       >
-                        {loading ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Öneriler Hazırlanıyor...
-                          </>
-                        ) : (
-                          'Öneriler Getir'
-                        )}
+                        {loading ? 'Öneriler Hazırlanıyor...' : 'Öneriler Getir'}
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Loading State */}
-                {loading && (
-                  <Card>
-                    <CardContent className="p-8">
-                      <div className="flex flex-col items-center justify-center space-y-4">
-                        <Loader2 className="h-12 w-12 text-green-500 animate-spin" />
-                        <div className="text-center space-y-2">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            Ai Önerileriniz Hazırlanıyor
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            Size özel öğün tarifleri oluşturuluyor...
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
                 {/* Suggestions Grid - Responsive */}
-                {!loading && suggestions.length > 0 && (
+                {suggestions.length > 0 && (
                   <div className="grid gap-3 sm:gap-4">
                     {suggestions.map((suggestion, index) => (
                       <Card key={index} className="hover:shadow-md transition-shadow">

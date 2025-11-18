@@ -42,23 +42,23 @@ export const tutorials: Record<TutorialScreen, TutorialStep[]> = {
 
   home: [
     {
-      id: 'camera-button-header',
-      title: '📸 Öğün Ekleme',
-      description: 'Sağ üstteki + butonuna tıklayarak hızlıca öğün ekleyebilirsiniz. Fotoğraf çekin veya manuel olarak girin!',
-      targetSelector: '[data-tutorial="camera-button"]',
-      position: 'bottom'
-    },
-    {
-      id: 'calorie-cards',
-      title: '🔥 Kalori Takibi',
-      description: 'Günlük kalori alımınızı ve hedefinizi buradan takip edebilirsiniz. Hedeflerinize ne kadar yakınsınız?',
+      id: 'home-header',
+      title: '🏠 Ana Sayfa',
+      description: 'Hoş geldiniz! Ana sayfanızda günlük kalori ve makro takibinizi kolayca görebilirsiniz.',
       targetSelector: '[data-tutorial="calorie-cards"]',
       position: 'bottom'
     },
     {
+      id: 'add-meal-button-home',
+      title: '➕ Hızlı Öğün Ekleme',
+      description: 'Bu butona tıklayarak hızlıca yeni bir öğün ekleyebilirsiniz. Fotoğraf çekin veya manuel olarak girin!',
+      targetSelector: '[data-tutorial="add-meal-button-home"]',
+      position: 'top'
+    },
+    {
       id: 'macro-charts',
       title: '📊 Makro Takibi',
-      description: 'Protein, karbonhidrat ve yağ oranlarınızı renkli grafiklerle takip edin. Dolu çember hedefe ulaştığınız anlamına gelir!',
+      description: 'Protein, karbonhidrat ve yağ oranlarınızı renkli grafiklerle takip edin. Hedefinize ne kadar yakınsınız?',
       targetSelector: '[data-tutorial="macro-charts"]',
       position: 'top'
     }

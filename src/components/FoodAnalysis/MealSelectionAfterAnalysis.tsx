@@ -50,11 +50,11 @@ interface MealSelectionAfterAnalysisProps {
 }
 
 const mealOptions = [
-  { value: 'breakfast', label: 'Kahvaltı', emoji: '🌅' },
-  { value: 'lunch', label: 'Öğle Yemeği', emoji: '☀️' },
-  { value: 'dinner', label: 'Akşam Yemeği', emoji: '🌙' },
-  { value: 'snack', label: 'Atıştırmalık', emoji: '🍎' },
-  { value: 'drink', label: 'İçecek', emoji: '🥤' },
+  { value: 'Kahvaltı', label: 'Kahvaltı', emoji: '🌅' },
+  { value: 'Öğle', label: 'Öğle Yemeği', emoji: '☀️' },
+  { value: 'Akşam', label: 'Akşam Yemeği', emoji: '🌙' },
+  { value: 'Atıştırmalık', label: 'Atıştırmalık', emoji: '🍎' },
+  { value: 'İçecek', label: 'İçecek', emoji: '🥤' },
 ]
 
 export default function MealSelectionAfterAnalysis({ 

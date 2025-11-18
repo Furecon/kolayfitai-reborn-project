@@ -22,7 +22,7 @@ serve(async (req) => {
       throw new Error('Valid meal type is required');
     }
 
-    if (!['breakfast', 'lunch', 'dinner', 'snack', 'drink'].includes(mealType)) {
+    if (!['breakfast', 'lunch', 'dinner', 'snack'].includes(mealType)) {
       throw new Error('Invalid meal type');
     }
 

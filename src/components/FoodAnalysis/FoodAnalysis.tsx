@@ -37,7 +37,7 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
   const [detailedFormData, setDetailedFormData] = useState<any>(null)
   
   // Tutorial context
-  const { isVisible: tutorialVisible, currentScreen, completeTutorial, hideTutorial, disableTutorialsPermanently } = useTutorial()
+  const { isVisible: tutorialVisible, currentScreen, completeTutorial, hideTutorial } = useTutorial()
   const { autoShowTutorial } = useTutorialAutoShow()
 
   // Enhanced navigation with hardware back button support
@@ -104,8 +104,8 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
 
   const handleQuickAnalysisComplete = (foods: any[]) => {
     console.log('Quick analysis completed with foods:', foods)
-    // Meal is already saved in QuickAnalysisResult, just trigger callback
-    onMealAdded()
+    setDetectedFoods(foods)
+    setCurrentStep('meal-selection')
   }
 
   const handleDetailedAnalysisComplete = (data: any) => {
@@ -117,8 +117,8 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
 
   const handleManualEntryComplete = async (foods: any[]) => {
     console.log('Manual entry completed:', foods)
-    // Manual entry now also saves directly, just trigger callback
-    onMealAdded()
+    setDetectedFoods(foods)
+    setCurrentStep('meal-selection')
   }
 
   const handleMealSelectionComplete = (mealType: string, foods: any[]) => {
@@ -162,7 +162,7 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
 
       const mealData = {
         user_id: user.user.id,
-        meal_type: finalMealType,
+        meal_type: finalMealType.toLowerCase(),
         food_items: foods.map(food => ({
           name: food.name,
           nameEn: food.nameEn || food.name,
@@ -382,7 +382,6 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
         currentScreen={currentScreen}
         onComplete={handleTutorialComplete}
         onClose={handleTutorialClose}
-        onDontShowAgain={disableTutorialsPermanently}
       />
     </div>
   )

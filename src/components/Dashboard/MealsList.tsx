@@ -66,16 +66,14 @@ export function MealsList({ onAddMeal, refreshTrigger }: MealsListProps) {
 
   const getMealIcon = (mealType: string) => {
     switch (mealType.toLowerCase()) {
-      case 'breakfast':
+      case 'kahvaltı':
         return '🌅'
-      case 'lunch':
+      case 'öğle':
         return '☀️'
-      case 'dinner':
+      case 'akşam':
         return '🌙'
-      case 'snack':
+      case 'atıştırmalık':
         return '🍎'
-      case 'drink':
-        return '🥤'
       default:
         return '🍽️'
     }
@@ -94,7 +92,10 @@ export function MealsList({ onAddMeal, refreshTrigger }: MealsListProps) {
       'lunch': 'Öğle Yemeği',
       'dinner': 'Akşam Yemeği',
       'snack': 'Atıştırmalık',
-      'drink': 'İçecek'
+      'kahvaltı': 'Kahvaltı',
+      'öğle': 'Öğle Yemeği',
+      'akşam': 'Akşam Yemeği',
+      'atıştırmalık': 'Atıştırmalık'
     }
     return translations[mealType.toLowerCase() as keyof typeof translations] || mealType
   }

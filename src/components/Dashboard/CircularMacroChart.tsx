@@ -25,19 +25,19 @@ const CircularProgress = ({
 }) => {
   const percentage = Math.min((current / goal) * 100, 100)
   
-  // Responsive sizing - optimized for triangle layout
+  // Responsive sizing
   const dimensions = {
     large: {
-      container: 'w-36 h-36 sm:w-40 sm:h-40 md:w-44 md:h-44 lg:w-48 lg:h-48',
-      radius: { mobile: 70, tablet: 80, desktop: 90 },
-      strokeWidth: { mobile: 7, tablet: 8, desktop: 9 },
-      fontSize: 'text-2xl sm:text-3xl md:text-4xl'
+      container: 'w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-44 lg:h-44',
+      radius: { mobile: 60, tablet: 70, desktop: 80 },
+      strokeWidth: { mobile: 6, tablet: 7, desktop: 8 },
+      fontSize: 'text-xl sm:text-2xl md:text-3xl'
     },
     normal: {
-      container: 'w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32',
-      radius: { mobile: 38, tablet: 46, desktop: 54 },
+      container: 'w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36',
+      radius: { mobile: 45, tablet: 55, desktop: 65 },
       strokeWidth: { mobile: 4, tablet: 5, desktop: 6 },
-      fontSize: 'text-base sm:text-lg md:text-xl'
+      fontSize: 'text-lg sm:text-xl md:text-2xl'
     }
   }
   

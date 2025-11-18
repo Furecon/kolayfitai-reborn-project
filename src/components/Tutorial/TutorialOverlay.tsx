@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { X, ChevronRight, ScrollText } from 'lucide-react'
 import { tutorials, TutorialScreen } from './tutorials'
 
@@ -9,12 +8,10 @@ interface TutorialOverlayProps {
   currentScreen: TutorialScreen | null
   onComplete: () => void
   onClose: () => void
-  onDontShowAgain?: () => void
 }
 
-export function TutorialOverlay({ isVisible, currentScreen, onComplete, onClose, onDontShowAgain }: TutorialOverlayProps) {
+export function TutorialOverlay({ isVisible, currentScreen, onComplete, onClose }: TutorialOverlayProps) {
   const [stepIndex, setStepIndex] = useState(0)
-  const [dontShowAgain, setDontShowAgain] = useState(false)
 
   useEffect(() => {
     if (isVisible && currentScreen) {
@@ -38,9 +35,6 @@ export function TutorialOverlay({ isVisible, currentScreen, onComplete, onClose,
   }
 
   const handleSkip = () => {
-    if (dontShowAgain && onDontShowAgain) {
-      onDontShowAgain()
-    }
     onClose()
   }
 
@@ -175,24 +169,9 @@ export function TutorialOverlay({ isVisible, currentScreen, onComplete, onClose,
           </Button>
         </div>
         
-        <p className="text-xs text-gray-600 mb-2 leading-relaxed">
+        <p className="text-xs text-gray-600 mb-3 leading-relaxed">
           {currentStep.description}
         </p>
-
-        {/* Don't show again checkbox */}
-        <div className="flex items-center space-x-2 mb-3">
-          <Checkbox
-            id="dont-show-again"
-            checked={dontShowAgain}
-            onCheckedChange={(checked) => setDontShowAgain(checked as boolean)}
-          />
-          <label
-            htmlFor="dont-show-again"
-            className="text-xs text-gray-600 cursor-pointer select-none"
-          >
-            Bir daha gösterme
-          </label>
-        </div>
 
         {/* Show scroll message if target is off-screen */}
         {isTargetOffScreen && (

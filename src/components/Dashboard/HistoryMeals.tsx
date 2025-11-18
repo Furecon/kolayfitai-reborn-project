@@ -128,16 +128,18 @@ export function HistoryMeals() {
 
   const getMealIcon = (mealType: string) => {
     switch (mealType.toLowerCase()) {
+      case 'kahvaltı':
       case 'breakfast':
         return '🌅'
+      case 'öğle':
       case 'lunch':
         return '☀️'
+      case 'akşam':
       case 'dinner':
         return '🌙'
+      case 'atıştırmalık':
       case 'snack':
         return '🍎'
-      case 'drink':
-        return '🥤'
       default:
         return '🍽️'
     }
@@ -149,7 +151,10 @@ export function HistoryMeals() {
       'lunch': 'Öğle Yemeği',
       'dinner': 'Akşam Yemeği',
       'snack': 'Atıştırmalık',
-      'drink': 'İçecek'
+      'kahvaltı': 'Kahvaltı',
+      'öğle': 'Öğle Yemeği',
+      'akşam': 'Akşam Yemeği',
+      'atıştırmalık': 'Atıştırmalık'
     }
     return translations[mealType.toLowerCase() as keyof typeof translations] || mealType
   }
@@ -265,11 +270,10 @@ export function HistoryMeals() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tüm Öğünler</SelectItem>
-                  <SelectItem value="breakfast">Kahvaltı</SelectItem>
-                  <SelectItem value="lunch">Öğle Yemeği</SelectItem>
-                  <SelectItem value="dinner">Akşam Yemeği</SelectItem>
-                  <SelectItem value="snack">Atıştırmalık</SelectItem>
-                  <SelectItem value="drink">İçecek</SelectItem>
+                  <SelectItem value="kahvaltı">Kahvaltı</SelectItem>
+                  <SelectItem value="öğle">Öğle Yemeği</SelectItem>
+                  <SelectItem value="akşam">Akşam Yemeği</SelectItem>
+                  <SelectItem value="atıştırmalık">Atıştırmalık</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -91,17 +91,20 @@ export default function ProgressTracker() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Genel İlerleme Skoru</p>
-              <div className="flex items-center gap-3">
-                <span className={`text-2xl font-bold ${getScoreColor(latestAssessment.progress_score)}`}>
-                  {latestAssessment.progress_score}/100
-                </span>
-                <Badge variant={getScoreBadgeVariant(latestAssessment.progress_score)}>
-                  {latestAssessment.progress_score >= 80 ? 'Mükemmel' :
-                   latestAssessment.progress_score >= 60 ? 'İyi' : 'Gelişim Alanı'}
-                </Badge>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Genel İlerleme Skoru</p>
+                <div className="flex items-center gap-3">
+                  <span className={`text-2xl font-bold ${getScoreColor(latestAssessment.progress_score)}`}>
+                    {latestAssessment.progress_score}/100
+                  </span>
+                  <Badge variant={getScoreBadgeVariant(latestAssessment.progress_score)}>
+                    {latestAssessment.progress_score >= 80 ? 'Mükemmel' : 
+                     latestAssessment.progress_score >= 60 ? 'İyi' : 'Gelişim Alanı'}
+                  </Badge>
+                </div>
               </div>
+              <Progress value={latestAssessment.progress_score} className="w-32" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
