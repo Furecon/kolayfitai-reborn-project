@@ -69,12 +69,43 @@ export default function QuickAnalysisResult({
   const [editingFoodIndex, setEditingFoodIndex] = useState<number | null>(null)
   const [editFoodName, setEditFoodName] = useState<string>('')
   const [isLookingUpFood, setIsLookingUpFood] = useState(false)
+  const [showHelp, setShowHelp] = useState<boolean | null>(null)
+  const [isLoadingHelpPreference, setIsLoadingHelpPreference] = useState(true)
 
   useEffect(() => {
     if (capturedImage && !hasAnalyzed) {
       analyzeImage()
     }
   }, [capturedImage, hasAnalyzed])
+
+  // Load help preference from user profile
+  useEffect(() => {
+    const loadHelpPreference = async () => {
+      if (!user?.id) return
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('show_analysis_help')
+          .eq('id', user.id)
+          .single()
+
+        if (error) {
+          console.error('Error loading help preference:', error)
+          setShowHelp(true) // Default to showing help
+        } else {
+          setShowHelp(data?.show_analysis_help ?? true)
+        }
+      } catch (error) {
+        console.error('Error loading help preference:', error)
+        setShowHelp(true)
+      } finally {
+        setIsLoadingHelpPreference(false)
+      }
+    }
+
+    loadHelpPreference()
+  }, [user?.id])
 
   const analyzeImage = async () => {
     if (!capturedImage) return
@@ -270,6 +301,25 @@ export default function QuickAnalysisResult({
   const handleCancelEdit = () => {
     setEditingFoodIndex(null)
     setEditFoodName('')
+  }
+
+  const handleDismissHelp = async () => {
+    if (!user?.id) return
+
+    try {
+      setShowHelp(false)
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ show_analysis_help: false })
+        .eq('id', user.id)
+
+      if (error) {
+        console.error('Error saving help preference:', error)
+      }
+    } catch (error) {
+      console.error('Error dismissing help:', error)
+    }
   }
 
   const handleLookupFood = async () => {
@@ -535,6 +585,26 @@ export default function QuickAnalysisResult({
         </div>
       )}
 
+      {/* Usage Help Card */}
+      {showHelp && !isLoadingHelpPreference && (
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4">
+          <div className="flex justify-between items-start mb-2">
+            <h4 className="font-medium text-gray-900">💡 Kullanım İpuçları</h4>
+            <button
+              onClick={handleDismissHelp}
+              className="text-xs text-gray-500 hover:text-gray-700 underline"
+            >
+              Bir daha gösterme
+            </button>
+          </div>
+          <div className="space-y-2 text-sm text-gray-700">
+            <p>• <strong>Yemek adı yanlışsa:</strong> Her kartın altındaki "Yemeğin ismini düzelt ve yeniden hesaplat" butonuna tıklayarak düzeltebilirsiniz.</p>
+            <p>• <strong>Öğün seçimi:</strong> Aşağıda hangi öğüne kaydedeceğinizi seçin (Kahvaltı, Öğle, Akşam, Atıştırmalık, İçecek).</p>
+            <p>• <strong>Kaydetme:</strong> Tüm değişiklikleri yaptıktan sonra "Öğünü Kaydet" butonuna basın.</p>
+          </div>
+        </div>
+      )}
+
       {/* Low Confidence Warning */}
       {confidence < 0.7 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -556,25 +626,15 @@ export default function QuickAnalysisResult({
                 <h4 className="text-lg font-semibold text-gray-900">{food.name}</h4>
                 <p className="text-sm text-gray-500">{food.estimatedAmount}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleEditFood(index)}
-                  className="h-8 px-2"
-                >
-                  <Edit className="h-3 w-3" />
-                </Button>
-                <div className="text-right">
-                  <p className="text-xl font-bold text-green-600">
-                    {Math.round(food.totalNutrition.calories)} kcal
-                  </p>
-                </div>
+              <div className="text-right">
+                <p className="text-xl font-bold text-green-600">
+                  {Math.round(food.totalNutrition.calories)} kcal
+                </p>
               </div>
             </div>
-            
+
             {/* Detailed Nutrition Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
               {Object.entries(food.totalNutrition).map(([key, value]) => {
                 if (key === 'calories') return null // Already shown above
                 return (
@@ -600,6 +660,16 @@ export default function QuickAnalysisResult({
                 )
               })}
             </div>
+
+            {/* Edit Button - Prominent and Clear */}
+            <Button
+              onClick={() => handleEditFood(index)}
+              variant="outline"
+              className="w-full mt-3 border-2 border-dashed border-gray-300 hover:border-green-500 hover:bg-green-50 text-gray-700 hover:text-green-700 font-medium py-3"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Yemeğin ismini düzelt ve yeniden hesaplat
+            </Button>
           </div>
         ))}
       </div>

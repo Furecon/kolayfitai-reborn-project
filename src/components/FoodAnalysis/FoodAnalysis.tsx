@@ -104,8 +104,8 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
 
   const handleQuickAnalysisComplete = (foods: any[]) => {
     console.log('Quick analysis completed with foods:', foods)
-    setDetectedFoods(foods)
-    setCurrentStep('meal-selection')
+    // Meal is already saved in QuickAnalysisResult, just trigger callback
+    onMealAdded()
   }
 
   const handleDetailedAnalysisComplete = (data: any) => {
@@ -117,8 +117,8 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
 
   const handleManualEntryComplete = async (foods: any[]) => {
     console.log('Manual entry completed:', foods)
-    setDetectedFoods(foods)
-    setCurrentStep('meal-selection')
+    // Manual entry now also saves directly, just trigger callback
+    onMealAdded()
   }
 
   const handleMealSelectionComplete = (mealType: string, foods: any[]) => {
