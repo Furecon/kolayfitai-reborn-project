@@ -17,12 +17,34 @@ import {
 // Helper function to parse assessment data
 const parseAssessmentData = (assessment: Assessment) => {
   try {
+    // First, try to parse recommendations field (it might contain the structured data as JSON string)
+    if (assessment.recommendations) {
+      try {
+        const recommendationsData = typeof assessment.recommendations === 'string'
+          ? JSON.parse(assessment.recommendations)
+          : assessment.recommendations;
+
+        // Check if it has the new structure
+        if (recommendationsData.general_evaluation || recommendationsData.dietary_advice) {
+          console.log('Found structured data in recommendations field');
+          return recommendationsData;
+        }
+      } catch (e) {
+        // If recommendations is not JSON, continue to assessment_data
+      }
+    }
+
     // Try to parse assessment_data if it exists
     if (assessment.assessment_data) {
       const data = typeof assessment.assessment_data === 'string'
         ? JSON.parse(assessment.assessment_data)
         : assessment.assessment_data;
-      return data;
+
+      // Check if it has the new structure
+      if (data.general_evaluation || data.dietary_advice) {
+        console.log('Found structured data in assessment_data field');
+        return data;
+      }
     }
   } catch (e) {
     console.error('Error parsing assessment data:', e);
