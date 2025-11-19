@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { supabase } from '@/integrations/supabase/client'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react'
 import { format, subDays, subMonths, subYears } from 'date-fns'
 import { tr } from 'date-fns/locale'
@@ -168,7 +168,7 @@ export default function WeightProgressChart() {
         ) : (
           <>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Current Weight */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
                 <p className="text-sm text-gray-600 mb-1">Mevcut Kilo</p>
@@ -201,33 +201,26 @@ export default function WeightProgressChart() {
                   </div>
                 </div>
               )}
-
-              {/* Goal Progress */}
-              {goalProgress && (
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
-                  <p className="text-sm text-gray-600 mb-1">Hedefe İlerleme</p>
-                  <p className="text-2xl font-bold text-purple-700">
-                    {goalProgress.progress}%
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    {goalProgress.remaining} kg kaldı
-                  </p>
-                </div>
-              )}
             </div>
 
             {/* Chart */}
-            <div className="h-64 w-full">
+            <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="date"
                     tick={{ fontSize: 12 }}
                     interval="preserveStartEnd"
                   />
                   <YAxis
-                    domain={['dataMin - 2', 'dataMax + 2']}
+                    domain={[(dataMin: number) => {
+                      const minWeight = Math.min(dataMin, goalWeight || dataMin)
+                      return Math.floor(minWeight - 5)
+                    }, (dataMax: number) => {
+                      const maxWeight = Math.max(dataMax, goalWeight || dataMax)
+                      return Math.ceil(maxWeight + 5)
+                    }]}
                     tick={{ fontSize: 12 }}
                     label={{ value: 'Kilo (kg)', angle: -90, position: 'insideLeft' }}
                   />
@@ -246,6 +239,20 @@ export default function WeightProgressChart() {
                       return null
                     }}
                   />
+                  {goalWeight && (
+                    <ReferenceLine
+                      y={goalWeight}
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      label={{
+                        value: `Hedef: ${goalWeight.toFixed(1)} kg`,
+                        position: 'insideTopRight',
+                        fill: '#10b981',
+                        fontSize: 12
+                      }}
+                    />
+                  )}
                   <Line
                     type="monotone"
                     dataKey="weight"
@@ -254,20 +261,6 @@ export default function WeightProgressChart() {
                     dot={{ fill: '#3b82f6', r: 4 }}
                     activeDot={{ r: 6 }}
                   />
-                  {goalWeight && (
-                    <Line
-                      type="monotone"
-                      data={[
-                        { date: chartData[0]?.date, weight: goalWeight },
-                        { date: chartData[chartData.length - 1]?.date, weight: goalWeight }
-                      ]}
-                      dataKey="weight"
-                      stroke="#10b981"
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                      dot={false}
-                    />
-                  )}
                 </LineChart>
               </ResponsiveContainer>
             </div>
