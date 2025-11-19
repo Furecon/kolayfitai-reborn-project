@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { supabase } from '@/integrations/supabase/client'
-import { Calendar, TrendingUp, Target, MessageCircle, Sparkles, Heart } from 'lucide-react'
+import { Calendar, TrendingUp, Target, MessageCircle, Sparkles, Heart, Activity, Apple, Zap } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import {
   Dialog,
@@ -13,6 +13,50 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+
+// Helper function to parse assessment data
+const parseAssessmentData = (assessment: Assessment) => {
+  try {
+    // Try to parse assessment_data if it exists
+    if (assessment.assessment_data) {
+      const data = typeof assessment.assessment_data === 'string'
+        ? JSON.parse(assessment.assessment_data)
+        : assessment.assessment_data;
+      return data;
+    }
+  } catch (e) {
+    console.error('Error parsing assessment data:', e);
+  }
+  return null;
+}
+
+// Helper component to render structured content
+const StructuredContent = ({ title, content, icon: Icon, gradientFrom, gradientTo, textColor }: any) => {
+  if (!content) return null;
+
+  // Split content into sentences and create bullet points
+  const sentences = content
+    .split(/\.\s+/)
+    .filter((s: string) => s.trim().length > 0)
+    .map((s: string) => s.trim() + (s.endsWith('.') ? '' : '.'));
+
+  return (
+    <div className={`space-y-3 bg-gradient-to-br ${gradientFrom} ${gradientTo} p-5 rounded-lg border border-gray-200`}>
+      <h4 className="font-semibold text-base flex items-center gap-2">
+        <Icon className={`h-5 w-5 ${textColor}`} />
+        {title}
+      </h4>
+      <ul className="space-y-2">
+        {sentences.map((sentence: string, idx: number) => (
+          <li key={idx} className="text-sm text-gray-700 leading-relaxed flex gap-2">
+            <span className="text-gray-400 mt-1">•</span>
+            <span>{sentence}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
 interface Assessment {
   id: string
@@ -297,63 +341,113 @@ export default function ProgressTracker() {
             </DialogTitle>
           </DialogHeader>
 
-          {selectedAssessment && (
-            <div className="space-y-6 py-4">
-              {/* Score */}
-              <div className="text-center space-y-2">
-                <p className="text-sm text-gray-600">Genel İlerleme Skoru</p>
-                <div className="flex items-center justify-center gap-3">
-                  <span className={`text-4xl font-bold ${getScoreColor(selectedAssessment.progress_score)}`}>
-                    {selectedAssessment.progress_score}/100
-                  </span>
-                  <Badge variant={getScoreBadgeVariant(selectedAssessment.progress_score)} className="text-base px-3 py-1">
-                    {selectedAssessment.progress_score >= 80 ? 'Mükemmel' :
-                     selectedAssessment.progress_score >= 60 ? 'İyi' : 'Gelişim Alanı'}
-                  </Badge>
+          {selectedAssessment && (() => {
+            const parsedData = parseAssessmentData(selectedAssessment);
+
+            return (
+              <div className="space-y-6 py-4">
+                {/* Score */}
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-gray-600">Genel İlerleme Skoru</p>
+                  <div className="flex items-center justify-center gap-3">
+                    <span className={`text-4xl font-bold ${getScoreColor(selectedAssessment.progress_score)}`}>
+                      {selectedAssessment.progress_score}/100
+                    </span>
+                    <Badge variant={getScoreBadgeVariant(selectedAssessment.progress_score)} className="text-base px-3 py-1">
+                      {selectedAssessment.progress_score >= 80 ? 'Mükemmel' :
+                       selectedAssessment.progress_score >= 60 ? 'İyi' : 'Gelişim Alanı'}
+                    </Badge>
+                  </div>
+                  <Progress value={selectedAssessment.progress_score} className="w-full h-3" />
                 </div>
-                <Progress value={selectedAssessment.progress_score} className="w-full h-3" />
-              </div>
 
-              {/* Recommendations */}
-              <div className="space-y-2 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-base flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-blue-600" />
-                  Öneriler
-                </h4>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                  {selectedAssessment.recommendations}
+                {/* General Evaluation */}
+                {parsedData?.general_evaluation && (
+                  <div className="space-y-2 bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-lg border border-blue-200">
+                    <h4 className="font-semibold text-base flex items-center gap-2">
+                      <Target className="h-5 w-5 text-blue-600" />
+                      Genel Değerlendirme
+                    </h4>
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {parsedData.general_evaluation}
+                    </p>
+                  </div>
+                )}
+
+                {/* Dietary Advice */}
+                <StructuredContent
+                  title="Beslenme Önerileri"
+                  content={parsedData?.dietary_advice}
+                  icon={Apple}
+                  gradientFrom="from-green-50"
+                  gradientTo="to-emerald-50"
+                  textColor="text-green-600"
+                />
+
+                {/* Exercise Recommendations */}
+                <StructuredContent
+                  title="Egzersiz Önerileri"
+                  content={parsedData?.exercise_recommendations}
+                  icon={Activity}
+                  gradientFrom="from-orange-50"
+                  gradientTo="to-amber-50"
+                  textColor="text-orange-600"
+                />
+
+                {/* Lifestyle Changes */}
+                <StructuredContent
+                  title="Yaşam Tarzı Değişiklikleri"
+                  content={parsedData?.lifestyle_changes}
+                  icon={Zap}
+                  gradientFrom="from-purple-50"
+                  gradientTo="to-pink-50"
+                  textColor="text-purple-600"
+                />
+
+                {/* Fallback to old format if no parsed data */}
+                {!parsedData && (
+                  <>
+                    <StructuredContent
+                      title="Öneriler"
+                      content={selectedAssessment.recommendations}
+                      icon={TrendingUp}
+                      gradientFrom="from-blue-50"
+                      gradientTo="to-indigo-50"
+                      textColor="text-blue-600"
+                    />
+
+                    <StructuredContent
+                      title="Sağlık Önerileri"
+                      content={selectedAssessment.health_insights}
+                      icon={Heart}
+                      gradientFrom="from-green-50"
+                      gradientTo="to-emerald-50"
+                      textColor="text-green-600"
+                    />
+                  </>
+                )}
+
+                {/* Motivational Message */}
+                {selectedAssessment.motivational_message && (
+                  <div className="space-y-2 bg-gradient-to-br from-indigo-50 to-blue-50 p-5 rounded-lg border border-indigo-200">
+                    <h4 className="font-semibold text-base flex items-center gap-2">
+                      <MessageCircle className="h-5 w-5 text-indigo-600" />
+                      Motivasyon Mesajı
+                    </h4>
+                    <p className="text-sm text-indigo-700 italic leading-relaxed">
+                      {selectedAssessment.motivational_message}
+                    </p>
+                  </div>
+                )}
+
+                {/* Date */}
+                <p className="text-xs text-gray-500 text-center flex items-center justify-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {formatDate(selectedAssessment.created_at)}
                 </p>
               </div>
-
-              {/* Health Insights */}
-              <div className="space-y-2 bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-base flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-green-600" />
-                  Sağlık Önerileri
-                </h4>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                  {selectedAssessment.health_insights}
-                </p>
-              </div>
-
-              {/* Motivational Message */}
-              <div className="space-y-2 bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-base flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5 text-purple-600" />
-                  Motivasyon
-                </h4>
-                <p className="text-sm text-purple-700 italic whitespace-pre-wrap leading-relaxed">
-                  {selectedAssessment.motivational_message}
-                </p>
-              </div>
-
-              {/* Date */}
-              <p className="text-xs text-gray-500 text-center flex items-center justify-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {formatDate(selectedAssessment.created_at)}
-              </p>
-            </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
