@@ -76,6 +76,7 @@ export default function ProgressTracker() {
   const [generating, setGenerating] = useState(false)
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [showAllHistory, setShowAllHistory] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -318,7 +319,7 @@ export default function ProgressTracker() {
         <CardHeader>
           <CardTitle>Değerlendirme Geçmişi</CardTitle>
           <p className="text-sm text-gray-600">
-            AI tarafından yapılan değerlendirmelerinizin geçmişi
+            Son 3 değerlendirmeniz
           </p>
         </CardHeader>
         <CardContent>
@@ -330,50 +331,86 @@ export default function ProgressTracker() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {assessments.map((assessment, index) => (
-                <div
-                  key={assessment.id}
-                  className="border rounded-lg p-4 space-y-3 cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => openAssessmentDetail(assessment)}
+            <>
+              <div className="space-y-4">
+                {(showAllHistory ? assessments : assessments.slice(0, 3)).map((assessment, index) => {
+                  const parsedData = parseAssessmentData(assessment);
+
+                  return (
+                    <div
+                      key={assessment.id}
+                      className="border rounded-lg p-4 space-y-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => openAssessmentDetail(assessment)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Badge variant={getScoreBadgeVariant(assessment.progress_score)}>
+                            {assessment.progress_score}/100
+                          </Badge>
+                          <span className="text-sm text-gray-600">
+                            {formatDate(assessment.created_at)}
+                          </span>
+                        </div>
+                        {index === 0 && !showAllHistory && (
+                          <Badge variant="outline" className="text-xs">
+                            En Son
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 text-sm">
+                        {parsedData ? (
+                          <>
+                            {parsedData.general_evaluation && (
+                              <div>
+                                <h5 className="font-medium mb-1">Genel Değerlendirme</h5>
+                                <p className="text-gray-700 line-clamp-2">
+                                  {parsedData.general_evaluation}
+                                </p>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {assessment.health_insights && (
+                              <div>
+                                <h5 className="font-medium mb-1">Sağlık Önerileri</h5>
+                                <p className="text-gray-700 line-clamp-2">
+                                  {assessment.health_insights}
+                                </p>
+                              </div>
+                            )}
+                            {assessment.recommendations && (
+                              <div>
+                                <h5 className="font-medium mb-1">Genel Öneriler</h5>
+                                <p className="text-gray-700 line-clamp-2">
+                                  {assessment.recommendations}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <Progress value={assessment.progress_score} className="w-full" />
+
+                      <p className="text-xs text-gray-400 text-center">Detayları görmek için tıklayın</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Show More/Less Button */}
+              {assessments.length > 3 && (
+                <Button
+                  variant="outline"
+                  className="w-full mt-4"
+                  onClick={() => setShowAllHistory(!showAllHistory)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Badge variant={getScoreBadgeVariant(assessment.progress_score)}>
-                        {assessment.progress_score}/100
-                      </Badge>
-                      <span className="text-sm text-gray-600">
-                        {formatDate(assessment.created_at)}
-                      </span>
-                    </div>
-                    {index === 0 && (
-                      <Badge variant="outline" className="text-xs">
-                        En Son
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <h5 className="font-medium mb-1">Sağlık Önerileri</h5>
-                      <p className="text-gray-700 line-clamp-2">
-                        {assessment.health_insights}
-                      </p>
-                    </div>
-                    <div>
-                      <h5 className="font-medium mb-1">Genel Öneriler</h5>
-                      <p className="text-gray-700 line-clamp-2">
-                        {assessment.recommendations}
-                      </p>
-                    </div>
-                  </div>
-
-                  <Progress value={assessment.progress_score} className="w-full" />
-
-                  <p className="text-xs text-gray-400 text-center">Detayları görmek için tıklayın</p>
-                </div>
-              ))}
-            </div>
+                  {showAllHistory ? 'Daha Az Göster' : `Tümünü Gör (${assessments.length})`}
+                </Button>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
@@ -408,69 +445,79 @@ export default function ProgressTracker() {
                   <Progress value={selectedAssessment.progress_score} className="w-full h-3" />
                 </div>
 
-                {/* General Evaluation */}
-                {parsedData?.general_evaluation && (
-                  <div className="space-y-2 bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-lg border border-blue-200">
-                    <h4 className="font-semibold text-base flex items-center gap-2">
-                      <Target className="h-5 w-5 text-blue-600" />
-                      Genel Değerlendirme
-                    </h4>
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      {parsedData.general_evaluation}
-                    </p>
-                  </div>
-                )}
-
-                {/* Dietary Advice */}
-                <StructuredContent
-                  title="Beslenme Önerileri"
-                  content={parsedData?.dietary_advice}
-                  icon={Apple}
-                  gradientFrom="from-green-50"
-                  gradientTo="to-emerald-50"
-                  textColor="text-green-600"
-                />
-
-                {/* Exercise Recommendations */}
-                <StructuredContent
-                  title="Egzersiz Önerileri"
-                  content={parsedData?.exercise_recommendations}
-                  icon={Activity}
-                  gradientFrom="from-orange-50"
-                  gradientTo="to-amber-50"
-                  textColor="text-orange-600"
-                />
-
-                {/* Lifestyle Changes */}
-                <StructuredContent
-                  title="Yaşam Tarzı Değişiklikleri"
-                  content={parsedData?.lifestyle_changes}
-                  icon={Zap}
-                  gradientFrom="from-purple-50"
-                  gradientTo="to-pink-50"
-                  textColor="text-purple-600"
-                />
-
-                {/* Fallback to old format if no parsed data */}
-                {!parsedData && (
+                {/* Show new structured format or fallback to old format */}
+                {parsedData ? (
                   <>
-                    <StructuredContent
-                      title="Öneriler"
-                      content={selectedAssessment.recommendations}
-                      icon={TrendingUp}
-                      gradientFrom="from-blue-50"
-                      gradientTo="to-indigo-50"
-                      textColor="text-blue-600"
-                    />
+                    {/* General Evaluation */}
+                    {parsedData.general_evaluation && (
+                      <div className="space-y-2 bg-gradient-to-br from-slate-50 to-gray-50 p-5 rounded-lg border border-gray-200">
+                        <h4 className="font-semibold text-base flex items-center gap-2">
+                          <Target className="h-5 w-5 text-gray-700" />
+                          Genel Değerlendirme
+                        </h4>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {parsedData.general_evaluation}
+                        </p>
+                      </div>
+                    )}
 
+                    {/* Dietary Advice */}
                     <StructuredContent
-                      title="Sağlık Önerileri"
-                      content={selectedAssessment.health_insights}
-                      icon={Heart}
+                      title="Beslenme Önerileri"
+                      content={parsedData.dietary_advice}
+                      icon={Apple}
                       gradientFrom="from-green-50"
                       gradientTo="to-emerald-50"
                       textColor="text-green-600"
                     />
+
+                    {/* Exercise Recommendations */}
+                    <StructuredContent
+                      title="Egzersiz Önerileri"
+                      content={parsedData.exercise_recommendations}
+                      icon={Activity}
+                      gradientFrom="from-orange-50"
+                      gradientTo="to-amber-50"
+                      textColor="text-orange-600"
+                    />
+
+                    {/* Lifestyle Changes */}
+                    <StructuredContent
+                      title="Yaşam Tarzı Değişiklikleri"
+                      content={parsedData.lifestyle_changes}
+                      icon={Zap}
+                      gradientFrom="from-purple-50"
+                      gradientTo="to-pink-50"
+                      textColor="text-purple-600"
+                    />
+                  </>
+                ) : (
+                  <>
+                    {/* Fallback: Show health insights */}
+                    {selectedAssessment.health_insights && (
+                      <div className="space-y-2 bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-lg border border-blue-200">
+                        <h4 className="font-semibold text-base flex items-center gap-2">
+                          <Heart className="h-5 w-5 text-blue-600" />
+                          Sağlık Önerileri
+                        </h4>
+                        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                          {selectedAssessment.health_insights}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Fallback: Show general recommendations */}
+                    {selectedAssessment.recommendations && (
+                      <div className="space-y-2 bg-gradient-to-br from-green-50 to-emerald-50 p-5 rounded-lg border border-green-200">
+                        <h4 className="font-semibold text-base flex items-center gap-2">
+                          <TrendingUp className="h-5 w-5 text-green-600" />
+                          Genel Öneriler
+                        </h4>
+                        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                          {selectedAssessment.recommendations}
+                        </p>
+                      </div>
+                    )}
                   </>
                 )}
 
