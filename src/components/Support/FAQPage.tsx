@@ -59,8 +59,8 @@ export function FAQPage({ onBack }: FAQPageProps) {
         a: "Evet, galeriden/dosyadan görsel seçebilirsiniz. Fotoğraf analizi seçeneğinde 'Galeriden seç' butonunu kullanın."
       },
       {
-        q: "Barkodu fotoğraftan okutabilir miyim?",
-        a: "Evet. Barkod içeren fotoğrafı seçerek kodu çıkarabiliriz. Barkod ekleme seçeneğinde 'Fotoğraftan oku' butonunu kullanın."
+        q: "Aynı yemeği sık sık yiyorum, hızlı ekleme yapabilir miyim?",
+        a: "Evet! Favori yemekler özelliğini kullanabilirsiniz. Bir yemeği analiz ettikten sonra favorilere ekleyin. Daha sonra 'Öğünler' sekmesinden 'Favorilerim' butonuyla tek tıkla ekleyebilirsiniz."
       }
     ],
     ai: [
