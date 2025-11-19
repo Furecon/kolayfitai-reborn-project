@@ -7,6 +7,7 @@ import { Loader as Loader2, CircleAlert as AlertCircle, CircleCheck as CheckCirc
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { TrialLimitModal } from './TrialLimitModal'
 import { useAuth } from '@/components/Auth/AuthProvider'
+import { updateWaterFromFood } from '@/lib/waterCalculation'
 
 interface FoodItem {
   name: string
@@ -224,6 +225,13 @@ export default function QuickAnalysisResult({
       if (error) {
         console.error('Error saving meal:', error)
         throw error
+      }
+
+      // Update water intake from food items
+      for (const food of detectedFoods) {
+        const portionMatch = food.estimatedAmount.match(/(\d+)/);
+        const portionGrams = portionMatch ? parseInt(portionMatch[0]) : 100;
+        await updateWaterFromFood(supabase, user.id, food.name, portionGrams);
       }
 
       toast({

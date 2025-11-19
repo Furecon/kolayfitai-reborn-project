@@ -31,6 +31,7 @@ import {
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { useToast } from '@/hooks/use-toast'
+import { updateWaterFromFood } from '@/lib/waterCalculation'
 
 interface ManualFoodEntryProps {
   mealType: string
@@ -618,6 +619,15 @@ export default function ManualFoodEntry({
         .insert([mealLogData])
 
       if (error) throw error
+
+      // Update water intake from food
+      const portionGrams = formData.portionUnit === 'g'
+        ? Number(formData.portionAmount)
+        : formData.portionUnit === 'ml'
+          ? Number(formData.portionAmount)
+          : Number(formData.portionAmount) * 100;
+
+      await updateWaterFromFood(supabase, user.id, formData.mealName, portionGrams);
 
       toast({
         title: "Başarılı!",

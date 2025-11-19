@@ -65,7 +65,7 @@ export function Dashboard() {
 
     const { data } = await supabase
       .from('profiles')
-      .select('user_id')
+      .select('user_id, weight')
       .eq('user_id', user.id)
       .single()
 
@@ -231,6 +231,7 @@ export function Dashboard() {
         return (
           <HomeTab
             dailyStats={dailyStats}
+            userWeight={profile?.weight}
             onCameraClick={() => setCurrentView('meal-selection')}
             onUpgradeClick={() => setActiveTab('settings')}
           />

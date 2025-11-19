@@ -1,5 +1,6 @@
 import { CalorieCards } from '../CalorieCards'
 import { TrialUsageCard } from '../TrialUsageCard'
+import { WaterTracker } from '../WaterTracker'
 
 interface HomeTabProps {
   dailyStats: {
@@ -15,11 +16,12 @@ interface HomeTabProps {
     carbsGoal: number
     fatGoal: number
   }
+  userWeight?: number
   onCameraClick: () => void
   onUpgradeClick: () => void
 }
 
-export function HomeTab({ dailyStats, onCameraClick, onUpgradeClick }: HomeTabProps) {
+export function HomeTab({ dailyStats, userWeight, onCameraClick, onUpgradeClick }: HomeTabProps) {
   return (
     <div className="pb-20 w-full">
       <div>
@@ -30,7 +32,8 @@ export function HomeTab({ dailyStats, onCameraClick, onUpgradeClick }: HomeTabPr
       </div>
 
       <div className="w-full px-4 sm:px-6 pb-3 sm:pb-4">
-        <div className="max-w-screen-2xl mx-auto">
+        <div className="max-w-screen-2xl mx-auto space-y-4">
+          <WaterTracker userWeight={userWeight} />
           <TrialUsageCard onUpgradeClick={onUpgradeClick} />
         </div>
       </div>
