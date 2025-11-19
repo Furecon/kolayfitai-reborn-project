@@ -110,7 +110,7 @@ export function FAQPage({ onBack }: FAQPageProps) {
       },
       {
         q: "Üyelik ücretleri ne kadar?",
-        a: "Aylık 119,99₺ veya yıllık 1.199,99₺. Ödemeler Google Play veya App Store üzerinden güvenli şekilde yapılır."
+        a: "Aylık 149,99₺ veya yıllık 1.499,99₺. Ödemeler Google Play veya App Store üzerinden güvenli şekilde yapılır."
       },
       {
         q: "Aboneliğimi nasıl iptal edebilirim?",
