@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import WeightProgressChart from './WeightProgressChart'
 
 // Helper function to parse assessment data
 const parseAssessmentData = (assessment: Assessment) => {
@@ -566,6 +567,9 @@ export default function ProgressTracker() {
           })()}
         </DialogContent>
       </Dialog>
+
+      {/* Weight Progress Chart */}
+      <WeightProgressChart />
     </div>
   )
 }
