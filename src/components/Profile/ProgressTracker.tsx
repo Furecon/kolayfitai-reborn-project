@@ -5,8 +5,14 @@ import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { supabase } from '@/integrations/supabase/client'
-import { Calendar, TrendingUp, Target, MessageCircle, Sparkles } from 'lucide-react'
+import { Calendar, TrendingUp, Target, MessageCircle, Sparkles, Heart } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface Assessment {
   id: string
@@ -24,6 +30,8 @@ export default function ProgressTracker() {
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
+  const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -99,6 +107,11 @@ export default function ProgressTracker() {
     } finally {
       setGenerating(false)
     }
+  }
+
+  const openAssessmentDetail = (assessment: Assessment) => {
+    setSelectedAssessment(assessment)
+    setIsDialogOpen(true)
   }
 
   if (loading) {
@@ -192,6 +205,15 @@ export default function ProgressTracker() {
               </div>
             </div>
 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openAssessmentDetail(latestAssessment)}
+              className="w-full mt-2"
+            >
+              Tümünü Görüntüle
+            </Button>
+
             <p className="text-xs text-gray-500 flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               {formatDate(latestAssessment.created_at)}
@@ -219,7 +241,11 @@ export default function ProgressTracker() {
           ) : (
             <div className="space-y-4">
               {assessments.map((assessment, index) => (
-                <div key={assessment.id} className="border rounded-lg p-4 space-y-3">
+                <div
+                  key={assessment.id}
+                  className="border rounded-lg p-4 space-y-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => openAssessmentDetail(assessment)}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Badge variant={getScoreBadgeVariant(assessment.progress_score)}>
@@ -252,12 +278,84 @@ export default function ProgressTracker() {
                   </div>
 
                   <Progress value={assessment.progress_score} className="w-full" />
+
+                  <p className="text-xs text-gray-400 text-center">Detayları görmek için tıklayın</p>
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Assessment Detail Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              Değerlendirme Detayları
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedAssessment && (
+            <div className="space-y-6 py-4">
+              {/* Score */}
+              <div className="text-center space-y-2">
+                <p className="text-sm text-gray-600">Genel İlerleme Skoru</p>
+                <div className="flex items-center justify-center gap-3">
+                  <span className={`text-4xl font-bold ${getScoreColor(selectedAssessment.progress_score)}`}>
+                    {selectedAssessment.progress_score}/100
+                  </span>
+                  <Badge variant={getScoreBadgeVariant(selectedAssessment.progress_score)} className="text-base px-3 py-1">
+                    {selectedAssessment.progress_score >= 80 ? 'Mükemmel' :
+                     selectedAssessment.progress_score >= 60 ? 'İyi' : 'Gelişim Alanı'}
+                  </Badge>
+                </div>
+                <Progress value={selectedAssessment.progress_score} className="w-full h-3" />
+              </div>
+
+              {/* Recommendations */}
+              <div className="space-y-2 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-base flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                  Öneriler
+                </h4>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                  {selectedAssessment.recommendations}
+                </p>
+              </div>
+
+              {/* Health Insights */}
+              <div className="space-y-2 bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-base flex items-center gap-2">
+                  <Heart className="h-5 w-5 text-green-600" />
+                  Sağlık Önerileri
+                </h4>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                  {selectedAssessment.health_insights}
+                </p>
+              </div>
+
+              {/* Motivational Message */}
+              <div className="space-y-2 bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-base flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-purple-600" />
+                  Motivasyon
+                </h4>
+                <p className="text-sm text-purple-700 italic whitespace-pre-wrap leading-relaxed">
+                  {selectedAssessment.motivational_message}
+                </p>
+              </div>
+
+              {/* Date */}
+              <p className="text-xs text-gray-500 text-center flex items-center justify-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {formatDate(selectedAssessment.created_at)}
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
