@@ -19,6 +19,7 @@
     "@capacitor/android": "^6.1.2",
     "@capacitor/app": "^6.0.1",
     "@capacitor/core": "^6.1.2",
+    "@capacitor/local-notifications": "^7.0.3",
     "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
@@ -93,6 +94,6 @@
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1"
+    "vite": "^5.4.21"
   }
 }

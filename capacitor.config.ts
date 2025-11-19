@@ -20,6 +20,11 @@ const config: CapacitorConfig = {
       scopes: ['profile', 'email'],
       serverClientId: '680638175809-ud31fspsid283q4tt7s9etok0nrb9e2g.apps.googleusercontent.com',
       forceCodeForRefreshToken: true
+    },
+    LocalNotifications: {
+      smallIcon: 'ic_stat_icon_config_sample',
+      iconColor: '#10b981',
+      sound: 'beep.wav'
     }
   }
 };
