@@ -73,8 +73,8 @@ export function FAQPage({ onBack }: FAQPageProps) {
         a: "AI, profiliniz (yaş, kilo, hedef), beslenme geçmişiniz, tercihleriniz ve güncel ihtiyaçlarınızı analiz ederek size özel öneriler sunar. Zamanla daha da kişiselleşir."
       },
       {
-        q: "AI asistana nasıl soru sorabilirim?",
-        a: "Sağ alt köşedeki yeşil mesaj butonuna tıklayarak AI asistanla konuşabilirsiniz. Beslenme, kalori, yemek tarifleri hakkında sorular sorabilirsiniz."
+        q: "AI ile yemek tarifi alabilir miyim?",
+        a: "Evet! 'Öğünler' sekmesinde 'AI Önerileri' butonuna tıklayarak günlük kalori hedefinize ve beslenme ihtiyaçlarınıza uygun kişiselleştirilmiş yemek tarifleri alabilirsiniz. AI, hedeflerinize ulaşmanıza yardımcı olacak sağlıklı tarifler önerir."
       },
       {
         q: "Fotoğraflarım saklanıyor mu?",
