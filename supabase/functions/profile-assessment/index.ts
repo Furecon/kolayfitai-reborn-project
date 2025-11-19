@@ -80,15 +80,20 @@ ${previousAssessment ? `
 ` : ''}
 
 Lütfen şunları sağla:
-1. Kullanıcının mevcut durumunun genel değerlendirmesi
-2. Hedeflerine ulaşması için özel öneriler (beslenme, egzersiz, yaşam tarzı)
-3. Sağlık ve wellness konularında önemli noktalar
-4. Motivasyonel ve cesaretlendirici mesaj
-5. Genel ilerleme skoru (0-100)
+1. Kullanıcının mevcut durumunun genel değerlendirmesi (VKI, hedefler vs)
+2. Detaylı beslenme önerileri (hangi gıdalar, ne kadar, nasıl dağıtılmalı)
+3. Egzersiz önerileri (hangi aktiviteler, ne sıklıkta, ne kadar süre)
+4. Yaşam tarzı değişiklikleri önerileri (öğün saatleri, uyku, stres yönetimi)
+5. Motivasyonel ve cesaretlendirici mesaj
+6. Genel ilerleme skoru (0-100)
 
 JSON formatında yanıt ver:
 {
-  "recommendations": "Detaylı öneriler ve tavsiyeler",
+  "general_evaluation": "Kullanıcının mevcut durumunun detaylı değerlendirmesi, VKI analizi, hedeflerin değerlendirilmesi",
+  "dietary_advice": "Detaylı beslenme önerileri: hangi besinler, porsiyon kontrolü, öğün dağılımı, su tüketimi vb.",
+  "exercise_recommendations": "Spor ve aktivite önerileri: hangi egzersizler, ne sıklıkta, süre, yoğunluk seviyesi",
+  "lifestyle_changes": "Yaşam tarzı önerileri: öğün saatleri, uyku düzeni, stres yönetimi, tartılma sıklığı vb.",
+  "recommendations": "Genel öneriler ve hatırlatmalar",
   "health_insights": "Sağlık konularında önemli bilgiler",
   "motivational_message": "Pozitif ve motive edici mesaj",
   "progress_score": sayısal_skor_0_100
@@ -146,9 +151,9 @@ JSON formatında yanıt ver:
       };
     }
 
-    console.log('Successfully parsed assessment:', { 
+    console.log('Successfully parsed assessment:', {
       hasRecommendations: !!assessment.recommendations,
-      progressScore: assessment.progress_score 
+      progressScore: assessment.progress_score
     });
 
     // Save assessment to database
@@ -157,7 +162,7 @@ JSON formatında yanıt ver:
       .insert({
         user_id: profileData.user_id,
         assessment_type: 'profile_update',
-        assessment_data: profileData,
+        assessment_data: assessment,  // Save the full AI response
         recommendations: assessment.recommendations,
         progress_score: assessment.progress_score,
         health_insights: assessment.health_insights,

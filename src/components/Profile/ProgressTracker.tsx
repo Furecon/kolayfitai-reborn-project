@@ -205,66 +205,113 @@ export default function ProgressTracker() {
       </Card>
 
       {/* Latest Assessment Summary */}
-      {latestAssessment && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
-              Son Değerlendirmeniz
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Genel İlerleme Skoru</p>
-              <div className="flex items-center gap-3">
-                <span className={`text-2xl font-bold ${getScoreColor(latestAssessment.progress_score)}`}>
-                  {latestAssessment.progress_score}/100
-                </span>
-                <Badge variant={getScoreBadgeVariant(latestAssessment.progress_score)}>
-                  {latestAssessment.progress_score >= 80 ? 'Mükemmel' :
-                   latestAssessment.progress_score >= 60 ? 'İyi' : 'Gelişim Alanı'}
-                </Badge>
-              </div>
-            </div>
+      {latestAssessment && (() => {
+        const parsedData = parseAssessmentData(latestAssessment);
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm flex items-center gap-1">
-                  <TrendingUp className="h-4 w-4" />
-                  Öneriler
-                </h4>
-                <p className="text-sm text-gray-700 line-clamp-3">
-                  {latestAssessment.recommendations}
-                </p>
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                Son Değerlendirmeniz
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Genel İlerleme Skoru</p>
+                <div className="flex items-center gap-3">
+                  <span className={`text-2xl font-bold ${getScoreColor(latestAssessment.progress_score)}`}>
+                    {latestAssessment.progress_score}/100
+                  </span>
+                  <Badge variant={getScoreBadgeVariant(latestAssessment.progress_score)}>
+                    {latestAssessment.progress_score >= 80 ? 'Mükemmel' :
+                     latestAssessment.progress_score >= 60 ? 'İyi' : 'Gelişim Alanı'}
+                  </Badge>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm flex items-center gap-1">
-                  <MessageCircle className="h-4 w-4" />
-                  Motivasyon
-                </h4>
-                <p className="text-sm text-blue-700 italic line-clamp-3">
-                  {latestAssessment.motivational_message}
-                </p>
-              </div>
-            </div>
+              {/* Show parsed data if available */}
+              {parsedData ? (
+                <div className="space-y-3">
+                  {parsedData.general_evaluation && (
+                    <div className="space-y-1">
+                      <h4 className="font-semibold text-sm flex items-center gap-1">
+                        <Target className="h-4 w-4" />
+                        Genel Değerlendirme
+                      </h4>
+                      <p className="text-sm text-gray-700 line-clamp-2">
+                        {parsedData.general_evaluation}
+                      </p>
+                    </div>
+                  )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => openAssessmentDetail(latestAssessment)}
-              className="w-full mt-2"
-            >
-              Tümünü Görüntüle
-            </Button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {parsedData.dietary_advice && (
+                      <div className="space-y-1">
+                        <h4 className="font-semibold text-sm flex items-center gap-1">
+                          <Apple className="h-4 w-4" />
+                          Beslenme
+                        </h4>
+                        <p className="text-sm text-gray-700 line-clamp-2">
+                          {parsedData.dietary_advice}
+                        </p>
+                      </div>
+                    )}
 
-            <p className="text-xs text-gray-500 flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {formatDate(latestAssessment.created_at)}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+                    {parsedData.exercise_recommendations && (
+                      <div className="space-y-1">
+                        <h4 className="font-semibold text-sm flex items-center gap-1">
+                          <Activity className="h-4 w-4" />
+                          Egzersiz
+                        </h4>
+                        <p className="text-sm text-gray-700 line-clamp-2">
+                          {parsedData.exercise_recommendations}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm flex items-center gap-1">
+                      <TrendingUp className="h-4 w-4" />
+                      Öneriler
+                    </h4>
+                    <p className="text-sm text-gray-700 line-clamp-3">
+                      {latestAssessment.recommendations}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm flex items-center gap-1">
+                      <MessageCircle className="h-4 w-4" />
+                      Motivasyon
+                    </h4>
+                    <p className="text-sm text-blue-700 italic line-clamp-3">
+                      {latestAssessment.motivational_message}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => openAssessmentDetail(latestAssessment)}
+                className="w-full mt-2"
+              >
+                Tümünü Görüntüle
+              </Button>
+
+              <p className="text-xs text-gray-500 flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {formatDate(latestAssessment.created_at)}
+              </p>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Assessment History */}
       <Card>
