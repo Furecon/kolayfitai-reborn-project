@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react'
-import { HashRouter as Router, Routes, Route } from 'react-router-dom'
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -10,6 +10,7 @@ import { PrivacyPolicy } from '@/components/Legal/PrivacyPolicy'
 import { TermsOfService } from '@/components/Legal/TermsOfService'
 import { ContactUs } from '@/components/Legal/ContactUs'
 import { useOAuthRedirect } from '@/hooks/useOAuthRedirect'
+import { usePlatform } from '@/hooks/usePlatform'
 import './App.css'
 
 const queryClient = new QueryClient({
@@ -70,10 +71,14 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
 function AppRoutes() {
   useOAuthRedirect()
+  const { isNative } = usePlatform()
 
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
+      <Route
+        path="/"
+        element={isNative ? <Navigate to="/app" replace /> : <Landing />}
+      />
       <Route path="/app" element={<Index />} />
       <Route path="/legal/privacy" element={<PrivacyPolicy />} />
       <Route path="/legal/terms" element={<TermsOfService />} />
