@@ -107,16 +107,16 @@ export default function Landing() {
               </div>
 
               <div className="order-1 md:order-2 flex justify-center">
-                <div className="relative max-w-sm w-full">
+                <div className="relative w-64 md:w-72">
                   <div className="absolute inset-0 bg-gradient-to-br from-green-400/30 to-cyan-400/30 rounded-[3rem] transform rotate-6 blur-xl"></div>
-                  <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-[2.5rem] md:rounded-[3rem] p-2 md:p-3 shadow-2xl transform hover:scale-105 transition-all duration-500">
-                    <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] overflow-hidden">
+                  <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-[2.2rem] md:rounded-[2.5rem] p-2 shadow-2xl transform hover:scale-105 transition-all duration-500">
+                    <div className="bg-white rounded-[1.8rem] md:rounded-[2.2rem] overflow-hidden">
                       <div className="relative">
-                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 md:w-40 h-6 md:h-7 bg-black rounded-b-3xl z-10"></div>
+                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-28 md:w-32 h-5 md:h-6 bg-black rounded-b-3xl z-10"></div>
                         <img
-                          src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=900&fit=crop&q=80"
+                          src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=800&fit=crop&q=80"
                           alt="Yemek Analizi"
-                          className="w-full h-[500px] md:h-[600px] object-cover"
+                          className="w-full h-[520px] md:h-[580px] object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
                           <div className="absolute bottom-4 md:bottom-6 left-4 right-4 md:left-6 md:right-6 space-y-3 md:space-y-4">
