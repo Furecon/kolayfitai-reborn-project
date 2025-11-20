@@ -10,22 +10,34 @@ export interface NotificationPreferences {
   weekly_summary: boolean
 }
 
+export interface MealReminders {
+  breakfast: boolean
+  lunch: boolean
+  dinner: boolean
+}
+
+export interface WaterReminderTime {
+  id: string
+  time: string
+}
+
 export interface ExtendedUserPreferences {
   notification_settings: NotificationPreferences
   reminder_times: ReminderTimes
+  meal_reminders_enabled: MealReminders
+  water_reminder_times: WaterReminderTime[]
+  water_reminder_interval: number
   quiet_hours_start: string
   quiet_hours_end: string
-  primary_meal_reminder: 'breakfast' | 'lunch' | 'dinner' | 'none'
   weekend_notifications_enabled: boolean
-  notification_interaction_count: Record<string, number>
-  last_notification_sent: Record<string, string>
+  notification_interaction_count?: Record<string, number>
+  last_notification_sent?: Record<string, string>
 }
 
 export interface ReminderTimes {
   breakfast: string
   lunch: string
   dinner: string
-  water_time: string
 }
 
 interface NotificationHistory {
@@ -40,14 +52,11 @@ interface NotificationHistory {
   was_dismissed: boolean
 }
 
-const MAX_DAILY_NOTIFICATIONS = 4
-const NOTIFICATION_COOLDOWN_HOURS = 48
+// No limits - user controls everything
 
 export class NotificationManager {
   private static instance: NotificationManager
   private isSupported: boolean = false
-  private dailyNotificationCount: number = 0
-  private lastResetDate: string = ''
 
   private constructor() {
     this.checkSupport()

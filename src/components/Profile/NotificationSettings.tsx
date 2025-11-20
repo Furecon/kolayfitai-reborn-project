@@ -6,13 +6,43 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
-import { notificationManager, ExtendedUserPreferences } from '@/lib/notificationManager'
-import { Bell, Clock, Moon, Calendar } from 'lucide-react'
+import { Bell, Clock, Calendar, Plus, Trash2, Droplet } from 'lucide-react'
+
+interface MealReminders {
+  breakfast: boolean
+  lunch: boolean
+  dinner: boolean
+}
+
+interface WaterReminderTime {
+  id: string
+  time: string
+}
+
+interface NotificationPreferences {
+  notification_settings: {
+    meal_reminders: boolean
+    water_reminders: boolean
+    goal_notifications: boolean
+    weekly_summary: boolean
+  }
+  reminder_times: {
+    breakfast: string
+    lunch: string
+    dinner: string
+  }
+  meal_reminders_enabled: MealReminders
+  water_reminder_times: WaterReminderTime[]
+  water_reminder_interval: number
+  quiet_hours_start: string
+  quiet_hours_end: string
+  weekend_notifications_enabled: boolean
+}
 
 export function NotificationSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [preferences, setPreferences] = useState<ExtendedUserPreferences | null>(null)
+  const [preferences, setPreferences] = useState<NotificationPreferences | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -24,10 +54,14 @@ export function NotificationSettings() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const prefs = await notificationManager.getUserPreferences(user.id)
+      const { data } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle()
 
-      if (!prefs) {
-        const defaultPrefs: ExtendedUserPreferences = {
+      if (!data) {
+        const defaultPrefs: NotificationPreferences = {
           notification_settings: {
             meal_reminders: true,
             water_reminders: true,
@@ -37,19 +71,38 @@ export function NotificationSettings() {
           reminder_times: {
             breakfast: '08:00',
             lunch: '12:30',
-            dinner: '19:00',
-            water_time: '14:30'
+            dinner: '19:00'
           },
+          meal_reminders_enabled: {
+            breakfast: true,
+            lunch: true,
+            dinner: true
+          },
+          water_reminder_times: [
+            { id: '1', time: '09:00' },
+            { id: '2', time: '12:00' },
+            { id: '3', time: '15:00' },
+            { id: '4', time: '18:00' }
+          ],
+          water_reminder_interval: 0,
           quiet_hours_start: '22:00',
           quiet_hours_end: '07:00',
-          primary_meal_reminder: 'lunch',
-          weekend_notifications_enabled: true,
-          notification_interaction_count: {},
-          last_notification_sent: {}
+          weekend_notifications_enabled: true
         }
         setPreferences(defaultPrefs)
       } else {
-        setPreferences(prefs)
+        setPreferences({
+          notification_settings: data.notification_settings as any,
+          reminder_times: data.reminder_times as any,
+          meal_reminders_enabled: data.meal_reminders_enabled || { breakfast: true, lunch: true, dinner: true },
+          water_reminder_times: Array.isArray(data.water_reminder_times)
+            ? data.water_reminder_times
+            : [{ id: '1', time: '14:30' }],
+          water_reminder_interval: data.water_reminder_interval || 0,
+          quiet_hours_start: data.quiet_hours_start || '22:00',
+          quiet_hours_end: data.quiet_hours_end || '07:00',
+          weekend_notifications_enabled: data.weekend_notifications_enabled ?? true
+        })
       }
     } catch (error) {
       console.error('Error loading preferences:', error)
@@ -71,7 +124,21 @@ export function NotificationSettings() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      await notificationManager.updateUserPreferences(user.id, preferences)
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
+          notification_settings: preferences.notification_settings,
+          reminder_times: preferences.reminder_times,
+          meal_reminders_enabled: preferences.meal_reminders_enabled,
+          water_reminder_times: preferences.water_reminder_times,
+          water_reminder_interval: preferences.water_reminder_interval,
+          quiet_hours_start: preferences.quiet_hours_start,
+          quiet_hours_end: preferences.quiet_hours_end,
+          weekend_notifications_enabled: preferences.weekend_notifications_enabled
+        })
+
+      if (error) throw error
 
       toast({
         title: 'Başarılı',
@@ -100,6 +167,17 @@ export function NotificationSettings() {
     })
   }
 
+  const updateMealReminder = (meal: keyof MealReminders, enabled: boolean) => {
+    if (!preferences) return
+    setPreferences({
+      ...preferences,
+      meal_reminders_enabled: {
+        ...preferences.meal_reminders_enabled,
+        [meal]: enabled
+      }
+    })
+  }
+
   const updateReminderTime = (meal: keyof typeof preferences.reminder_times, time: string) => {
     if (!preferences) return
     setPreferences({
@@ -108,6 +186,36 @@ export function NotificationSettings() {
         ...preferences.reminder_times,
         [meal]: time
       }
+    })
+  }
+
+  const addWaterReminder = () => {
+    if (!preferences) return
+    const newId = Date.now().toString()
+    setPreferences({
+      ...preferences,
+      water_reminder_times: [
+        ...preferences.water_reminder_times,
+        { id: newId, time: '14:00' }
+      ]
+    })
+  }
+
+  const removeWaterReminder = (id: string) => {
+    if (!preferences) return
+    setPreferences({
+      ...preferences,
+      water_reminder_times: preferences.water_reminder_times.filter(r => r.id !== id)
+    })
+  }
+
+  const updateWaterReminderTime = (id: string, time: string) => {
+    if (!preferences) return
+    setPreferences({
+      ...preferences,
+      water_reminder_times: preferences.water_reminder_times.map(r =>
+        r.id === id ? { ...r, time } : r
+      )
     })
   }
 
@@ -139,18 +247,18 @@ export function NotificationSettings() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
-            <CardTitle>Bildirim Tercihleri</CardTitle>
+            <CardTitle>Öğün Hatırlatmaları</CardTitle>
           </div>
           <CardDescription>
-            Günde maksimum 3-4 bildirim alacaksınız
+            Hangi öğünler için hatırlatma almak istediğinizi seçin
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="meal-reminders">Öğün Hatırlatmaları</Label>
+              <Label htmlFor="meal-reminders">Öğün Hatırlatmalarını Aç/Kapat</Label>
               <p className="text-sm text-muted-foreground">
-                Seçtiğiniz öğün için günde 1 hatırlatma
+                Tüm öğün hatırlatmalarını toplu olarak açıp kapatın
               </p>
             </div>
             <Switch
@@ -161,92 +269,126 @@ export function NotificationSettings() {
           </div>
 
           {preferences.notification_settings.meal_reminders && (
-            <div className="ml-6 space-y-4 border-l-2 pl-4">
-              <div className="space-y-2">
-                <Label>Hangi öğün için hatırlatma istiyorsunuz?</Label>
-                <Select
-                  value={preferences.primary_meal_reminder}
-                  onValueChange={(value: any) => setPreferences({ ...preferences, primary_meal_reminder: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="breakfast">Kahvaltı ({preferences.reminder_times.breakfast})</SelectItem>
-                    <SelectItem value="lunch">Öğle Yemeği ({preferences.reminder_times.lunch})</SelectItem>
-                    <SelectItem value="dinner">Akşam Yemeği ({preferences.reminder_times.dinner})</SelectItem>
-                    <SelectItem value="none">Hiçbiri</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="space-y-4 ml-6 border-l-2 pl-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <Label>Kahvaltı</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {preferences.reminder_times.breakfast}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={preferences.reminder_times.breakfast}
+                    onValueChange={(value) => updateReminderTime('breakfast', value)}
+                    disabled={!preferences.meal_reminders_enabled.breakfast}
+                  >
+                    <SelectTrigger className="w-28">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {generateTimeOptions().map((time) => (
+                        <SelectItem key={time} value={time}>
+                          {time}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Switch
+                    checked={preferences.meal_reminders_enabled.breakfast}
+                    onCheckedChange={(checked) => updateMealReminder('breakfast', checked)}
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Öğün Saatleri</Label>
-                <div className="grid gap-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Kahvaltı</span>
-                    <Select
-                      value={preferences.reminder_times.breakfast}
-                      onValueChange={(value) => updateReminderTime('breakfast', value)}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {generateTimeOptions().map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <Label>Öğle Yemeği</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {preferences.reminder_times.lunch}
+                    </p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Öğle</span>
-                    <Select
-                      value={preferences.reminder_times.lunch}
-                      onValueChange={(value) => updateReminderTime('lunch', value)}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {generateTimeOptions().map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={preferences.reminder_times.lunch}
+                    onValueChange={(value) => updateReminderTime('lunch', value)}
+                    disabled={!preferences.meal_reminders_enabled.lunch}
+                  >
+                    <SelectTrigger className="w-28">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {generateTimeOptions().map((time) => (
+                        <SelectItem key={time} value={time}>
+                          {time}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Switch
+                    checked={preferences.meal_reminders_enabled.lunch}
+                    onCheckedChange={(checked) => updateMealReminder('lunch', checked)}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <Label>Akşam Yemeği</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {preferences.reminder_times.dinner}
+                    </p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Akşam</span>
-                    <Select
-                      value={preferences.reminder_times.dinner}
-                      onValueChange={(value) => updateReminderTime('dinner', value)}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {generateTimeOptions().map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={preferences.reminder_times.dinner}
+                    onValueChange={(value) => updateReminderTime('dinner', value)}
+                    disabled={!preferences.meal_reminders_enabled.dinner}
+                  >
+                    <SelectTrigger className="w-28">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {generateTimeOptions().map((time) => (
+                        <SelectItem key={time} value={time}>
+                          {time}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Switch
+                    checked={preferences.meal_reminders_enabled.dinner}
+                    onCheckedChange={(checked) => updateMealReminder('dinner', checked)}
+                  />
                 </div>
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
 
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Droplet className="h-5 w-5" />
+            <CardTitle>Su İçme Hatırlatmaları</CardTitle>
+          </div>
+          <CardDescription>
+            İstediğiniz saatlerde su içme hatırlatmaları ekleyin
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="water-reminders">Su İçme Hatırlatması</Label>
+              <Label htmlFor="water-reminders">Su Hatırlatmalarını Aç/Kapat</Label>
               <p className="text-sm text-muted-foreground">
-                Öğleden sonra tek bir hatırlatma
+                Tüm su hatırlatmalarını toplu olarak açıp kapatın
               </p>
             </div>
             <Switch
@@ -257,26 +399,86 @@ export function NotificationSettings() {
           </div>
 
           {preferences.notification_settings.water_reminders && (
-            <div className="ml-6 space-y-2 border-l-2 pl-4">
-              <Label>Su hatırlatma saati</Label>
-              <Select
-                value={preferences.reminder_times.water_time}
-                onValueChange={(value) => updateReminderTime('water_time', value)}
+            <div className="space-y-4 ml-6 border-l-2 pl-4">
+              <div className="space-y-3">
+                {preferences.water_reminder_times.map((reminder) => (
+                  <div key={reminder.id} className="flex items-center gap-2">
+                    <Select
+                      value={reminder.time}
+                      onValueChange={(value) => updateWaterReminderTime(reminder.id, value)}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {generateTimeOptions().map((time) => (
+                          <SelectItem key={time} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeWaterReminder(reminder.id)}
+                      disabled={preferences.water_reminder_times.length === 1}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={addWaterReminder}
+                className="w-full"
               >
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {generateTimeOptions().map((time) => (
-                    <SelectItem key={time} value={time}>
-                      {time}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Plus className="h-4 w-4 mr-2" />
+                Su Hatırlatması Ekle
+              </Button>
+
+              <div className="pt-4 border-t">
+                <Label>Veya Otomatik Aralıklarla Hatırlat</Label>
+                <p className="text-sm text-muted-foreground mb-2">
+                  0 = Kapalı, Yukarıdaki saatleri kullan
+                </p>
+                <Select
+                  value={preferences.water_reminder_interval.toString()}
+                  onValueChange={(value) => setPreferences({ ...preferences, water_reminder_interval: parseInt(value) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Kapalı (Manuel saatler)</SelectItem>
+                    <SelectItem value="1">Her 1 saatte</SelectItem>
+                    <SelectItem value="2">Her 2 saatte</SelectItem>
+                    <SelectItem value="3">Her 3 saatte</SelectItem>
+                    <SelectItem value="4">Her 4 saatte</SelectItem>
+                  </SelectContent>
+                </Select>
+                {preferences.water_reminder_interval > 0 && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Otomatik mod aktif: Yukarıdaki manuel saatler kullanılmayacak
+                  </p>
+                )}
+              </div>
             </div>
           )}
+        </CardContent>
+      </Card>
 
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            <CardTitle>Diğer Bildirimler</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="goal-notifications">Hedef Bildirimleri</Label>

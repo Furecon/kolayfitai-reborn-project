@@ -8,23 +8,12 @@ import { supabase } from '@/integrations/supabase/client'
 import { useOAuthRedirect } from '@/hooks/useOAuthRedirect'
 import { RatingDialog } from '@/components/StoreRating/RatingDialog'
 import { TrialExpiredDialog } from '@/components/Subscription/TrialExpiredDialog'
-import { useEffect } from 'react'
-import { notificationManager } from '@/lib/notificationManager'
 
 function AppContent() {
   const { user, loading } = useAuth()
 
   // Initialize OAuth redirect handler for mobile deep links
   useOAuthRedirect()
-
-  // Initialize notifications when user logs in
-  useEffect(() => {
-    if (user?.id) {
-      notificationManager.initializeNotifications(user.id).catch(error => {
-        console.error('Failed to initialize notifications:', error)
-      })
-    }
-  }, [user?.id])
 
   // Fetch user profile to check onboarding status
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
