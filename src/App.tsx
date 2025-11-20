@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import Index from './pages/Index'
+import Landing from './pages/Landing'
 import NotFound from './pages/NotFound'
 import { PrivacyPolicy } from '@/components/Legal/PrivacyPolicy'
 import { TermsOfService } from '@/components/Legal/TermsOfService'
@@ -72,7 +73,8 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
+      <Route path="/" element={<Landing />} />
+      <Route path="/app" element={<Index />} />
       <Route path="/legal/privacy" element={<PrivacyPolicy />} />
       <Route path="/legal/terms" element={<TermsOfService />} />
       <Route path="/legal/contact" element={<ContactUs />} />
