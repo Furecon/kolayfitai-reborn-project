@@ -18,15 +18,24 @@ export function OnboardingComplete() {
 
   const handleComplete = async () => {
     if (!user) return
-    
+
     setLoading(true)
     try {
       console.log('Starting onboarding completion for user:', user.id)
       console.log('Onboarding data:', onboardingData)
       console.log('Daily calories calculated:', dailyCalories)
 
+      // First verify the profile data
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      console.log('Existing profile:', existingProfile)
+
       // Use UPSERT to handle cases where profile doesn't exist or needs update
-      const { error } = await supabase
+      const { data: savedProfile, error } = await supabase
         .from('profiles')
         .upsert({
           user_id: user.id,
@@ -41,29 +50,31 @@ export function OnboardingComplete() {
         }, {
           onConflict: 'user_id'
         })
+        .select()
+        .single()
 
       if (error) {
         console.error('Profile upsert error:', error)
         throw error
       }
 
-      console.log('Profile successfully saved/updated')
+      console.log('Profile successfully saved/updated:', savedProfile)
 
-      // Invalidate the profile query to trigger immediate refetch
-      await queryClient.invalidateQueries({
-        queryKey: ['profile', user.id]
+      // Reset and refetch all queries to ensure fresh data
+      await queryClient.resetQueries({
+        queryKey: ['profile']
+      })
+
+      // Force refetch the profile
+      await queryClient.refetchQueries({
+        queryKey: ['profile', user.id],
+        exact: true
       })
 
       toast({
         title: "Başarılı!",
         description: "Profilin oluşturuldu. Dashboard'a yönlendiriliyorsun!"
       })
-
-      // Small delay for smooth transition
-      setTimeout(() => {
-        // The profile query invalidation will automatically trigger the redirect
-        // since Index.tsx checks onboarding_completed status
-      }, 500)
 
     } catch (error) {
       console.error('Error completing onboarding:', error)
@@ -72,7 +83,6 @@ export function OnboardingComplete() {
         description: "Profil kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.",
         variant: "destructive"
       })
-    } finally {
       setLoading(false)
     }
   }
