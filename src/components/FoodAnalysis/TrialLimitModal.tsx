@@ -11,21 +11,19 @@ import { Crown, Camera, Sparkles } from 'lucide-react'
 
 interface TrialLimitModalProps {
   isOpen: boolean
-  onClose: () => void
   onUpgrade: () => void
   limitType: 'photo' | 'meal_suggestion'
 }
 
 export function TrialLimitModal({
   isOpen,
-  onClose,
   onUpgrade,
   limitType
 }: TrialLimitModalProps) {
   const isPhotoLimit = limitType === 'photo'
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
+    <AlertDialog open={isOpen}>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
           <div className="flex justify-center mb-4">
@@ -84,12 +82,6 @@ export function TrialLimitModal({
             <Crown className="mr-2 h-4 w-4" />
             Premium'a Geç
           </AlertDialogAction>
-          <button
-            onClick={onClose}
-            className="w-full px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-          >
-            Daha Sonra
-          </button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

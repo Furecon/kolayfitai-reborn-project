@@ -85,16 +85,9 @@ export function TrialExpiredDialog() {
     }
   };
 
-  const handleLater = () => {
-    setShowDialog(false);
-    // Show again after 24 hours
-    setTimeout(() => {
-      setShowDialog(true);
-    }, 24 * 60 * 60 * 1000);
-  };
 
   return (
-    <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
+    <AlertDialog open={showDialog}>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
           <div className="flex justify-center mb-4">
@@ -159,14 +152,6 @@ export function TrialExpiredDialog() {
                 Premium'a Geç
               </>
             )}
-          </Button>
-          <Button
-            onClick={handleLater}
-            variant="outline"
-            className="w-full"
-            disabled={isLoading}
-          >
-            Daha Sonra
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

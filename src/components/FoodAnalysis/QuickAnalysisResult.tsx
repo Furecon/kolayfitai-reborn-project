@@ -754,7 +754,6 @@ export default function QuickAnalysisResult({
 
       <TrialLimitModal
         isOpen={showTrialLimitModal}
-        onClose={() => setShowTrialLimitModal(false)}
         onUpgrade={() => {
           setShowTrialLimitModal(false)
           onUpgradeClick?.()
