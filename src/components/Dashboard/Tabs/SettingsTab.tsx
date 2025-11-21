@@ -16,6 +16,7 @@ import {
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import ProfileSetup from '../../Profile/ProfileSetup'
+import { DailyGoalsSettings } from '../../Profile/DailyGoalsSettings'
 import { SubscriptionManager } from '../../Subscription/SubscriptionManager'
 import { ContactPage } from '../../Support/ContactPage'
 import { ResourcesPage } from '../../Support/ResourcesPage'
@@ -23,7 +24,7 @@ import { PoliciesPage } from '../../Support/PoliciesPage'
 import { FAQPage } from '../../Support/FAQPage'
 import { NotificationSettings } from '../../Profile/NotificationSettings'
 
-type SettingsView = 'main' | 'profile' | 'subscription' | 'notifications' | 'contact' | 'resources' | 'policies' | 'faq'
+type SettingsView = 'main' | 'profile' | 'goals' | 'subscription' | 'notifications' | 'contact' | 'resources' | 'policies' | 'faq'
 
 interface SettingsTabProps {
   onRefreshNeeded?: () => void
@@ -53,6 +54,19 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
     return (
       <div className="pb-20 w-full">
         <ProfileSetup
+          onBack={() => {
+            setCurrentView('main')
+            onRefreshNeeded?.()
+          }}
+        />
+      </div>
+    )
+  }
+
+  if (currentView === 'goals') {
+    return (
+      <div className="pb-20 w-full">
+        <DailyGoalsSettings
           onBack={() => {
             setCurrentView('main')
             onRefreshNeeded?.()
@@ -174,7 +188,7 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
             </button>
 
             <button
-              onClick={() => setCurrentView('profile')}
+              onClick={() => setCurrentView('goals')}
               className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center gap-3">

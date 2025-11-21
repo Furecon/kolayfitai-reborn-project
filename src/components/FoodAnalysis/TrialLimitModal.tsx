@@ -39,6 +39,11 @@ export function TrialLimitModal({
             Ücretsiz Deneme Hakkınız Doldu
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center space-y-3">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-2">
+              <p className="text-sm text-yellow-800 font-medium">
+                ⚠️ Daha fazla kullanım için Premium üyeliğe geçmeniz gerekmektedir.
+              </p>
+            </div>
             <p className="text-base">
               {isPhotoLimit
                 ? 'Ücretsiz fotoğraf analizi hakkınızı tükettiniz.'

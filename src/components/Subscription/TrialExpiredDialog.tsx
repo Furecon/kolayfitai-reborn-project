@@ -99,6 +99,11 @@ export function TrialExpiredDialog() {
             Deneme Süreniz Sona Erdi
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center space-y-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+              <p className="text-sm text-yellow-800 font-medium">
+                ⚠️ Uygulamayı kullanmaya devam edebilmek için Premium üyeliğe geçmeniz gerekmektedir.
+              </p>
+            </div>
             <p className="text-base">
               KolayFit'in tüm özelliklerinden yararlanmaya devam etmek için Premium'a geçin!
             </p>
