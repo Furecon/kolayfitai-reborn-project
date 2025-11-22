@@ -155,46 +155,64 @@ Deno.serve(async (req: Request) => {
     }
 
     // 7. Call OpenAI for food research with enhanced intelligence
-    const systemPrompt = `Sen profesyonel bir besin uzmanısın. Kullanıcının verdiği yiyecek/içecek için 100g/100ml başına besin değerlerini tahmin edeceksin.
+    const systemPrompt = `Sen profesyonel bir beslenme uzmanı ve gıda bilimcisisin. Görevin: Kullanıcının verdiği yiyecek/içecek için en doğru ve gerçekçi besin değerlerini araştırmak ve sağlamak.
+
+ARAŞTIRMA YÖNTEMİ:
+1. Önce ürünün tam ismini ve markasını analiz et
+2. Türkiye'deki yaygın markalı ürünlerin gerçek besin değerlerini bilgilerine dayanarak tahmin et
+3. Markalı ürünler için o markanın tipik ürün özelliklerini göz önünde bulundur
+4. Eğer genel bir yemek ismi ise (örn: "domates çorbası"), standart tariflere göre değerlendirme yap
 
 ÖNEMLİ TALİMATLAR:
-- Marka adı + ürün tipi üzerinden muhakeme yap
-  Örnek: "Nescafe 2'si 1 arada" → şekerli, süt tozu içeren hazır kahve tozu
-  Örnek: "Ülker çikolatalı gofret" → çikolatalı gofret sınıfı ortalaması
-- Türkiye'de satılan yaygın markalı ürünlere öncelik ver
-- Değerler MUTLAKA 100g / 100ml bazlı olmalı
-- Paket üzerindeki besin tablosuna mümkün olduğunca yakın değerler tahmin et
-- Türkçe doğal isimler kullan
-- Sadece JSON döndür, açıklama yapma
-- Su, sade kahve, şekersiz çay, diet/zero içecekler için kalori 0 olabilir
-- Değerler gerçekçi olmalı (100g'da 5000 kcal gibi saçma değerler yok)
-- Sodyum mg, lif ve şeker gram cinsinden`;
+- Marka + ürün kombinasyonlarında O MARKANIN gerçek ürün değerlerini baz al
+  Örnek: "Nescafe 2'si 1 arada" → Nestle'nin bu ürününün gerçek besin değerleri
+  Örnek: "Ülker Çokoprens" → Ülker'in bu ürününün gerçek besin değerleri
+  Örnek: "Coca Cola Zero" → Coca Cola'nın zero ürününün gerçek değerleri (0 kalori)
+- Değerler MUTLAKA 100g / 100ml bazında olmalı
+- Paket üzerindeki besin tablosundaki gerçek değerlere EN YAKIN tahmini yap
+- İnternette bulunan, markaların resmi sitelerindeki veya güvenilir kaynaklardaki değerleri kullan
+- Türkçe doğal isimler kullan (ürün adı düzgün yazılmalı)
+- Sadece JSON formatında döndür, hiçbir açıklama ekleme
+- Su, sade kahve, şekersiz çay, diet/zero/light içecekler için kalori genelde 0-5 arası
+- Değerler son derece gerçekçi olmalı (100g'da 5000 kcal gibi imkansız değerler yasak)
+- Sodyum mg, diğer tüm makrolar gram cinsinden
+- Şüpheye düştüğünde markanın resmi web sitesindeki veya güvenilir besin tablolarındaki değerleri kullan
 
-    const userPrompt = `Kullanıcı şu ürünü girdi: "${cleanedFoodName}"
+ÖRNEK DURUM:
+Kullanıcı: "Nescafe 2'si 1 arada"
+→ Bu Nestle'nin hazır kahve karışımı. Genelde 100g'da: ~400 kcal, yüksek şeker, orta protein, düşük yağ
+Kullanıcı: "Torku labne"
+→ Bu Torku'nun yoğurt ürünü. Genelde 100g'da: ~120-150 kcal, yüksek protein, düşük-orta yağ
+Kullanıcı: "Coca Cola"
+→ Şekerli kola. 100ml'de: ~42 kcal, ~11g şeker, 0 protein, 0 yağ`;
 
-Türkiye'de satılan tipik ürünlere göre, bu ürün için 100 g başına besin değerlerini tahmin et.
+    const userPrompt = `Kullanıcı şu ürünü/yemeği girdi: "${cleanedFoodName}"
 
-Eğer marka adı varsa (Nescafe, Ülker, Torku, vb.), o markanın tipik ürün değerlerini baz al.
+ÖNEMLİ: Bu ürün için internetten araştırma yap ve gerçek besin değerlerini bul. Markalı bir ürünse o markanın resmi besin değerlerini kullan. Genel bir yemekse standart tariflere göre hesapla.
 
-JSON formatı (SADECE bu JSON'ı döndür):
+100g/100ml başına besin değerlerini VERİLERE DAYALI OLARAK araştır ve tahmin et.
+
+Eğer marka adı varsa (Nescafe, Ülker, Torku, Pınar, Migros, vb.), o markanın GERÇEKTEKİ ürün değerlerini baz al.
+
+JSON formatı (SADECE bu JSON'ı döndür, başka hiçbir şey yazma):
 {
-  "name_tr": "Türkçe normalize edilmiş ad",
+  "name_tr": "Türkçe normalize edilmiş tam ad",
   "name_en": "English normalized name",
   "nutritionPer100g": {
-    "calories": sayı,
-    "protein": sayı,
-    "carbs": sayı,
-    "fat": sayı,
-    "fiber": sayı,
-    "sugar": sayı,
+    "calories": sayı (gerçekçi değer),
+    "protein": sayı (gram),
+    "carbs": sayı (gram),
+    "fat": sayı (gram),
+    "fiber": sayı (gram),
+    "sugar": sayı (gram),
     "sodium": sayı (mg)
   },
   "is_drink": true veya false
 }`;
 
-    // Try gpt-o1 first, fallback to gpt-4 if needed
-    let modelToUse = 'o1';
-    let openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Use GPT-4o for better nutrition research
+    const modelToUse = 'gpt-4o';
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
@@ -206,32 +224,10 @@ JSON formatı (SADECE bu JSON'ı döndür):
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.3,
-        max_tokens: 500,
+        temperature: 0.2,
+        max_tokens: 600,
       }),
     });
-
-    // Fallback to gpt-4 if o1 fails
-    if (!openaiResponse.ok) {
-      console.log('o1 failed, falling back to gpt-4');
-      modelToUse = 'gpt-4';
-      openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: modelToUse,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ],
-          temperature: 0.3,
-          max_tokens: 500,
-        }),
-      });
-    }
 
     if (!openaiResponse.ok) {
       const errorText = await openaiResponse.text();
