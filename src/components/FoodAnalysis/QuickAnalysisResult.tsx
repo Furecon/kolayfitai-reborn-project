@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
-import { Loader as Loader2, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Expand, Zap, Droplets, CreditCard as Edit } from 'lucide-react'
+import { Loader as Loader2, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Expand, Zap, Droplets, Info } from 'lucide-react'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { TrialLimitModal } from './TrialLimitModal'
 import { useAuth } from '@/components/Auth/AuthProvider'
@@ -65,9 +65,6 @@ export default function QuickAnalysisResult({
   const [showTrialLimitModal, setShowTrialLimitModal] = useState(false)
   const [selectedMealType, setSelectedMealType] = useState<string>('snack')
   const [isSaving, setIsSaving] = useState(false)
-  const [editingFoodIndex, setEditingFoodIndex] = useState<number | null>(null)
-  const [editFoodName, setEditFoodName] = useState<string>('')
-  const [isLookingUpFood, setIsLookingUpFood] = useState(false)
   const [showHelp, setShowHelp] = useState<boolean | null>(null)
   const [isLoadingHelpPreference, setIsLoadingHelpPreference] = useState(true)
 
@@ -262,16 +259,6 @@ export default function QuickAnalysisResult({
     onRetry()
   }
 
-  const handleEditFood = (index: number) => {
-    setEditingFoodIndex(index)
-    setEditFoodName(detectedFoods[index].name)
-  }
-
-  const handleCancelEdit = () => {
-    setEditingFoodIndex(null)
-    setEditFoodName('')
-  }
-
   const handleDismissHelp = async () => {
     if (!user?.id) return
 
@@ -288,86 +275,6 @@ export default function QuickAnalysisResult({
       }
     } catch (error) {
       console.error('Error dismissing help:', error)
-    }
-  }
-
-  const handleLookupFood = async () => {
-    if (!editFoodName.trim() || editingFoodIndex === null) return
-
-    setIsLookingUpFood(true)
-    try {
-      // Use analyze-food-by-name for better AI analysis
-      const { data, error } = await supabase.functions.invoke('analyze-food-by-name', {
-        body: {
-          foodName: editFoodName.trim(),
-          mealType: selectedMealType
-        }
-      })
-
-      if (error) {
-        throw new Error(error.message)
-      }
-
-      if (data?.error) {
-        throw new Error(data.error)
-      }
-
-      if (data && data.foods && data.foods.length > 0) {
-        // Use the first food item from the analysis
-        const analyzedFood = data.foods[0]
-        const updatedFoods = [...detectedFoods]
-        const originalFood = updatedFoods[editingFoodIndex]
-
-        // Parse amount from original estimatedAmount (e.g., "100 gram" -> 100)
-        const amountMatch = originalFood.estimatedAmount.match(/(\d+\.?\d*)/)
-        const amount = amountMatch ? parseFloat(amountMatch[1]) : analyzedFood.amount
-
-        // Calculate total nutrition based on the analyzed amount
-        const multiplier = amount / analyzedFood.amount
-        updatedFoods[editingFoodIndex] = {
-          name: analyzedFood.name,
-          nameEn: analyzedFood.name,
-          estimatedAmount: `${amount} ${analyzedFood.unit}`,
-          nutritionPer100g: {
-            calories: Math.round(analyzedFood.calories / (analyzedFood.amount / 100)),
-            protein: Number((analyzedFood.protein / (analyzedFood.amount / 100)).toFixed(1)),
-            carbs: Number((analyzedFood.carbs / (analyzedFood.amount / 100)).toFixed(1)),
-            fat: Number((analyzedFood.fat / (analyzedFood.amount / 100)).toFixed(1)),
-            fiber: Number((analyzedFood.fiber / (analyzedFood.amount / 100)).toFixed(1)),
-            sugar: Number((analyzedFood.sugar / (analyzedFood.amount / 100)).toFixed(1)),
-            sodium: Math.round(analyzedFood.calories / (analyzedFood.amount / 100))
-          },
-          totalNutrition: {
-            calories: Math.round(analyzedFood.calories * multiplier),
-            protein: Number((analyzedFood.protein * multiplier).toFixed(1)),
-            carbs: Number((analyzedFood.carbs * multiplier).toFixed(1)),
-            fat: Number((analyzedFood.fat * multiplier).toFixed(1)),
-            fiber: Number((analyzedFood.fiber * multiplier).toFixed(1)),
-            sugar: Number((analyzedFood.sugar * multiplier).toFixed(1)),
-            sodium: Math.round(analyzedFood.calories * multiplier)
-          }
-        }
-
-        setDetectedFoods(updatedFoods)
-
-        toast({
-          title: "AI Analizi Tamamlandı!",
-          description: `${data.recognizedName} - Detaylı besin değerleri hesaplandı`
-        })
-
-        handleCancelEdit()
-      } else {
-        throw new Error('Yemek analizi başarısız oldu')
-      }
-    } catch (error: any) {
-      console.error('Lookup food error:', error)
-      toast({
-        title: "Arama Hatası",
-        description: error.message || "Yemek bilgisi bulunamadı. Lütfen yemek adını kontrol edin.",
-        variant: "destructive"
-      })
-    } finally {
-      setIsLookingUpFood(false)
     }
   }
 
@@ -575,23 +482,30 @@ export default function QuickAnalysisResult({
             </button>
           </div>
           <div className="space-y-2 text-sm text-gray-700">
-            <p>• <strong>Yemek adı yanlışsa:</strong> Her kartın altındaki "Yemeğin ismini düzelt ve yeniden hesaplat" butonuna tıklayarak düzeltebilirsiniz.</p>
             <p>• <strong>Öğün seçimi:</strong> Aşağıda hangi öğüne kaydedeceğinizi seçin (Kahvaltı, Öğle, Akşam, Atıştırmalık, İçecek).</p>
             <p>• <strong>Kaydetme:</strong> Tüm değişiklikleri yaptıktan sonra "Öğünü Kaydet" butonuna basın.</p>
+            <p>• <strong>Yanlış tanıma:</strong> Yemek yanlış hesaplandıysa, "Yeni Fotoğraf" butonuna basıp "Detaylı Analiz" seçeneğini kullanın.</p>
           </div>
         </div>
       )}
 
-      {/* Low Confidence Warning */}
+      {/* Low Confidence or Wrong Detection Warning */}
       {confidence < 0.7 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
-            <AlertCircle className="h-4 w-4 text-yellow-600" />
-            <span className="font-medium text-yellow-800">Dikkat!</span>
+            <AlertCircle className="h-5 w-5 text-yellow-600" />
+            <span className="font-medium text-yellow-800">Doğruluk Oranı Düşük</span>
           </div>
-          <p className="text-sm text-yellow-700">
-            Ai doğruluk oranı %70'in altında. Sonuçları kontrol etmenizi öneriyoruz.
+          <p className="text-sm text-yellow-700 mb-3">
+            AI doğruluk oranı %70'in altında. Yemek yanlış tanımlanmış veya hesaplamalar yanlış olabilir.
           </p>
+          <div className="bg-white rounded-md p-3 border border-yellow-200">
+            <p className="text-xs font-medium text-gray-900 mb-1">💡 Çözüm:</p>
+            <p className="text-xs text-gray-700">
+              Daha doğru sonuçlar için <strong>"Yeni Fotoğraf"</strong> butonuna basıp <strong>"Detaylı Analiz"</strong> seçeneğini kullanın.
+              Yemeğin içinde yapay zekanın doğrudan göremeyeceği bilgileri (malzemeler, marka, porsiyon vb.) yazabilirsiniz.
+            </p>
+          </div>
         </div>
       )}
 
@@ -638,17 +552,24 @@ export default function QuickAnalysisResult({
               })}
             </div>
 
-            {/* Edit Button - Prominent and Clear */}
-            <Button
-              onClick={() => handleEditFood(index)}
-              variant="outline"
-              className="w-full mt-3 border-2 border-dashed border-gray-300 hover:border-green-500 hover:bg-green-50 text-gray-700 hover:text-green-700 font-medium py-3"
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Yemeğin ismini düzelt ve yeniden hesaplat
-            </Button>
           </div>
         ))}
+      </div>
+
+      {/* Info box about detailed analysis */}
+      <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-blue-900">
+              Yemek yanlış hesaplandı mı veya tanımlandı mı?
+            </p>
+            <p className="text-xs text-blue-800">
+              Daha doğru sonuçlar için <strong>"Yeni Fotoğraf"</strong> butonuna basıp <strong>"Detaylı Analiz"</strong> seçeneğini kullanın.
+              Detaylı analizde yemeğin ismini, malzemelerini, markasını ve porsiyon bilgilerini yazabilirsiniz.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Meal Type Selection */}
@@ -709,62 +630,6 @@ export default function QuickAnalysisResult({
           📷 Yeni Fotoğraf
         </Button>
       </div>
-
-      {/* Food Edit Dialog */}
-      <Dialog open={editingFoodIndex !== null} onOpenChange={(open) => !open && handleCancelEdit()}>
-        <DialogContent className="sm:max-w-md">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Yemeği Düzelt</h3>
-              <p className="text-sm text-gray-600">
-                AI yanlış tanıdıysa, doğru yemek adını yazın
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                Yemek / İçecek Adı
-              </label>
-              <input
-                type="text"
-                value={editFoodName}
-                onChange={(e) => setEditFoodName(e.target.value)}
-                placeholder="Örn: Nescafe 2'si 1 arada, domates çorbası..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isLookingUpFood}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                onClick={handleLookupFood}
-                disabled={isLookingUpFood || !editFoodName.trim()}
-                className="flex-1 bg-green-500 hover:bg-green-600 text-white"
-              >
-                {isLookingUpFood ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Aranıyor...
-                  </>
-                ) : (
-                  'Ara ve Güncelle'
-                )}
-              </Button>
-              <Button
-                onClick={handleCancelEdit}
-                variant="outline"
-                disabled={isLookingUpFood}
-              >
-                İptal
-              </Button>
-            </div>
-
-            <div className="text-xs text-gray-500 mt-2">
-              💡 Önce veritabanımızda arayacağız. Bulamazsak AI ile besin değerlerini araştıracağız.
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <TrialLimitModal
         isOpen={showTrialLimitModal}

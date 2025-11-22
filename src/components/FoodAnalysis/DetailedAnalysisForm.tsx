@@ -81,9 +81,11 @@ export default function DetailedAnalysisForm({ onSubmit, onBack, loading }: Deta
             {/* Soru 2: Gizli İçerikler */}
             <div className="space-y-3">
               <Label className="text-black font-medium">2. Yemeğin içeriği hakkında yapay zekanın doğrudan göremeyeceği unsurlar varsa belirtin:</Label>
-              <p className="text-sm text-gray-600">Yağ, tuz, şeker, sos vb. kullanıldı mı?</p>
+              <p className="text-sm text-gray-600">
+                Yağ, tuz, şeker, sos vb. kullanıldı mı? Yemeğin ismini biliyorsanız onu da ekleyebilirsiniz.
+              </p>
               <Textarea
-                placeholder="Ek malzemeler varsa buraya yazın..."
+                placeholder="Örn: Nescafe 2'si 1 arada, zeytinyağlı domates çorbası, kelle paça çorbası..."
                 value={formData.hiddenIngredients}
                 onChange={(e) => setFormData({...formData, hiddenIngredients: e.target.value})}
                 disabled={formData.noHiddenIngredients}
