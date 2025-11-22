@@ -218,77 +218,96 @@ JSON (SADECE bu formatı döndür):
   "is_drink": true_ya_da_false
 }`;
 
-    // Use GPT-4o for better nutrition research
+    // Use GPT-4o for better nutrition research with retry mechanism
     const modelToUse = 'gpt-4o';
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: modelToUse,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.2,
-        max_tokens: 600,
-      }),
-    });
-
-    if (!openaiResponse.ok) {
-      const errorText = await openaiResponse.text();
-      console.error(`OpenAI API error with model ${modelToUse}:`, errorText);
-      throw new Error('AI research failed');
-    }
-
-    const openaiData = await openaiResponse.json();
-    const aiContent = openaiData.choices[0]?.message?.content;
-
-    if (!aiContent) {
-      throw new Error('No response from AI');
-    }
-
-    console.log(`AI research completed using model: ${modelToUse}`);
-
-    // Parse AI response
     let aiResult;
-    try {
-      // Remove markdown code blocks if present
-      const cleanedContent = aiContent.replace(/```json\n?|\n?```/g, '').trim();
-      aiResult = JSON.parse(cleanedContent);
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', aiContent);
-      throw new Error('Invalid AI response format');
+    let retryCount = 0;
+    const maxRetries = 3;
+
+    while (retryCount < maxRetries) {
+      const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: modelToUse,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.1 + (retryCount * 0.1), // Increase temperature slightly on retry
+          max_tokens: 600,
+        }),
+      });
+
+      if (!openaiResponse.ok) {
+        const errorText = await openaiResponse.text();
+        console.error(`OpenAI API error with model ${modelToUse}:`, errorText);
+        throw new Error('AI research failed');
+      }
+
+      const openaiData = await openaiResponse.json();
+      const aiContent = openaiData.choices[0]?.message?.content;
+
+      if (!aiContent) {
+        throw new Error('No response from AI');
+      }
+
+      console.log(`AI research completed using model: ${modelToUse} (attempt ${retryCount + 1})`);
+
+      // Parse AI response
+      try {
+        // Remove markdown code blocks if present
+        const cleanedContent = aiContent.replace(/```json\n?|\n?```/g, '').trim();
+        aiResult = JSON.parse(cleanedContent);
+
+        // Validate immediately after parsing
+        const nutrition = aiResult.nutritionPer100g;
+
+        // Check if values are realistic
+        const isZeroCalorieDrink = cleanedFoodName.toLowerCase().includes('su') ||
+                                   cleanedFoodName.toLowerCase().includes('çay') ||
+                                   cleanedFoodName.toLowerCase().includes('kahve') ||
+                                   cleanedFoodName.toLowerCase().includes('zero') ||
+                                   cleanedFoodName.toLowerCase().includes('light');
+
+        const isValid = nutrition &&
+                       typeof nutrition.calories === 'number' &&
+                       nutrition.calories >= 0 &&
+                       nutrition.calories <= 900 &&
+                       (nutrition.calories >= 10 || isZeroCalorieDrink);
+
+        if (isValid) {
+          // Success! Break the retry loop
+          break;
+        } else {
+          console.log(`Invalid nutrition values on attempt ${retryCount + 1}, retrying...`);
+          console.log(`Calories: ${nutrition?.calories}, Food: ${cleanedFoodName}`);
+          retryCount++;
+
+          if (retryCount >= maxRetries) {
+            throw new Error(`AI provided unrealistic values after ${maxRetries} attempts. Calories: ${nutrition?.calories || 'N/A'}`);
+          }
+        }
+      } catch (parseError) {
+        console.error('Failed to parse AI response:', aiContent);
+        retryCount++;
+
+        if (retryCount >= maxRetries) {
+          throw new Error('Invalid AI response format after multiple attempts');
+        }
+      }
     }
 
-    // 8. Validate AI response
+    // 8. Final validation (already done in retry loop, but double-check)
     const nutrition = aiResult.nutritionPer100g;
     if (!nutrition || typeof nutrition.calories !== 'number') {
       throw new Error('Invalid nutrition data from AI');
     }
 
-    // Strict validation for realistic values
-    if (nutrition.calories < 0 || nutrition.calories > 900) {
-      console.error(`Unrealistic calorie value: ${nutrition.calories} for ${cleanedFoodName}`);
-      throw new Error(`Unrealistic calorie value: ${nutrition.calories}. Expected range: 0-900 kcal/100g`);
-    }
-
-    // Special validation: most foods should have at least 10 kcal
-    // Exceptions: water, tea, coffee, zero drinks
-    const isZeroCalorieDrink = cleanedFoodName.toLowerCase().includes('su') ||
-                               cleanedFoodName.toLowerCase().includes('çay') ||
-                               cleanedFoodName.toLowerCase().includes('kahve') ||
-                               cleanedFoodName.toLowerCase().includes('zero') ||
-                               cleanedFoodName.toLowerCase().includes('light');
-
-    if (nutrition.calories < 10 && !isZeroCalorieDrink) {
-      console.error(`Suspiciously low calorie value: ${nutrition.calories} for ${cleanedFoodName}`);
-      throw new Error(`Calorie value too low: ${nutrition.calories}. Most foods have at least 10 kcal/100g. Please provide realistic values.`);
-    }
-
-    // Validate other nutrients
+    // Final sanity check
     if (nutrition.protein < 0 || nutrition.protein > 100) {
       throw new Error('Unrealistic protein value');
     }
@@ -298,6 +317,8 @@ JSON (SADECE bu formatı döndür):
     if (nutrition.fat < 0 || nutrition.fat > 100) {
       throw new Error('Unrealistic fat value');
     }
+
+    console.log(`Final values for ${cleanedFoodName}: ${nutrition.calories} kcal, ${nutrition.protein}g protein, ${nutrition.carbs}g carbs, ${nutrition.fat}g fat`);
 
     // 9. Save to foods table
     const { data: newFood, error: insertError } = await supabaseClient
