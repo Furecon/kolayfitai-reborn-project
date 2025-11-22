@@ -155,59 +155,67 @@ Deno.serve(async (req: Request) => {
     }
 
     // 7. Call OpenAI for food research with enhanced intelligence
-    const systemPrompt = `Sen profesyonel bir beslenme uzmanı ve gıda bilimcisisin. Görevin: Kullanıcının verdiği yiyecek/içecek için en doğru ve gerçekçi besin değerlerini araştırmak ve sağlamak.
+    const systemPrompt = `Sen profesyonel bir beslenme uzmanı ve gıda analizcisisin. Görevin: Kullanıcının verdiği yiyecek/içecek için 100g/100ml başına DOĞRU ve GERÇEKÇİ besin değerlerini sağlamak.
 
-ARAŞTIRMA YÖNTEMİ:
-1. Önce ürünün tam ismini ve markasını analiz et
-2. Türkiye'deki yaygın markalı ürünlerin gerçek besin değerlerini bilgilerine dayanarak tahmin et
-3. Markalı ürünler için o markanın tipik ürün özelliklerini göz önünde bulundur
-4. Eğer genel bir yemek ismi ise (örn: "domates çorbası"), standart tariflere göre değerlendirme yap
+KRİTİK KURALLAR:
+1. Değerler MUTLAKA 100 gram veya 100 ml bazında olmalı
+2. Kalori değeri çoğu yemek için 30-900 kcal/100g arası olmalı (çok yağlı ürünler 900'e yakın, hafif çorbalar 30-60 arası)
+3. ASLA 0-10 kcal gibi çok düşük değerler verme (sadece su, çay, kahve, zero içecekler hariç)
+4. Çorbalar genelde 30-80 kcal/100g arası (içeriğine göre)
+5. Et/tavuk yemekleri 120-250 kcal/100g arası
+6. Tatlılar ve hamur işleri 250-450 kcal/100g arası
 
-ÖNEMLİ TALİMATLAR:
-- Marka + ürün kombinasyonlarında O MARKANIN gerçek ürün değerlerini baz al
-  Örnek: "Nescafe 2'si 1 arada" → Nestle'nin bu ürününün gerçek besin değerleri
-  Örnek: "Ülker Çokoprens" → Ülker'in bu ürününün gerçek besin değerleri
-  Örnek: "Coca Cola Zero" → Coca Cola'nın zero ürününün gerçek değerleri (0 kalori)
-- Değerler MUTLAKA 100g / 100ml bazında olmalı
-- Paket üzerindeki besin tablosundaki gerçek değerlere EN YAKIN tahmini yap
-- İnternette bulunan, markaların resmi sitelerindeki veya güvenilir kaynaklardaki değerleri kullan
-- Türkçe doğal isimler kullan (ürün adı düzgün yazılmalı)
-- Sadece JSON formatında döndür, hiçbir açıklama ekleme
-- Su, sade kahve, şekersiz çay, diet/zero/light içecekler için kalori genelde 0-5 arası
-- Değerler son derece gerçekçi olmalı (100g'da 5000 kcal gibi imkansız değerler yasak)
-- Sodyum mg, diğer tüm makrolar gram cinsinden
-- Şüpheye düştüğünde markanın resmi web sitesindeki veya güvenilir besin tablolarındaki değerleri kullan
+TÜRK MUTFAĞI REFERANS DEĞERLERİ (100g bazında):
+- Mercimek çorbası: ~50-70 kcal, 3-4g protein, 8-10g karb, 1-2g yağ
+- Kelle paça çorbası: ~80-120 kcal, 8-10g protein, 2-3g karb, 4-7g yağ
+- Domates çorbası: ~40-60 kcal, 1-2g protein, 7-9g karb, 2-3g yağ
+- Tavuk pirzola: ~165 kcal, 31g protein, 0g karb, 4g yağ
+- Kuru fasulye: ~90-110 kcal, 6-7g protein, 15-17g karb, 1-2g yağ
+- Pilav: ~130-150 kcal, 2-3g protein, 28-30g karb, 2-4g yağ
+- Baklava: ~330-400 kcal, 5-7g protein, 50-60g karb, 15-20g yağ
 
-ÖRNEK DURUM:
-Kullanıcı: "Nescafe 2'si 1 arada"
-→ Bu Nestle'nin hazır kahve karışımı. Genelde 100g'da: ~400 kcal, yüksek şeker, orta protein, düşük yağ
-Kullanıcı: "Torku labne"
-→ Bu Torku'nun yoğurt ürünü. Genelde 100g'da: ~120-150 kcal, yüksek protein, düşük-orta yağ
-Kullanıcı: "Coca Cola"
-→ Şekerli kola. 100ml'de: ~42 kcal, ~11g şeker, 0 protein, 0 yağ`;
+MARKALI ÜRÜNLER İÇİN:
+- Nescafe 2'si 1 arada: ~400 kcal/100g, 7g protein, 70g karb, 10g yağ
+- Ülker Çokoprens: ~510 kcal/100g, 6g protein, 64g karb, 25g yağ
+- Coca Cola: ~42 kcal/100ml, 0g protein, 10.6g karb (şeker), 0g yağ
+- Coca Cola Zero: ~0.3 kcal/100ml, tüm değerler ~0
+- Süt (tam yağlı): ~61 kcal/100ml, 3.2g protein, 4.8g karb, 3.3g yağ
 
-    const userPrompt = `Kullanıcı şu ürünü/yemeği girdi: "${cleanedFoodName}"
+ÖNEMLİ:
+- Türkçe yemek adlarını düzgün yaz
+- Sadece JSON döndür
+- Değerler GERÇEKÇİ olmalı
+- Yüksek yağlı/kalorili ürünler: fıstık, çikolata, yağlar
+- Düşük kalorili: sebze çorbaları, salata, meyve`;
 
-ÖNEMLİ: Bu ürün için internetten araştırma yap ve gerçek besin değerlerini bul. Markalı bir ürünse o markanın resmi besin değerlerini kullan. Genel bir yemekse standart tariflere göre hesapla.
+    const userPrompt = `Yemek/İçecek: "${cleanedFoodName}"
 
-100g/100ml başına besin değerlerini VERİLERE DAYALI OLARAK araştır ve tahmin et.
+Yukarıdaki referans değerlere göre bu ürün için 100g/100ml başına besin değerlerini hesapla.
 
-Eğer marka adı varsa (Nescafe, Ülker, Torku, Pınar, Migros, vb.), o markanın GERÇEKTEKİ ürün değerlerini baz al.
+Eğer:
+- Türk mutfağı yemeğiyse (çorba, pilav, et yemeği, vb.) → yukarıdaki referans değerlere göre hesapla
+- Markalı ürünse → o markanın gerçek değerlerini kullan
+- Genel bir yemekse → benzer yemeklerin ortalamasını al
 
-JSON formatı (SADECE bu JSON'ı döndür, başka hiçbir şey yazma):
+DİKKAT:
+- Çorbalar için 30-120 kcal/100g arası değer ver
+- Et yemekleri için 120-250 kcal/100g arası değer ver
+- ASLA 1-10 kcal gibi mantıksız değerler verme
+
+JSON (SADECE bu formatı döndür):
 {
-  "name_tr": "Türkçe normalize edilmiş tam ad",
-  "name_en": "English normalized name",
+  "name_tr": "Düzgün Türkçe ad",
+  "name_en": "English name",
   "nutritionPer100g": {
-    "calories": sayı (gerçekçi değer),
-    "protein": sayı (gram),
-    "carbs": sayı (gram),
-    "fat": sayı (gram),
-    "fiber": sayı (gram),
-    "sugar": sayı (gram),
-    "sodium": sayı (mg)
+    "calories": gerçekçi_sayı,
+    "protein": sayı,
+    "carbs": sayı,
+    "fat": sayı,
+    "fiber": sayı,
+    "sugar": sayı,
+    "sodium": sayı
   },
-  "is_drink": true veya false
+  "is_drink": true_ya_da_false
 }`;
 
     // Use GPT-4o for better nutrition research
@@ -261,8 +269,34 @@ JSON formatı (SADECE bu JSON'ı döndür, başka hiçbir şey yazma):
       throw new Error('Invalid nutrition data from AI');
     }
 
-    if (nutrition.calories < 0 || nutrition.calories > 2000) {
-      throw new Error('Unrealistic calorie value');
+    // Strict validation for realistic values
+    if (nutrition.calories < 0 || nutrition.calories > 900) {
+      console.error(`Unrealistic calorie value: ${nutrition.calories} for ${cleanedFoodName}`);
+      throw new Error(`Unrealistic calorie value: ${nutrition.calories}. Expected range: 0-900 kcal/100g`);
+    }
+
+    // Special validation: most foods should have at least 10 kcal
+    // Exceptions: water, tea, coffee, zero drinks
+    const isZeroCalorieDrink = cleanedFoodName.toLowerCase().includes('su') ||
+                               cleanedFoodName.toLowerCase().includes('çay') ||
+                               cleanedFoodName.toLowerCase().includes('kahve') ||
+                               cleanedFoodName.toLowerCase().includes('zero') ||
+                               cleanedFoodName.toLowerCase().includes('light');
+
+    if (nutrition.calories < 10 && !isZeroCalorieDrink) {
+      console.error(`Suspiciously low calorie value: ${nutrition.calories} for ${cleanedFoodName}`);
+      throw new Error(`Calorie value too low: ${nutrition.calories}. Most foods have at least 10 kcal/100g. Please provide realistic values.`);
+    }
+
+    // Validate other nutrients
+    if (nutrition.protein < 0 || nutrition.protein > 100) {
+      throw new Error('Unrealistic protein value');
+    }
+    if (nutrition.carbs < 0 || nutrition.carbs > 100) {
+      throw new Error('Unrealistic carbs value');
+    }
+    if (nutrition.fat < 0 || nutrition.fat > 100) {
+      throw new Error('Unrealistic fat value');
     }
 
     // 9. Save to foods table
