@@ -296,10 +296,11 @@ export default function QuickAnalysisResult({
 
     setIsLookingUpFood(true)
     try {
-      const { data, error } = await supabase.functions.invoke('lookup-food-by-name', {
+      // Use analyze-food-by-name for better AI analysis
+      const { data, error } = await supabase.functions.invoke('analyze-food-by-name', {
         body: {
           foodName: editFoodName.trim(),
-          locale: 'tr-TR'
+          mealType: selectedMealType
         }
       })
 
@@ -307,49 +308,62 @@ export default function QuickAnalysisResult({
         throw new Error(error.message)
       }
 
-      if (data && data.food) {
-        // Update the food item with new data
+      if (data?.error) {
+        throw new Error(data.error)
+      }
+
+      if (data && data.foods && data.foods.length > 0) {
+        // Use the first food item from the analysis
+        const analyzedFood = data.foods[0]
         const updatedFoods = [...detectedFoods]
         const originalFood = updatedFoods[editingFoodIndex]
 
         // Parse amount from original estimatedAmount (e.g., "100 gram" -> 100)
         const amountMatch = originalFood.estimatedAmount.match(/(\d+\.?\d*)/)
-        const amount = amountMatch ? parseFloat(amountMatch[1]) : 100
+        const amount = amountMatch ? parseFloat(amountMatch[1]) : analyzedFood.amount
 
-        // Calculate total nutrition based on amount
-        const multiplier = amount / 100
+        // Calculate total nutrition based on the analyzed amount
+        const multiplier = amount / analyzedFood.amount
         updatedFoods[editingFoodIndex] = {
-          name: data.food.name_tr,
-          nameEn: data.food.name_en,
-          estimatedAmount: originalFood.estimatedAmount,
-          nutritionPer100g: data.food.nutritionPer100g,
+          name: analyzedFood.name,
+          nameEn: analyzedFood.name,
+          estimatedAmount: `${amount} ${analyzedFood.unit}`,
+          nutritionPer100g: {
+            calories: Math.round(analyzedFood.calories / (analyzedFood.amount / 100)),
+            protein: Number((analyzedFood.protein / (analyzedFood.amount / 100)).toFixed(1)),
+            carbs: Number((analyzedFood.carbs / (analyzedFood.amount / 100)).toFixed(1)),
+            fat: Number((analyzedFood.fat / (analyzedFood.amount / 100)).toFixed(1)),
+            fiber: Number((analyzedFood.fiber / (analyzedFood.amount / 100)).toFixed(1)),
+            sugar: Number((analyzedFood.sugar / (analyzedFood.amount / 100)).toFixed(1)),
+            sodium: Math.round(analyzedFood.calories / (analyzedFood.amount / 100))
+          },
           totalNutrition: {
-            calories: data.food.nutritionPer100g.calories * multiplier,
-            protein: data.food.nutritionPer100g.protein * multiplier,
-            carbs: data.food.nutritionPer100g.carbs * multiplier,
-            fat: data.food.nutritionPer100g.fat * multiplier,
-            fiber: data.food.nutritionPer100g.fiber * multiplier,
-            sugar: data.food.nutritionPer100g.sugar * multiplier,
-            sodium: data.food.nutritionPer100g.sodium * multiplier
+            calories: Math.round(analyzedFood.calories * multiplier),
+            protein: Number((analyzedFood.protein * multiplier).toFixed(1)),
+            carbs: Number((analyzedFood.carbs * multiplier).toFixed(1)),
+            fat: Number((analyzedFood.fat * multiplier).toFixed(1)),
+            fiber: Number((analyzedFood.fiber * multiplier).toFixed(1)),
+            sugar: Number((analyzedFood.sugar * multiplier).toFixed(1)),
+            sodium: Math.round(analyzedFood.calories * multiplier)
           }
         }
 
         setDetectedFoods(updatedFoods)
 
         toast({
-          title: data.foundInDb ? "Veritabanından Bulundu!" : "AI ile Oluşturuldu!",
-          description: data.foundInDb
-            ? "Yemek veritabanımızda bulundu"
-            : "Besin değerleri AI ile araştırıldı ve kaydedildi"
+          title: "AI Analizi Tamamlandı!",
+          description: `${data.recognizedName} - Detaylı besin değerleri hesaplandı`
         })
 
         handleCancelEdit()
+      } else {
+        throw new Error('Yemek analizi başarısız oldu')
       }
     } catch (error: any) {
       console.error('Lookup food error:', error)
       toast({
         title: "Arama Hatası",
-        description: error.message || "Yemek bilgisi bulunamadı",
+        description: error.message || "Yemek bilgisi bulunamadı. Lütfen yemek adını kontrol edin.",
         variant: "destructive"
       })
     } finally {
