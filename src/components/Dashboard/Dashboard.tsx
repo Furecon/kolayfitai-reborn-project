@@ -19,26 +19,12 @@ import { useToast } from '@/hooks/use-toast'
 
 type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'file-image' | 'crop-image'
 
-interface DashboardProps {
-  openSubscriptionSettings?: boolean
-  onSubscriptionSettingsClosed?: () => void
-}
-
-export function Dashboard({ openSubscriptionSettings, onSubscriptionSettingsClosed }: DashboardProps = {}) {
+export function Dashboard() {
   const { user } = useAuth()
   const { toast } = useToast()
   const [currentView, setCurrentView] = useState<View>('dashboard')
   const [activeTab, setActiveTab] = useState<TabType>('home')
   const [selectedImageForAnalysis, setSelectedImageForAnalysis] = useState<string | null>(null)
-
-  // Watch for openSubscriptionSettings changes
-  useEffect(() => {
-    if (openSubscriptionSettings) {
-      setCurrentView('dashboard')
-      setActiveTab('settings')
-      onSubscriptionSettingsClosed?.()
-    }
-  }, [openSubscriptionSettings, onSubscriptionSettingsClosed])
 
   // Enhanced navigation with hardware back button support
   useNavigation({
