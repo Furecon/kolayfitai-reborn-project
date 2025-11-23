@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { AuthProvider } from '@/components/Auth/AuthProvider'
 import { AuthScreen } from '@/components/Auth/AuthScreen'
 import { Dashboard } from '@/components/Dashboard/Dashboard'
@@ -11,6 +12,7 @@ import { TrialExpiredDialog } from '@/components/Subscription/TrialExpiredDialog
 
 function AppContent() {
   const { user, loading } = useAuth()
+  const [openSubscriptionSettings, setOpenSubscriptionSettings] = useState(false)
 
   // Initialize OAuth redirect handler for mobile deep links
   useOAuthRedirect()
@@ -64,7 +66,17 @@ function AppContent() {
     return <OnboardingFlow />
   }
 
-  return <Dashboard />
+  return (
+    <>
+      <Dashboard
+        openSubscriptionSettings={openSubscriptionSettings}
+        onSubscriptionSettingsClosed={() => setOpenSubscriptionSettings(false)}
+      />
+      <TrialExpiredDialog
+        onManageSubscription={() => setOpenSubscriptionSettings(true)}
+      />
+    </>
+  )
 }
 
 export default function Index() {
@@ -72,7 +84,6 @@ export default function Index() {
     <AuthProvider>
       <AppContent />
       <RatingDialog />
-      <TrialExpiredDialog />
     </AuthProvider>
   )
 }

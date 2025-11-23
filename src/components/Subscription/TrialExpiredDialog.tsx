@@ -11,12 +11,18 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Crown, CheckCircle2 } from 'lucide-react';
+import { Crown, CheckCircle2, LogOut, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
-export function TrialExpiredDialog() {
-  const { user } = useAuth();
+interface TrialExpiredDialogProps {
+  onManageSubscription?: () => void;
+}
+
+export function TrialExpiredDialog({ onManageSubscription }: TrialExpiredDialogProps = {}) {
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [showDialog, setShowDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -50,6 +56,28 @@ export function TrialExpiredDialog() {
       }
     } catch (error) {
       console.error('Error checking trial status:', error);
+    }
+  };
+
+  const handleManageSubscription = () => {
+    setShowDialog(false);
+    if (onManageSubscription) {
+      onManageSubscription();
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setShowDialog(false);
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: 'Hata',
+        description: 'Çıkış yapılamadı.',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -170,19 +198,23 @@ export function TrialExpiredDialog() {
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col sm:flex-col gap-2">
           <Button
-            onClick={handleUpgrade}
+            onClick={handleManageSubscription}
             disabled={isLoading}
             className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
             size="lg"
           >
-            {isLoading ? (
-              'Yükleniyor...'
-            ) : (
-              <>
-                <Crown className="h-5 w-5 mr-2" />
-                Premium'a Geç
-              </>
-            )}
+            <Settings className="h-5 w-5 mr-2" />
+            Abonelik Yönetimi
+          </Button>
+          <Button
+            onClick={handleLogout}
+            disabled={isLoading}
+            variant="outline"
+            className="w-full"
+            size="lg"
+          >
+            <LogOut className="h-5 w-5 mr-2" />
+            Çıkış Yap
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
