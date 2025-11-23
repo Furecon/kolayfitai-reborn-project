@@ -173,12 +173,27 @@ export function Dashboard() {
           description: "Premium özellikleriniz aktif edildi.",
         })
         setRefreshTrigger(prev => prev + 1)
-      } else if (result.result === 'error') {
+      } else if (result.result === 'cancelled') {
         toast({
-          title: "Hata",
-          description: result.error || "Abonelik işlemi başarısız oldu.",
-          variant: "destructive"
+          title: "İşlem İptal Edildi",
+          description: "Satın alma işlemi iptal edildi.",
         })
+      } else if (result.result === 'error') {
+        // Check if it's web platform error
+        if (result.error?.includes('mobile apps')) {
+          toast({
+            title: "Mobil Uygulama Gerekli",
+            description: "Abonelik satın alma işlemi sadece mobil uygulamada yapılabilir. Lütfen Android veya iOS uygulamasını kullanın.",
+            variant: "destructive",
+            duration: 5000
+          })
+        } else {
+          toast({
+            title: "Hata",
+            description: result.error || "Abonelik işlemi başarısız oldu.",
+            variant: "destructive"
+          })
+        }
       }
     } catch (error: any) {
       console.error('Error opening paywall:', error)

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/Auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
-import { purchaseService } from '@/services/PurchaseService';
+import { paywallService } from '@/services/PaywallService';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -59,25 +59,51 @@ export function TrialExpiredDialog() {
     setIsLoading(true);
 
     try {
-      const success = await purchaseService.purchaseWithPaywall(user.id);
+      console.log('🚀 Opening paywall from trial expired dialog...');
+      const result = await paywallService.presentPaywall();
 
-      if (success) {
+      if (result.result === 'purchased') {
         toast({
-          title: 'Harika!',
-          description: 'Premium aboneliğiniz başarıyla aktif edildi.',
+          title: 'Abonelik Başarılı!',
+          description: 'Premium özelliklerinin keyfini çıkarın!',
         });
         setShowDialog(false);
-      } else {
+        // Reload page to refresh trial status
+        window.location.reload();
+      } else if (result.result === 'restored') {
+        toast({
+          title: 'Abonelik Geri Yüklendi!',
+          description: 'Premium özellikleriniz aktif edildi.',
+        });
+        setShowDialog(false);
+        window.location.reload();
+      } else if (result.result === 'cancelled') {
         toast({
           title: 'İşlem İptal Edildi',
           description: 'Satın alma işlemi iptal edildi.',
         });
+      } else if (result.result === 'error') {
+        // Check if it's web platform error
+        if (result.error?.includes('mobile apps')) {
+          toast({
+            title: 'Mobil Uygulama Gerekli',
+            description: 'Abonelik satın alma işlemi sadece mobil uygulamada yapılabilir. Lütfen Android veya iOS uygulamasını kullanın.',
+            variant: 'destructive',
+            duration: 5000
+          });
+        } else {
+          toast({
+            title: 'Hata',
+            description: result.error || 'Abonelik işlemi başarısız oldu.',
+            variant: 'destructive'
+          });
+        }
       }
     } catch (error: any) {
       console.error('Upgrade error:', error);
       toast({
         title: 'Hata',
-        description: error.message || 'Bir hata oluştu. Lütfen tekrar deneyin.',
+        description: error.message || 'Abonelik sayfası açılamadı.',
         variant: 'destructive'
       });
     } finally {
