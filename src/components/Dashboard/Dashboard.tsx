@@ -14,11 +14,14 @@ import { AIInsightsTab } from './Tabs/AIInsightsTab'
 import { ProgressTab } from './Tabs/ProgressTab'
 import { MealsTab } from './Tabs/MealsTab'
 import { SettingsTab } from './Tabs/SettingsTab'
+import { paywallService } from '@/services/PaywallService'
+import { useToast } from '@/hooks/use-toast'
 
 type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'file-image' | 'crop-image'
 
 export function Dashboard() {
   const { user } = useAuth()
+  const { toast } = useToast()
   const [currentView, setCurrentView] = useState<View>('dashboard')
   const [activeTab, setActiveTab] = useState<TabType>('home')
   const [selectedImageForAnalysis, setSelectedImageForAnalysis] = useState<string | null>(null)
@@ -152,6 +155,41 @@ export function Dashboard() {
     setActiveTab('home')
   }
 
+  const handleUpgrade = async () => {
+    try {
+      console.log('🚀 Opening paywall...')
+      const result = await paywallService.presentPaywall()
+
+      if (result.result === 'purchased') {
+        toast({
+          title: "Abonelik Başarılı!",
+          description: "Premium özelliklerinin keyfini çıkarın!",
+        })
+        // Refresh stats to update trial usage
+        setRefreshTrigger(prev => prev + 1)
+      } else if (result.result === 'restored') {
+        toast({
+          title: "Abonelik Geri Yüklendi!",
+          description: "Premium özellikleriniz aktif edildi.",
+        })
+        setRefreshTrigger(prev => prev + 1)
+      } else if (result.result === 'error') {
+        toast({
+          title: "Hata",
+          description: result.error || "Abonelik işlemi başarısız oldu.",
+          variant: "destructive"
+        })
+      }
+    } catch (error: any) {
+      console.error('Error opening paywall:', error)
+      toast({
+        title: "Hata",
+        description: "Abonelik sayfası açılamadı.",
+        variant: "destructive"
+      })
+    }
+  }
+
 
   if (currentView === 'meal-selection') {
     return (
@@ -219,7 +257,7 @@ export function Dashboard() {
         initialImage={selectedImageForAnalysis}
         skipCameraStep={!!selectedImageForAnalysis}
         autoOpenCamera={!selectedImageForAnalysis}
-        onUpgradeClick={() => setCurrentView('subscription')}
+        onUpgradeClick={handleUpgrade}
       />
     )
   }
@@ -233,7 +271,7 @@ export function Dashboard() {
             dailyStats={dailyStats}
             userWeight={profile?.weight}
             onCameraClick={() => setCurrentView('meal-selection')}
-            onUpgradeClick={() => setActiveTab('settings')}
+            onUpgradeClick={handleUpgrade}
           />
         )
       case 'ai-insights':
