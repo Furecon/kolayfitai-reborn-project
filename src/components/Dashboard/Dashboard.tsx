@@ -16,6 +16,7 @@ import { MealsTab } from './Tabs/MealsTab'
 import { SettingsTab } from './Tabs/SettingsTab'
 import { paywallService } from '@/services/PaywallService'
 import { useToast } from '@/hooks/use-toast'
+import { notificationManager } from '@/lib/notificationManager'
 
 type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'file-image' | 'crop-image'
 
@@ -60,6 +61,10 @@ export function Dashboard() {
     if (user) {
       fetchDailyStats()
       fetchProfile()
+      // Bildirimleri başlat
+      notificationManager.initializeNotifications(user.id).catch(err => {
+        console.error('Failed to initialize notifications:', err)
+      })
     }
   }, [user, refreshTrigger])
 

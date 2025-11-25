@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { Bell, Clock, Calendar, Plus, Trash2, Droplet } from 'lucide-react'
+import { notificationManager } from '@/lib/notificationManager'
 
 interface MealReminders {
   breakfast: boolean
@@ -140,9 +141,12 @@ export function NotificationSettings() {
 
       if (error) throw error
 
+      // Bildirimleri yeniden planla
+      await notificationManager.initializeNotifications(user.id)
+
       toast({
         title: 'Başarılı',
-        description: 'Bildirim ayarlarınız kaydedildi'
+        description: 'Bildirim ayarlarınız kaydedildi ve bildirimler yeniden planlandı'
       })
     } catch (error) {
       console.error('Error saving preferences:', error)
