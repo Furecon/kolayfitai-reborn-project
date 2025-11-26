@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { usePlatform } from '@/hooks/usePlatform'
 import GoogleAuth from '@/plugins/GoogleAuthPlugin'
+import { purchaseService } from '@/services/PurchaseService'
+import { paywallService } from '@/services/PaywallService'
 
 interface AuthContextType {
   user: User | null
@@ -26,7 +28,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     console.log('AuthProvider initialized for platform:', platform)
-    
+
+    // Initialize purchase and paywall services on app start
+    const initializeServices = async () => {
+      try {
+        await purchaseService.initialize()
+        console.log('✅ Purchase service initialized')
+
+        await paywallService.initialize()
+        console.log('✅ Paywall service initialized')
+      } catch (error) {
+        console.error('Failed to initialize services:', error)
+      }
+    }
+
+    initializeServices()
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
