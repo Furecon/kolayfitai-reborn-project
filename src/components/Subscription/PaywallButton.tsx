@@ -49,16 +49,27 @@ export function PaywallButton({
         }
       } else {
         toast({
-          title: 'İşlem İptal Edildi',
-          description: 'Satın alma işlemi iptal edildi veya tamamlanamadı.',
+          title: 'İşlem Tamamlanamadı',
+          description: 'Satın alma işlemi iptal edildi veya tamamlanamadı. Lütfen tekrar deneyin.',
         });
       }
     } catch (error: any) {
       console.error('Paywall error:', error);
+
+      // More detailed error message
+      let errorMessage = 'Bir hata oluştu. Lütfen tekrar deneyin.';
+
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+
       toast({
         title: 'Hata',
-        description: error.message || 'Bir hata oluştu. Lütfen tekrar deneyin.',
-        variant: 'destructive'
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 5000
       });
     } finally {
       setIsLoading(false);

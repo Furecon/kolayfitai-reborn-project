@@ -43,6 +43,28 @@ class PaywallService {
     try {
       console.log('🎨 Presenting paywall from default offering...');
 
+      // Check if offerings are available first
+      try {
+        const offerings = await Purchases.getOfferings();
+        console.log('📦 Available offerings:', offerings);
+
+        if (!offerings.current) {
+          console.error('❌ No current offering found in RevenueCat');
+          return {
+            result: 'error',
+            error: 'Abonelik paketleri yüklenemedi. RevenueCat dashboard\'ında "default" offering\'i kontrol edin.'
+          };
+        }
+
+        console.log('✅ Current offering found:', offerings.current.identifier);
+      } catch (offerError: any) {
+        console.error('❌ Error fetching offerings:', offerError);
+        return {
+          result: 'error',
+          error: `Abonelik paketleri yüklenemedi: ${offerError.message}`
+        };
+      }
+
       const result = await RevenueCatUI.presentPaywall({
         offering: undefined,
       });
@@ -65,10 +87,10 @@ class PaywallService {
           return { result: 'cancelled' };
 
         case PAYWALL_RESULT.ERROR:
-          console.error('❌ Paywall error');
+          console.error('❌ Paywall returned error status');
           return {
             result: 'error',
-            error: 'An error occurred while displaying the paywall'
+            error: 'Abonelik ekranı gösterilemedi. Lütfen internet bağlantınızı kontrol edin.'
           };
 
         default:
@@ -77,9 +99,15 @@ class PaywallService {
 
     } catch (error: any) {
       console.error('❌ Failed to present paywall:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+
       return {
         result: 'error',
-        error: error.message || 'Failed to display paywall'
+        error: `Paywall hatası: ${error.message || 'Bilinmeyen hata'}`
       };
     }
   }

@@ -159,12 +159,12 @@ export class PurchaseService {
 
     if (!isNative) {
       console.warn('⚠️ Paywalls are only available on native platforms');
-      return false;
+      throw new Error('Abonelik satın alma sadece mobil uygulamada yapılabilir.');
     }
 
     if (!paywallService.isAvailable()) {
       console.warn('⚠️ Paywall service not available');
-      return false;
+      throw new Error('Abonelik servisi başlatılamadı. Lütfen uygulamayı yeniden başlatın.');
     }
 
     try {
@@ -174,6 +174,11 @@ export class PurchaseService {
       }
 
       const result = await paywallService.presentPaywall();
+
+      // If there's an error result, throw it
+      if (result.result === 'error') {
+        throw new Error(result.error || 'Paywall gösterilemedi');
+      }
 
       if (result.result === 'purchased' || result.result === 'restored') {
         console.log('✅ Purchase successful via paywall');
@@ -194,10 +199,12 @@ export class PurchaseService {
         return true;
       }
 
+      // Cancelled
       return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Paywall purchase failed:', error);
-      return false;
+      // Re-throw with a user-friendly message
+      throw new Error(error.message || 'Satın alma işlemi başarısız oldu');
     }
   }
 
