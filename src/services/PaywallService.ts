@@ -57,6 +57,30 @@ class PaywallService {
         }
 
         console.log('✅ Current offering found:', offerings.current.identifier);
+
+        // Check if packages are available
+        const packages = offerings.current.availablePackages;
+        console.log('📦 Available packages in offering:', packages.length);
+
+        if (packages.length === 0) {
+          console.error('❌ No packages found in current offering');
+          console.error('Please check:');
+          console.error('1. Google Play Console - Subscriptions are ACTIVE');
+          console.error('2. RevenueCat Dashboard - Products are configured');
+          console.error('3. RevenueCat Dashboard - Products are attached to offering');
+          return {
+            result: 'error',
+            error: 'Abonelik paketlerinde ürün bulunamadı. Lütfen Google Play Console ve RevenueCat yapılandırmasını kontrol edin.'
+          };
+        }
+
+        packages.forEach((pkg: any) => {
+          console.log(`  📦 Package: ${pkg.identifier}`, {
+            product: pkg.product.identifier,
+            price: pkg.product.priceString,
+            title: pkg.product.title
+          });
+        });
       } catch (offerError: any) {
         console.error('❌ Error fetching offerings:', offerError);
         return {
