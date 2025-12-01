@@ -47,6 +47,7 @@ export function DietPlanView({
   });
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
   const [showTips, setShowTips] = useState(!dietProfile?.hide_diet_tips);
+  const [replacingMealIndex, setReplacingMealIndex] = useState<number | null>(null);
   const { toast } = useToast();
 
   const planData = plan.plan_data;
@@ -68,8 +69,10 @@ export function DietPlanView({
     }
   };
 
-  const handleReplaceMeal = async (meal: DietMeal) => {
+  const handleReplaceMeal = async (meal: DietMeal, mealIndex: number) => {
     try {
+      setReplacingMealIndex(mealIndex);
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
@@ -124,6 +127,8 @@ export function DietPlanView({
         description: error.message || 'Öğün değiştirilirken hata oluştu',
         variant: 'destructive',
       });
+    } finally {
+      setReplacingMealIndex(null);
     }
   };
 
@@ -247,7 +252,8 @@ export function DietPlanView({
             <MealCard
               key={index}
               meal={meal}
-              onReplace={() => handleReplaceMeal(meal)}
+              onReplace={() => handleReplaceMeal(meal, index)}
+              isReplacing={replacingMealIndex === index}
             />
           ))}
         </div>

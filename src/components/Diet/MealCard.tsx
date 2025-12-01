@@ -14,6 +14,7 @@ import { ChevronDown, Flame, Beef, Wheat, Droplet, RefreshCw, Coffee, Sun, Moon,
 interface MealCardProps {
   meal: DietMeal;
   onReplace: () => void;
+  isReplacing?: boolean;
 }
 
 const mealIcons = {
@@ -23,12 +24,12 @@ const mealIcons = {
   snack: Cookie,
 };
 
-export function MealCard({ meal, onReplace }: MealCardProps) {
+export function MealCard({ meal, onReplace, isReplacing = false }: MealCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const MealIcon = mealIcons[meal.mealType];
 
   return (
-    <Card>
+    <Card className={`transition-opacity ${isReplacing ? 'opacity-60' : 'opacity-100'}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-start gap-2 flex-1">
@@ -73,7 +74,7 @@ export function MealCard({ meal, onReplace }: MealCardProps) {
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
           <div className="flex gap-2">
             <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-1">
+              <Button variant="outline" size="sm" className="flex-1" disabled={isReplacing}>
                 <span>Tarifi Göster</span>
                 <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
               </Button>
@@ -82,9 +83,10 @@ export function MealCard({ meal, onReplace }: MealCardProps) {
               variant="outline"
               size="sm"
               onClick={onReplace}
+              disabled={isReplacing}
             >
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Değiştir
+              <RefreshCw className={`h-4 w-4 mr-1 transition-transform ${isReplacing ? 'animate-spin' : ''}`} />
+              {isReplacing ? 'Değiştiriliyor...' : 'Değiştir'}
             </Button>
           </div>
 
