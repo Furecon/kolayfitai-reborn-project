@@ -83,7 +83,7 @@ export function DietOnboarding({ onComplete, onSkip, initialData }: DietOnboardi
   const progress = (step / totalSteps) * 100;
 
   return (
-    <div className="fixed inset-0 bg-background z-[100]">
+    <div className="fixed inset-0 bg-background z-50">
       <div className="h-full flex flex-col">
         {/* Header */}
         <div className="flex-none flex items-center justify-between p-4 border-b bg-background">
