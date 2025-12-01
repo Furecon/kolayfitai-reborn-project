@@ -83,22 +83,22 @@ export function DietOnboarding({ onComplete, onSkip, initialData }: DietOnboardi
   const progress = (step / totalSteps) * 100;
 
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col">
-      <div className="flex items-center justify-between p-4 border-b bg-background">
+    <div className="fixed inset-0 bg-background z-50 flex flex-col overflow-hidden">
+      <div className="flex items-center justify-between p-4 border-b bg-background shrink-0">
         <h1 className="text-lg font-semibold">Diyet Profili Oluştur</h1>
         <Button variant="ghost" size="icon" onClick={onSkip}>
           <X className="h-5 w-5" />
         </Button>
       </div>
 
-      <div className="px-4 py-2 bg-background border-b">
+      <div className="px-4 py-2 bg-background border-b shrink-0">
         <Progress value={progress} className="h-2" />
         <p className="text-sm text-muted-foreground mt-2">
           Adım {step}/{totalSteps}
         </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 pb-24">
+      <div className="flex-1 overflow-y-auto p-4">
         {step === 1 && (
           <Card>
             <CardHeader>
@@ -282,7 +282,7 @@ export function DietOnboarding({ onComplete, onSkip, initialData }: DietOnboardi
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 border-t p-4 flex items-center justify-between gap-2 bg-background">
+      <div className="border-t p-4 flex items-center justify-between gap-2 bg-background shrink-0 mt-auto">
         <Button
           variant="outline"
           onClick={onSkip}
