@@ -252,6 +252,9 @@ export const EnhancedAIVerification: React.FC<EnhancedAIVerificationProps> = ({
             currentFoods: foodNames,
             recalculate: true
           }
+        },
+        headers: {
+          'x-request-timeout': '60000'
         }
       });
 

@@ -19,6 +19,14 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     flowType: 'pkce',
     detectSessionInUrl: true
+  },
+  global: {
+    fetch: (url, options = {}) => {
+      return fetch(url, {
+        ...options,
+        signal: options.signal || AbortSignal.timeout(90000)
+      });
+    }
   }
 });
 

@@ -120,6 +120,9 @@ export default function QuickAnalysisResult({
           mealType: mealType,
           analysisType: analysisType,
           detailsData: detailsData
+        },
+        headers: {
+          'x-request-timeout': '60000'
         }
       })
 
