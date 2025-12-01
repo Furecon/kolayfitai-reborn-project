@@ -64,7 +64,7 @@ Deno.serve(async (req: Request) => {
     const systemPrompt = `Sen Türk kullanıcılar için çalışan profesyonel bir beslenme uzmanısın. Görevin kullanıcının diyet profiline göre 7 günlük dengeli ve sağlıklı bir beslenme planı oluşturmak.
 
 ÖNEMLİ KURALLAR:
-1. Kullanıcının belirlediği alerjenlere KESINLIKLE UYACAKSIN. Alerjen içeren hiçbir malzeme kullanma.
+1. Kullanıcının belirlediği alerjenlere KESİNLİKLE UYACAKSIN. Alerjen içeren hiçbir malzeme kullanma.
 2. Kullanıcının seçtiği diyet türüne %100 uyum sağla.
 3. Aynı yemeği çok sık tekrar etme. 7 gün içinde mümkün olduğunca çeşitlilik sağla.
 4. Türk mutfağına ve Türkiye'de bulunabilir malzemelere öncelik ver.
@@ -147,7 +147,7 @@ Tercih Edilen Mutfaklar: ${dietProfile.preferred_cuisines || 'Belirtilmedi'}
 
 Lütfen bu bilgilere göre 7 günlük dengeli ve çeşitli bir diyet planı oluştur.`;
 
-    console.log('🤖 Calling OpenAI GPT-4.1...');
+    console.log('🤖 Calling OpenAI GPT-4o...');
 
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -156,7 +156,7 @@ Lütfen bu bilgilere göre 7 günlük dengeli ve çeşitli bir diyet planı olu�
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -176,13 +176,52 @@ Lütfen bu bilgilere göre 7 günlük dengeli ve çeşitli bir diyet planı olu�
     console.log('✅ OpenAI response received');
 
     const planContent = openAIData.choices[0].message.content;
+    console.log('📝 Plan content (first 500 chars):', planContent?.substring(0, 500));
+
     let planData;
 
     try {
-      planData = JSON.parse(planContent);
+      // Clean the content before parsing
+      let cleanContent = planContent.trim();
+
+      // Remove markdown code blocks if present
+      if (cleanContent.startsWith('```json')) {
+        cleanContent = cleanContent.replace(/```json\n?/, '').replace(/\n?```$/, '');
+      } else if (cleanContent.startsWith('```')) {
+        cleanContent = cleanContent.replace(/```\n?/, '').replace(/\n?```$/, '');
+      }
+
+      // Remove any DOCTYPE or HTML tags
+      cleanContent = cleanContent.replace(/<!DOCTYPE[^>]*>/gi, '');
+      cleanContent = cleanContent.replace(/<[^>]*>/g, '');
+      cleanContent = cleanContent.trim();
+
+      // Try to find JSON object
+      const jsonStart = cleanContent.indexOf('{');
+      const jsonEnd = cleanContent.lastIndexOf('}');
+
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        cleanContent = cleanContent.substring(jsonStart, jsonEnd + 1);
+      }
+
+      console.log('🧹 Cleaned content (first 300 chars):', cleanContent.substring(0, 300));
+
+      planData = JSON.parse(cleanContent);
+
+      // Validate structure
+      if (!planData.days || !Array.isArray(planData.days) || planData.days.length === 0) {
+        throw new Error('Invalid plan structure: missing or empty days array');
+      }
+
+      console.log('✅ Plan data validated:', {
+        daysCount: planData.days.length,
+        firstDayMealsCount: planData.days[0]?.meals?.length
+      });
+
     } catch (parseError) {
       console.error('❌ Failed to parse OpenAI response:', parseError);
-      throw new Error('Invalid plan format from OpenAI');
+      console.error('📄 Raw content:', planContent);
+      throw new Error(`Invalid plan format from OpenAI: ${parseError.message}`);
     }
 
     console.log('📦 Deactivating old plans and saving new plan...');
