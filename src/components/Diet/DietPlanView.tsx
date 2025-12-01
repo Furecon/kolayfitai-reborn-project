@@ -85,8 +85,14 @@ export function DietPlanView({
         description: 'Sana uygun yeni bir öğün hazırlanıyor...',
       });
 
+      // Use hardcoded values as fallback for mobile builds
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://acsqneuzkukmvtfmbphb.supabase.co';
+      const apiUrl = `${supabaseUrl}/functions/v1/replace-meal`;
+
+      console.log('Replacing meal, API URL:', apiUrl);
+
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/replace-meal`,
+        apiUrl,
         {
           method: 'POST',
           headers: {

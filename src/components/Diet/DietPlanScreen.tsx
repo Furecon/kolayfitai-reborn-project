@@ -145,8 +145,14 @@ export function DietPlanScreen() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
+      // Use hardcoded values as fallback for mobile builds
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://acsqneuzkukmvtfmbphb.supabase.co';
+      const apiUrl = `${supabaseUrl}/functions/v1/generate-diet-plan`;
+
+      console.log('Generating diet plan, API URL:', apiUrl);
+
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-diet-plan`,
+        apiUrl,
         {
           method: 'POST',
           headers: {
