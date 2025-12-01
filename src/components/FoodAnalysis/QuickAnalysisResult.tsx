@@ -114,23 +114,44 @@ export default function QuickAnalysisResult({
 
       console.log('Calling API for food analysis...')
 
-      const { data, error } = await supabase.functions.invoke('analyze-food', {
-        body: {
-          imageUrl: capturedImage,
-          mealType: mealType,
-          analysisType: analysisType,
-          detailsData: detailsData
-        },
-        headers: {
-          'x-request-timeout': '60000'
-        }
-      })
-
-      if (error) {
-        console.error('Supabase function error:', error)
-        throw new Error(error.message)
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('No active session')
       }
 
+      // Use fetch directly with proper timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 90000) // 90 second timeout
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-food`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({
+            imageUrl: capturedImage,
+            mealType: mealType,
+            analysisType: analysisType,
+            detailsData: detailsData
+          }),
+          signal: controller.signal
+        }
+      )
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Edge function error:', errorText)
+        throw new Error(`Request failed: ${response.status}`)
+      }
+
+      const data = await response.json()
       console.log('Analysis result:', data)
 
       if (data.error === 'trial_limit_reached') {
