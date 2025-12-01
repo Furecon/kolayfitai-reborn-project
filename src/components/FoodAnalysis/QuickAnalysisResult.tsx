@@ -146,18 +146,26 @@ export default function QuickAnalysisResult({
         controller.abort()
       }, 90000) // 90 second timeout
 
-      console.log('Sending request to analyze-food function...')
+      // Use hardcoded values as fallback for mobile builds
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://acsqneuzkukmvtfmbphb.supabase.co'
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjc3FuZXV6a3VrbXZ0Zm1icGhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NTc3MzQsImV4cCI6MjA2ODIzMzczNH0.YPi7bwjLsvEzqa8tBH05DU3yN0yPSH-qHNnEqKI2BR8'
+
+      const apiUrl = `${supabaseUrl}/functions/v1/analyze-food`
+      console.log('Sending request to:', apiUrl)
+      console.log('Using Supabase URL:', supabaseUrl)
+      console.log('Auth token present:', !!session.access_token)
+      console.log('Anon key present:', !!supabaseAnonKey)
 
       let response
       try {
         response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-food`,
+          apiUrl,
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${session.access_token}`,
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+              'apikey': supabaseAnonKey
             },
             body: JSON.stringify(requestBody),
             signal: controller.signal
