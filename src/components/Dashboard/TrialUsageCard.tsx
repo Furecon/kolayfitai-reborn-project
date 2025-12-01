@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
+import { entitlementService } from '@/services/EntitlementService'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Camera, Sparkles, Crown } from 'lucide-react'
@@ -33,23 +34,50 @@ export function TrialUsageCard({ onUpgradeClick }: TrialUsageCardProps) {
   const fetchTrialUsage = async () => {
     if (!user) return
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('subscription_status, trial_photo_analysis_count, trial_photo_analysis_limit, trial_meal_suggestion_count, trial_meal_suggestion_limit, trial_end_date')
-      .eq('user_id', user.id)
-      .single()
+    try {
+      // Check RevenueCat entitlement first
+      const hasPremium = await entitlementService.hasPremiumAccess()
 
-    if (!error && data) {
-      setUsage({
-        subscriptionStatus: data.subscription_status,
-        photoAnalysisCount: data.trial_photo_analysis_count,
-        photoAnalysisLimit: data.trial_photo_analysis_limit,
-        mealSuggestionCount: data.trial_meal_suggestion_count,
-        mealSuggestionLimit: data.trial_meal_suggestion_limit,
-        trialEndDate: data.trial_end_date
-      })
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('subscription_status, trial_photo_analysis_count, trial_photo_analysis_limit, trial_meal_suggestion_count, trial_meal_suggestion_limit, trial_end_date')
+        .eq('user_id', user.id)
+        .single()
+
+      if (!error && data) {
+        // If user has premium entitlement but database says trial, update database
+        if (hasPremium && data.subscription_status === 'trial') {
+          console.log('🔄 Syncing subscription status: RevenueCat shows premium, updating database')
+          await supabase
+            .from('profiles')
+            .update({ subscription_status: 'premium' })
+            .eq('user_id', user.id)
+
+          // Set status to premium so card doesn't show
+          setUsage({
+            subscriptionStatus: 'premium',
+            photoAnalysisCount: data.trial_photo_analysis_count,
+            photoAnalysisLimit: data.trial_photo_analysis_limit,
+            mealSuggestionCount: data.trial_meal_suggestion_count,
+            mealSuggestionLimit: data.trial_meal_suggestion_limit,
+            trialEndDate: data.trial_end_date
+          })
+        } else {
+          setUsage({
+            subscriptionStatus: data.subscription_status,
+            photoAnalysisCount: data.trial_photo_analysis_count,
+            photoAnalysisLimit: data.trial_photo_analysis_limit,
+            mealSuggestionCount: data.trial_meal_suggestion_count,
+            mealSuggestionLimit: data.trial_meal_suggestion_limit,
+            trialEndDate: data.trial_end_date
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching trial usage:', error)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   if (loading || !usage || usage.subscriptionStatus !== 'trial') {

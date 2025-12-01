@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/Auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { paywallService } from '@/services/PaywallService';
+import { entitlementService } from '@/services/EntitlementService';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -34,6 +35,15 @@ export function TrialExpiredDialog({ onManageSubscription }: TrialExpiredDialogP
     if (!user) return;
 
     try {
+      // First check RevenueCat entitlement (this is the source of truth for purchases)
+      const hasPremium = await entitlementService.hasPremiumAccess();
+
+      if (hasPremium) {
+        console.log('✅ User has active premium entitlement, no trial expiry check needed');
+        return;
+      }
+
+      // Then check database subscription status
       const { data: profile } = await supabase
         .from('profiles')
         .select('subscription_status, trial_end_date')
@@ -42,16 +52,34 @@ export function TrialExpiredDialog({ onManageSubscription }: TrialExpiredDialogP
 
       if (!profile) return;
 
+      // User is premium in database, no need to show dialog
+      if (profile.subscription_status === 'premium') {
+        console.log('✅ User has premium status in database');
+        return;
+      }
+
       // Check if trial has expired
       if (profile.subscription_status === 'trial' && profile.trial_end_date) {
         const trialEndDate = new Date(profile.trial_end_date);
         const now = new Date();
 
         if (now > trialEndDate) {
-          // Trial has expired, show upgrade dialog
-          setTimeout(() => {
-            setShowDialog(true);
-          }, 1000);
+          // Double check entitlement one more time before showing dialog
+          const hasEntitlement = await entitlementService.hasPremiumAccess();
+
+          if (!hasEntitlement) {
+            // Trial has expired and no active subscription, show upgrade dialog
+            setTimeout(() => {
+              setShowDialog(true);
+            }, 1000);
+          } else {
+            console.log('✅ Entitlement found, updating database status');
+            // Update database to match RevenueCat
+            await supabase
+              .from('profiles')
+              .update({ subscription_status: 'premium' })
+              .eq('user_id', user.id);
+          }
         }
       }
     } catch (error) {
