@@ -83,26 +83,25 @@ export function DietOnboarding({ onComplete, onSkip, initialData }: DietOnboardi
   const progress = (step / totalSteps) * 100;
 
   return (
-    <div className="fixed inset-0 bg-background z-50">
-      <div className="h-full flex flex-col">
-        {/* Header */}
-        <div className="flex-none flex items-center justify-between p-4 border-b bg-background">
-          <h1 className="text-lg font-semibold">Diyet Profili Oluştur</h1>
-          <Button variant="ghost" size="icon" onClick={onSkip}>
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
+    <div className="fixed inset-0 bg-background z-50 flex flex-col">
+      {/* Header */}
+      <div className="flex-none flex items-center justify-between p-4 border-b bg-background">
+        <h1 className="text-lg font-semibold">Diyet Profili Oluştur</h1>
+        <Button variant="ghost" size="icon" onClick={onSkip}>
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
 
-        {/* Progress */}
-        <div className="flex-none px-4 py-2 bg-background border-b">
-          <Progress value={progress} className="h-2" />
-          <p className="text-sm text-muted-foreground mt-2">
-            Adım {step}/{totalSteps}
-          </p>
-        </div>
+      {/* Progress */}
+      <div className="flex-none px-4 py-2 bg-background border-b">
+        <Progress value={progress} className="h-2" />
+        <p className="text-sm text-muted-foreground mt-2">
+          Adım {step}/{totalSteps}
+        </p>
+      </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-4 pb-24">
           {step === 1 && (
             <Card>
               <CardHeader>
@@ -285,35 +284,32 @@ export function DietOnboarding({ onComplete, onSkip, initialData }: DietOnboardi
             </Card>
           )}
 
-          {/* Spacer to prevent content from going under footer */}
-          <div className="h-20" />
-        </div>
+      </div>
 
-        {/* Footer - Fixed at bottom */}
-        <div className="flex-none border-t p-4 flex items-center justify-between gap-2 bg-background">
-          <Button
-            variant="outline"
-            onClick={onSkip}
-          >
-            Daha Sonra
-          </Button>
+      {/* Footer - Fixed at bottom */}
+      <div className="flex-none border-t p-4 flex items-center justify-between gap-2 bg-background shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+        <Button
+          variant="outline"
+          onClick={onSkip}
+        >
+          Daha Sonra
+        </Button>
 
-          <div className="flex gap-2">
-            {step > 1 && (
-              <Button variant="outline" onClick={handleBack}>
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Geri
-              </Button>
-            )}
-
-            <Button
-              onClick={handleNext}
-              disabled={!canProceed()}
-            >
-              {step === totalSteps ? 'Tamamla' : 'İleri'}
-              {step < totalSteps && <ChevronRight className="h-4 w-4 ml-1" />}
+        <div className="flex gap-2">
+          {step > 1 && (
+            <Button variant="outline" onClick={handleBack}>
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Geri
             </Button>
-          </div>
+          )}
+
+          <Button
+            onClick={handleNext}
+            disabled={!canProceed()}
+          >
+            {step === totalSteps ? 'Tamamla' : 'İleri'}
+            {step < totalSteps && <ChevronRight className="h-4 w-4 ml-1" />}
+          </Button>
         </div>
       </div>
     </div>
