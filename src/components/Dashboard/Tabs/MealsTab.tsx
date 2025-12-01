@@ -3,7 +3,7 @@ import { MealsList } from '../MealsList'
 import { HistoryMeals } from '../HistoryMeals'
 import { Button } from '@/components/ui/button'
 import { Sparkles, Heart, Camera } from 'lucide-react'
-import { MealSuggestions } from '../../MealSuggestions/MealSuggestions'
+import { DietPlanScreen } from '../../Diet/DietPlanScreen'
 import { FavoriteMeals } from '../../MealSuggestions/FavoriteMeals'
 
 interface MealsTabProps {
@@ -21,7 +21,7 @@ interface MealsTabProps {
   }
 }
 
-type MealsView = 'today' | 'suggestions' | 'favorites'
+type MealsView = 'today' | 'diet_plan' | 'favorites'
 
 export function MealsTab({ onAddMeal, refreshTrigger, dailyStats }: MealsTabProps) {
   const [currentView, setCurrentView] = useState<MealsView>('today')
@@ -30,14 +30,10 @@ export function MealsTab({ onAddMeal, refreshTrigger, dailyStats }: MealsTabProp
     setCurrentView('today')
   }
 
-  if (currentView === 'suggestions') {
+  if (currentView === 'diet_plan') {
     return (
-      <div className="pb-20 w-full">
-        <MealSuggestions
-          onBack={() => setCurrentView('today')}
-          onMealAdded={handleMealAdded}
-          dailyStats={dailyStats}
-        />
+      <div className="h-full w-full">
+        <DietPlanScreen />
       </div>
     )
   }
@@ -74,13 +70,13 @@ export function MealsTab({ onAddMeal, refreshTrigger, dailyStats }: MealsTabProp
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Button
-              onClick={() => setCurrentView('suggestions')}
+              onClick={() => setCurrentView('diet_plan')}
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-3 h-auto min-h-[4rem]"
             >
               <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
               <div className="text-left min-w-0">
-                <div className="font-semibold text-sm sm:text-base">AI Önerileri</div>
-                <div className="text-xs opacity-90 truncate">Kişisel öğün önerileri</div>
+                <div className="font-semibold text-sm sm:text-base">Diyet Planım</div>
+                <div className="text-xs opacity-90 truncate">AI destekli 7 günlük plan</div>
               </div>
             </Button>
 

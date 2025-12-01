@@ -11,7 +11,8 @@ import {
   FileText,
   LogOut,
   ChevronRight,
-  Mail
+  Mail,
+  Utensils
 } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
@@ -23,8 +24,10 @@ import { ResourcesPage } from '../../Support/ResourcesPage'
 import { PoliciesPage } from '../../Support/PoliciesPage'
 import { FAQPage } from '../../Support/FAQPage'
 import { NotificationSettings } from '../../Profile/NotificationSettings'
+import { DietOnboarding } from '../../Diet/DietOnboarding'
+import { DietProfile } from '@/types/diet'
 
-type SettingsView = 'main' | 'profile' | 'goals' | 'subscription' | 'notifications' | 'contact' | 'resources' | 'policies' | 'faq'
+type SettingsView = 'main' | 'profile' | 'goals' | 'subscription' | 'notifications' | 'contact' | 'resources' | 'policies' | 'faq' | 'diet'
 
 interface SettingsTabProps {
   onRefreshNeeded?: () => void
@@ -133,6 +136,55 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
     )
   }
 
+  if (currentView === 'diet') {
+    const handleDietProfileComplete = async (profile: DietProfile) => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: existingProfile } = await supabase
+          .from('diet_profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (existingProfile) {
+          await supabase
+            .from('diet_profiles')
+            .update(profile)
+            .eq('user_id', user.id);
+        } else {
+          await supabase
+            .from('diet_profiles')
+            .insert({
+              ...profile,
+              user_id: user.id,
+            });
+        }
+
+        toast({
+          title: 'Başarılı',
+          description: 'Diyet profili kaydedildi',
+        });
+
+        setCurrentView('main');
+      } catch (error: any) {
+        toast({
+          title: 'Hata',
+          description: error.message || 'Profil kaydedilirken hata oluştu',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    return (
+      <DietOnboarding
+        onComplete={handleDietProfileComplete}
+        onSkip={() => setCurrentView('main')}
+      />
+    );
+  }
+
   if (currentView === 'notifications') {
     return (
       <div className="pb-20 pt-4 w-full">
@@ -189,7 +241,7 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
 
             <button
               onClick={() => setCurrentView('goals')}
-              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
             >
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -198,6 +250,22 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
                 <div className="text-left">
                   <div className="font-medium text-gray-900">Günlük Hedefler</div>
                   <div className="text-xs text-gray-500">Kalori ve makro hedefleriniz</div>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </button>
+
+            <button
+              onClick={() => setCurrentView('diet')}
+              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Utensils className="h-5 w-5 text-purple-600" />
+                </div>
+                <div className="text-left">
+                  <div className="font-medium text-gray-900">Diyet Profilim</div>
+                  <div className="text-xs text-gray-500">Diyet tercihleri ve AI plan ayarları</div>
                 </div>
               </div>
               <ChevronRight className="h-5 w-5 text-gray-400" />
