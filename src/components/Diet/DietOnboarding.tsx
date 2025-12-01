@@ -83,9 +83,9 @@ export function DietOnboarding({ onComplete, onSkip, initialData }: DietOnboardi
   const progress = (step / totalSteps) * 100;
 
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col">
+    <div className="fixed inset-0 bg-background z-[100] flex flex-col">
       {/* Header */}
-      <div className="flex-none flex items-center justify-between p-4 border-b bg-background">
+      <div className="flex-none flex items-center justify-between p-4 pt-safe border-b bg-background">
         <h1 className="text-lg font-semibold">Diyet Profili Oluştur</h1>
         <Button variant="ghost" size="icon" onClick={onSkip}>
           <X className="h-5 w-5" />
@@ -101,7 +101,7 @@ export function DietOnboarding({ onComplete, onSkip, initialData }: DietOnboardi
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 pb-24">
+      <div className="flex-1 overflow-y-auto p-4">
           {step === 1 && (
             <Card>
               <CardHeader>
@@ -286,16 +286,17 @@ export function DietOnboarding({ onComplete, onSkip, initialData }: DietOnboardi
 
       </div>
 
-      {/* Footer - Fixed at bottom */}
-      <div className="flex-none border-t p-4 flex items-center justify-between gap-2 bg-background shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+      {/* Footer - Fixed at bottom with safe area */}
+      <div className="flex-none border-t p-4 pb-safe flex items-center justify-between gap-2 bg-background shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] min-h-[80px]">
         <Button
           variant="outline"
           onClick={onSkip}
+          className="flex-shrink-0"
         >
           Daha Sonra
         </Button>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           {step > 1 && (
             <Button variant="outline" onClick={handleBack}>
               <ChevronLeft className="h-4 w-4 mr-1" />
