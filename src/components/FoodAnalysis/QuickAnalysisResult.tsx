@@ -155,10 +155,22 @@ export default function QuickAnalysisResult({
       let data
       try {
         const responseText = await response.text()
-        console.log('Raw response (first 200 chars):', responseText.substring(0, 200))
+        console.log('Response status:', response.status)
+        console.log('Response content-type:', response.headers.get('content-type'))
+        console.log('Response length:', responseText.length)
+        console.log('Raw response (first 500 chars):', responseText.substring(0, 500))
+
+        if (!responseText || responseText.trim().length === 0) {
+          throw new Error('Sunucu boş yanıt döndürdü')
+        }
+
         data = JSON.parse(responseText)
       } catch (parseError) {
         console.error('JSON parse error:', parseError)
+        console.error('Parse error details:', {
+          name: parseError instanceof Error ? parseError.name : 'Unknown',
+          message: parseError instanceof Error ? parseError.message : 'Unknown error'
+        })
         throw new Error('Sunucudan geçersiz yanıt alındı. Lütfen tekrar deneyin.')
       }
 

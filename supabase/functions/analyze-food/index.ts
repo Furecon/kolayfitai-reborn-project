@@ -238,8 +238,19 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Error:', error);
+
+    const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
+    const errorDetails = {
+      name: error instanceof Error ? error.name : 'UnknownError',
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack?.substring(0, 500) : undefined
+    };
+
+    console.error('Error details:', errorDetails);
+
     return new Response(JSON.stringify({
       error: 'analysis_failed',
+      message: `Analiz sırasında hata: ${errorMessage}`,
       detectedFoods: [],
       confidence: 0,
       suggestions: 'Hata oluştu. Lütfen tekrar deneyin.'

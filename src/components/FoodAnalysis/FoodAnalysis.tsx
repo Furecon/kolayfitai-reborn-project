@@ -45,16 +45,19 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
 
   const handleImageCaptured = async (imageUrl: string) => {
     console.log('Image captured:', imageUrl.substring(0, 50) + '...')
+    console.log('Original image size (KB):', Math.round(imageUrl.length / 1024))
 
     // Import resize function dynamically
     const { resizeImage } = await import('@/lib/imageResize')
 
-    // Create 512px version for quick analysis
-    const resizedImage = await resizeImage(imageUrl, 512, 0.8)
+    // Create 512px version for quick analysis with lower quality for mobile
+    const resizedImage = await resizeImage(imageUrl, 512, 0.7)
+    console.log('Resized image size (KB):', Math.round(resizedImage.length / 1024))
     setCapturedImage(resizedImage)
 
     // Create 1024px version for detailed analysis
-    const hdImage = await resizeImage(imageUrl, 1024, 0.85)
+    const hdImage = await resizeImage(imageUrl, 1024, 0.75)
+    console.log('HD image size (KB):', Math.round(hdImage.length / 1024))
     setCapturedImageHD(hdImage)
 
     setCurrentStep('analysis-type')
