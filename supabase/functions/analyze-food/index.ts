@@ -1,13 +1,12 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.51.0';
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from 'npm:@supabase/supabase-js@2.51.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
@@ -312,9 +311,9 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
       analysisResult.confidence = analysisResult.confidence / 100;
     }
 
-    // --- 2. AŞAMA: quick + düşük güven → gpt-4.1 ---
+    // --- 2. AŞAMA: quick + düşük güven → gpt-4o retry ---
     if (analysisType === 'quick' && analysisResult.confidence < 0.75) {
-      console.log('Low confidence on gpt-4o, upgrading to gpt-4.1');
+      console.log('Low confidence on gpt-4o, retrying with adjusted prompt');
 
       const secondResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -323,7 +322,7 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-4.1',
+          model: 'gpt-4o',
           messages: [
             { role: 'system', content: baseSystemPrompt },
             {
@@ -352,7 +351,7 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
           try {
             const secondResult = cleanAndParse(secondContent);
             if (secondResult.detectedFoods && secondResult.detectedFoods.length > 0) {
-              console.log('Using upgraded gpt-4.1 result');
+              console.log('Using improved result from retry');
               analysisResult = secondResult;
             }
           } catch (err) {
