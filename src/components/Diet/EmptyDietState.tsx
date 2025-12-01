@@ -10,7 +10,7 @@ interface EmptyDietStateProps {
 
 export function EmptyDietState({ hasProfile, onCreateProfile, onGeneratePlan }: EmptyDietStateProps) {
   return (
-    <div className="flex items-center justify-center p-6 h-full">
+    <div className="flex items-center justify-center p-6 pb-24 h-full overflow-y-auto">
       <Card className="max-w-md w-full">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
