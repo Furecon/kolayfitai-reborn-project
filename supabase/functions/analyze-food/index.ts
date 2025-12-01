@@ -271,13 +271,62 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
     if (!firstResponse.ok) {
       const errorText = await firstResponse.text();
       console.error('OpenAI API error (stage 1):', firstResponse.status, errorText);
-      throw new Error(`OpenAI API error: ${firstResponse.status} - ${errorText}`);
+
+      // Return user-friendly error instead of throwing
+      return new Response(JSON.stringify({
+        error: 'analysis_failed',
+        message: 'Analiz servisi geçici olarak kullanılamıyor. Lütfen birkaç saniye bekleyip tekrar deneyin.',
+        detectedFoods: [],
+        confidence: 0,
+        suggestions: 'Servis şu anda yoğun. Lütfen tekrar deneyin veya manuel giriş yapın.'
+      }), {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      });
     }
 
-    const firstData = await firstResponse.json();
-    const firstContent = firstData.choices[0]?.message?.content;
+    // Parse response with better error handling
+    let firstData;
+    try {
+      const responseText = await firstResponse.text();
+      console.log('Raw OpenAI response:', responseText.substring(0, 200));
+      firstData = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response:', parseError);
+      return new Response(JSON.stringify({
+        error: 'invalid_response',
+        message: 'Analiz yanıtı alınamadı. Lütfen tekrar deneyin.',
+        detectedFoods: [],
+        confidence: 0,
+        suggestions: 'Geçici bir sorun oluştu. Lütfen tekrar deneyin.'
+      }), {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+
+    const firstContent = firstData.choices?.[0]?.message?.content;
     if (!firstContent) {
-      throw new Error('No content received from OpenAI (stage 1)');
+      console.error('No content in OpenAI response:', firstData);
+      return new Response(JSON.stringify({
+        error: 'no_content',
+        message: 'Analiz sonucu alınamadı. Lütfen tekrar deneyin.',
+        detectedFoods: [],
+        confidence: 0,
+        suggestions: 'Yanıt alınamadı. Lütfen tekrar deneyin.'
+      }), {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      });
     }
 
     console.log('Raw content from OpenAI (stage 1):', firstContent.substring(0, 200) + '...');
@@ -297,8 +346,20 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
     try {
       analysisResult = cleanAndParse(firstContent);
     } catch (err) {
-      console.error('JSON parse error (stage 1):', err);
-      throw new Error('Invalid JSON response from AI (stage 1)');
+      console.error('JSON parse error (stage 1):', err, 'Content:', firstContent.substring(0, 500));
+      return new Response(JSON.stringify({
+        error: 'parse_error',
+        message: 'Analiz sonucu işlenemedi. Lütfen tekrar deneyin.',
+        detectedFoods: [],
+        confidence: 0,
+        suggestions: 'AI yanıtı işlenemedi. Manuel giriş yapabilirsiniz.'
+      }), {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      });
     }
 
     if (!analysisResult.detectedFoods || !Array.isArray(analysisResult.detectedFoods)) {

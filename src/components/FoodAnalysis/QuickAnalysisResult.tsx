@@ -151,7 +151,17 @@ export default function QuickAnalysisResult({
         throw new Error(`Request failed: ${response.status}`)
       }
 
-      const data = await response.json()
+      // Parse response with better error handling
+      let data
+      try {
+        const responseText = await response.text()
+        console.log('Raw response (first 200 chars):', responseText.substring(0, 200))
+        data = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError)
+        throw new Error('Sunucudan geçersiz yanıt alındı. Lütfen tekrar deneyin.')
+      }
+
       console.log('Analysis result:', data)
 
       if (data.error === 'trial_limit_reached') {
@@ -161,7 +171,15 @@ export default function QuickAnalysisResult({
       }
 
       if (data.error) {
-        throw new Error(data.error)
+        // Show user-friendly error messages from backend
+        if (data.message) {
+          toast({
+            title: "Analiz Hatası",
+            description: data.message,
+            variant: "destructive"
+          })
+        }
+        throw new Error(data.message || data.error)
       }
 
       if (data.detectedFoods && Array.isArray(data.detectedFoods)) {
