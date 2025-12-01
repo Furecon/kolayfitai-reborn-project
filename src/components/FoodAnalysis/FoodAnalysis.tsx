@@ -281,7 +281,7 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
             capturedImage={analysisType === 'detailed' && capturedImageHD ? capturedImageHD : capturedImage}
             mealType=""
             onSave={handleQuickAnalysisComplete}
-            onRetry={() => setCurrentStep('camera')}
+            onRetry={() => setCurrentStep('analysis-type')}
             analysisType={analysisType || 'quick'}
             detailsData={detailedFormData}
             onUpgradeClick={onUpgradeClick}
