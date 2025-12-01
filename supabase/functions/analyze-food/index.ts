@@ -8,536 +8,169 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', {
-      headers: corsHeaders
-    });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
     console.log('Analyze-food function called');
 
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
+    if (!authHeader) throw new Error('No authorization header');
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: {
-            Authorization: authHeader
-          }
-        }
-      }
+      { global: { headers: { Authorization: authHeader } } }
     );
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) {
-      throw new Error('Unauthorized');
-    }
+    if (authError || !user) throw new Error('Unauthorized');
 
     const requestData = await req.json();
     const { imageUrl, mealType, analysisType, detailsData } = requestData;
 
-    // Check trial limits before processing
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('subscription_status, trial_photo_analysis_count, trial_photo_analysis_limit')
       .eq('user_id', user.id)
       .single();
 
-    if (profileError) {
-      console.error('Profile fetch error:', profileError);
-      throw new Error('Failed to fetch user profile');
+    if (profileError) throw new Error('Failed to fetch user profile');
+
+    if (profile.subscription_status === 'trial' && profile.trial_photo_analysis_count >= profile.trial_photo_analysis_limit) {
+      return new Response(JSON.stringify({
+        error: 'trial_limit_reached',
+        message: 'Ücretsiz fotoğraf analizi hakkınız doldu.',
+        detectedFoods: [],
+        confidence: 0,
+        suggestions: 'Premium üyeliğe geçerek sınırsız analiz yapabilirsiniz.'
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Check if user has reached trial limit
-    if (profile.subscription_status === 'trial') {
-      if (profile.trial_photo_analysis_count >= profile.trial_photo_analysis_limit) {
-        return new Response(JSON.stringify({
-          error: 'trial_limit_reached',
-          message: 'Ücretsiz fotoğraf analizi hakkınız doldu. Premium üyeliğe geçerek sınırsız analiz yapabilirsiniz.',
-          detectedFoods: [],
-          confidence: 0,
-          suggestions: 'Premium üyeliğe geçerek sınırsız fotoğraf analizi yapabilirsiniz.'
-        }), {
-          status: 200,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          }
-        });
-      }
-    }
-
-    // Input validation
-    if (!imageUrl || typeof imageUrl !== 'string') {
-      throw new Error('Valid image URL is required');
-    }
-
-    // Validate image URL format
-    if (
-      !imageUrl.startsWith('http://') &&
-      !imageUrl.startsWith('https://') &&
-      !imageUrl.startsWith('data:')
-    ) {
+    if (!imageUrl || typeof imageUrl !== 'string') throw new Error('Valid image URL required');
+    if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('data:')) {
       throw new Error('Invalid image URL format');
     }
 
-    // Validate mealType (TR + EN)
-    const allowedMealTypes = [
-      'breakfast',
-      'lunch',
-      'dinner',
-      'snack',
-      'drink',
-      'kahvaltı',
-      'öğle',
-      'akşam',
-      'atıştırmalık',
-      'içecek'
-    ];
-    if (mealType && !allowedMealTypes.includes(mealType)) {
-      throw new Error('Invalid meal type');
-    }
-
-    // Validate analysisType if provided
-    if (analysisType && !['quick', 'detailed'].includes(analysisType)) {
-      throw new Error('Invalid analysis type');
-    }
-
-    // Validate detailsData structure if provided
-    if (detailsData && typeof detailsData !== 'object') {
-      throw new Error('Invalid details data format');
-    }
-
-    console.log('Request data validated:', {
-      imageUrlLength: imageUrl.length,
-      mealType,
-      analysisType,
-      hasDetailsData: !!detailsData,
-      imageUrlPrefix: imageUrl.substring(0, 50)
-    });
-
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openaiApiKey) {
-      console.error('OpenAI API key not configured');
-      throw new Error('OpenAI API key not configured');
-    }
+    if (!openaiApiKey) throw new Error('OpenAI API key not configured');
 
-    // Build detailed prompt based on analysis type
     let detailsPrompt = '';
     if (analysisType === 'detailed' && detailsData) {
-      const cookingMethodText =
-        detailsData.cookingMethod === 'unsure'
-          ? 'Pişirme yöntemi belirsiz - fotoğraftan tahmin et'
-          : detailsData.cookingMethod;
-
-      detailsPrompt = `
-
-ÖNEMLİ EK BİLGİLER:
-- Yemek kaynağı: ${detailsData.foodSource === 'homemade' ? 'Ev yapımı' : 'Paketli/hazır'}
-- Pişirme yöntemi: ${cookingMethodText}
-- Tüketilen miktar: ${detailsData.consumedAmount}
-- Yemek türü: ${detailsData.mealType === 'single' ? 'Tek tip yemek' : 'Karışık tabak'}
-${detailsData.hiddenIngredients ? `- Gizli malzemeler/ekstralar: ${detailsData.hiddenIngredients}` : ''}
-
-Bu bilgileri kullanarak daha doğru besin değeri hesaplama yap. Pişirme yöntemi belirsizse fotoğraftan tahmin et.`;
+      detailsPrompt = `\n\nÖNEMLİ BİLGİLER: Pişirme yöntemi ve kaynağı göz önünde bulundur.`;
     }
 
-    console.log('Making request to OpenAI API...');
+    const model = 'gpt-4o';
+    const systemPrompt = 'Sen Türk mutfağı uzmanısın. Yemek fotoğraflarını analiz ederek besin değerlerini hesaplıyorsun. Türkçe yemek adlarını kullan.';
+    const userPrompt = `Bu yemek fotoğrafını analiz et.${detailsPrompt}\n\nJSON formatında döndür: {"detectedFoods": [{"name": "...", "nameEn": "...", "estimatedAmount": "...", "nutritionPer100g": {"calories": 0, "protein": 0, "carbs": 0, "fat": 0, "fiber": 0, "sugar": 0, "sodium": 0}, "totalNutrition": {"calories": 0, "protein": 0, "carbs": 0, "fat": 0, "fiber": 0, "sugar": 0, "sodium": 0}}], "confidence": 0.8, "suggestions": "..."}`;
 
-    // --- 1. AŞAMA: gpt-4o ---
-    let model = 'gpt-4o';
+    const maxRetries = 2;
+    let lastError: any = null;
+    let firstResponse: Response | null = null;
 
-    const baseSystemPrompt = `Sen Türk mutfağı ve beslenme konusunda uzman bir yapay zeka asistanısın.
-Yemek fotoğraflarını analiz ederek doğru besin değerlerini hesaplıyorsun.
-Türkçe yemek adlarını tercih et ve gerçekçi porsiyon tahminleri yap.
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`OpenAI request attempt ${attempt}/${maxRetries}`);
+        
+        firstResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${openaiApiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: [{ type: 'text', text: userPrompt }, { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } }] }
+            ],
+            max_tokens: 2000,
+            temperature: 0.1
+          })
+        });
 
-Hesaplaman gereken besin değerleri:
-- Kalori (kcal)
-- Protein (g)
-- Karbonhidrat (g)
-- Yağ (g)
-- Lif (g)
-- Şeker (g)
-- Sodyum (mg)
+        if (firstResponse.ok) break;
 
-Bazı içecek ve ürünler için (su, sade kahve, şekersiz çay, soda, maden suyu, diyet/zero içecekler vb.)
-kalori ve makro değerleri gerçekten 0 olabilir. Bu durumda değerleri 0 bırak.
-Diğer yiyecek ve içecekler için besin değerleri gerçekçi aralıklarda olmalı.
+        if (firstResponse.status === 429 || firstResponse.status >= 500) {
+          lastError = await firstResponse.text();
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, attempt * 1500));
+          }
+          continue;
+        }
 
-FOTOĞRAF KALİTESİ DEĞERLENDİRMESİ:
-Gerekirse analysisErrors alanına şu mesajlardan uygun olanları ekle:
-- "Fotoğraf çok karanlık - daha iyi ışıkta tekrar çekin"
-- "Fotoğraf bulanık - daha net bir fotoğraf çekin"
-- "Fotoğrafta yemek görünmüyor - yemeği net gösterecek şekilde çekin"
-- "Tabak veya kap net görünmüyor - tüm yemeği gösteren açı seçin"
-- "Yemekler net olarak tanımlanamıyor - daha yakından çekin"
-- "Porsiyon miktarı belirlenemiyor - standart tabak/kap kullanın"
-- "Paketli ürün net görünmüyor - barkod okuyucu kullanın"
-- "Renk algısı yetersiz - doğal ışıkta çekin"`;
-
-    const baseUserPrompt = `Bu yemek fotoğrafını analiz et ve besin değerlerini hesapla.
-Mümkün olduğunca Türkçe yemek adları kullan ve gerçekçi porsiyon tahminleri yap.
-
-İÇECEKLER İÇİN ÖZEL TALİMATLAR:
-- İçecekler için kap boyutuna dikkat et (çay bardağı ~100ml, su bardağı ~200-250ml)
-- Şişe boyutları: 330ml (küçük), 500ml (orta), 1L (büyük)
-- Kutular: genellikle 330ml
-- Şekerli vs şekersiz içecekleri ayırt et (özellikle çay/kahve)
-- Alkollü içecekler için bira (~330-500ml), şarap (~150ml), rakı vb. belirt
-- Sıvı hacmine odaklan, ağırlık değil (1ml ≈ 1g çoğu içecek için)
-- Su ve gerçekten kalorisiz içecekler için kalori 0 olabilir.
-
-${detailsPrompt}
-
-Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
-
-{
-  "detectedFoods": [
-    {
-      "name": "Yemek adı (Türkçe)",
-      "nameEn": "Food name (English)",
-      "estimatedAmount": "Miktar ve birim (örn: 1 porsiyon, 100g, 1 adet, 250ml, 1 bardak)",
-      "portionType": "gram|ml|cl|bardak|şişe|kutu|adet|porsiyon|kaşık",
-      "nutritionPer100g": {
-        "calories": sayı,
-        "protein": sayı,
-        "carbs": sayı,
-        "fat": sayı,
-        "fiber": sayı,
-        "sugar": sayı,
-        "sodium": sayı
-      },
-      "totalNutrition": {
-        "calories": sayı,
-        "protein": sayı,
-        "carbs": sayı,
-        "fat": sayı,
-        "fiber": sayı,
-        "sugar": sayı,
-        "sodium": sayı
+        lastError = await firstResponse.text();
+        break;
+      } catch (fetchError) {
+        lastError = fetchError;
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+        }
       }
     }
-  ],
-  "mealType": "${mealType || 'öğün'}",
-  "confidence": 0_ile_1_arası_sayı,
-  "suggestions": "Türkçe kısa öneriler (maksimum 2 cümle)",
-  "analysisErrors": ["fotoğraf kalitesi sorunları varsa buraya ekle"]
-}
 
-ÖNEMLİ KURALLAR:
-- Besin değerleri gerçekçi olmalı.
-- Su, sade kahve, şekersiz çay, soda, maden suyu, diyet/zero içecekler için kalori ve makrolar 0 olabilir.
-- Lif ve şeker gram cinsinden, sodyum miligram cinsinden olmalı.
-- Porsiyon tahminlerinde gerçekçi ol.
-- Eğer hiçbir yemeği net tanıyamıyorsan boş detectedFoods array'i döndür.
-- Confidence değeri 0.1-1.0 arasında olmalı.
-- Sadece JSON döndür, başka açıklama yapma.`;
-
-    const firstResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: baseSystemPrompt },
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: baseUserPrompt },
-              {
-                type: 'image_url',
-                image_url: { url: imageUrl, detail: 'high' }
-              }
-            ]
-          }
-        ],
-        max_tokens: 1500,
-        temperature: 0.2
-      })
-    });
-
-    console.log('OpenAI API response status (stage 1):', firstResponse.status);
-
-    if (!firstResponse.ok) {
-      const errorText = await firstResponse.text();
-      console.error('OpenAI API error (stage 1):', firstResponse.status, errorText);
-
-      // Return user-friendly error instead of throwing
+    if (!firstResponse || !firstResponse.ok) {
       return new Response(JSON.stringify({
         error: 'analysis_failed',
-        message: 'Analiz servisi geçici olarak kullanılamıyor. Lütfen birkaç saniye bekleyip tekrar deneyin.',
+        message: 'Analiz servisi geçici olarak kullanılamıyor.',
         detectedFoods: [],
         confidence: 0,
-        suggestions: 'Servis şu anda yoğun. Lütfen tekrar deneyin veya manuel giriş yapın.'
-      }), {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      });
+        suggestions: 'Lütfen tekrar deneyin.'
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Parse response with better error handling
     let firstData;
     try {
       const responseText = await firstResponse.text();
-      console.log('Raw OpenAI response:', responseText.substring(0, 200));
       firstData = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('Failed to parse OpenAI response:', parseError);
       return new Response(JSON.stringify({
         error: 'invalid_response',
-        message: 'Analiz yanıtı alınamadı. Lütfen tekrar deneyin.',
+        message: 'Analiz yanıtı alınamadı.',
         detectedFoods: [],
-        confidence: 0,
-        suggestions: 'Geçici bir sorun oluştu. Lütfen tekrar deneyin.'
-      }), {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      });
+        confidence: 0
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const firstContent = firstData.choices?.[0]?.message?.content;
-    if (!firstContent) {
-      console.error('No content in OpenAI response:', firstData);
-      return new Response(JSON.stringify({
-        error: 'no_content',
-        message: 'Analiz sonucu alınamadı. Lütfen tekrar deneyin.',
-        detectedFoods: [],
-        confidence: 0,
-        suggestions: 'Yanıt alınamadı. Lütfen tekrar deneyin.'
-      }), {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      });
+    const content = firstData.choices?.[0]?.message?.content;
+    if (!content) {
+      return new Response(JSON.stringify({ error: 'no_content', detectedFoods: [], confidence: 0 }), 
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    console.log('Raw content from OpenAI (stage 1):', firstContent.substring(0, 200) + '...');
-
-    function cleanAndParse(content: string) {
-      let jsonStr = content.trim();
-      if (jsonStr.startsWith('```json')) {
-        jsonStr = jsonStr.replace(/```json\n?/, '').replace(/\n?```$/, '');
-      }
-      if (jsonStr.startsWith('```')) {
-        jsonStr = jsonStr.replace(/```\n?/, '').replace(/\n?```$/, '');
-      }
-      return JSON.parse(jsonStr);
+    function cleanAndParse(c: string) {
+      let s = c.trim();
+      if (s.startsWith('```json')) s = s.replace(/```json\n?/, '').replace(/\n?```$/, '');
+      if (s.startsWith('```')) s = s.replace(/```\n?/, '').replace(/\n?```$/, '');
+      return JSON.parse(s);
     }
 
-    let analysisResult: any;
+    let analysisResult;
     try {
-      analysisResult = cleanAndParse(firstContent);
+      analysisResult = cleanAndParse(content);
     } catch (err) {
-      console.error('JSON parse error (stage 1):', err, 'Content:', firstContent.substring(0, 500));
-      return new Response(JSON.stringify({
-        error: 'parse_error',
-        message: 'Analiz sonucu işlenemedi. Lütfen tekrar deneyin.',
-        detectedFoods: [],
-        confidence: 0,
-        suggestions: 'AI yanıtı işlenemedi. Manuel giriş yapabilirsiniz.'
-      }), {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      });
+      return new Response(JSON.stringify({ error: 'parse_error', detectedFoods: [], confidence: 0 }), 
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    if (!analysisResult.detectedFoods || !Array.isArray(analysisResult.detectedFoods)) {
-      analysisResult.detectedFoods = [];
-    }
+    if (!analysisResult.detectedFoods) analysisResult.detectedFoods = [];
+    if (typeof analysisResult.confidence !== 'number') analysisResult.confidence = 0.7;
 
-    if (typeof analysisResult.confidence !== 'number') {
-      analysisResult.confidence = 0.7;
-    }
-    if (analysisResult.confidence > 1) {
-      analysisResult.confidence = analysisResult.confidence / 100;
-    }
-
-    // --- 2. AŞAMA: Düşük güven veya yemek bulunamadı → o1-mini ile tekrar dene ---
-    const needsRetry =
-      analysisResult.confidence < 0.7 ||
-      !analysisResult.detectedFoods ||
-      analysisResult.detectedFoods.length === 0;
-
-    if (needsRetry) {
-      console.log('Low confidence or no foods detected, upgrading to o1-mini model');
-
-      const retryPrompt = `${baseUserPrompt}
-
-ÖNCEKİ DENEME SONUCU:
-- Tespit edilen yemek sayısı: ${analysisResult.detectedFoods?.length || 0}
-- Güven skoru: ${(analysisResult.confidence * 100).toFixed(0)}%
-
-Bu sefer daha dikkatli incele:
-1. Fotoğraftaki tüm yiyecek ve içecekleri belirle
-2. Porsiyon tahminlerinde gerçekçi ol
-3. Güven skorunu yükselt`;
-
-      const secondResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'o1-mini',
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: retryPrompt },
-                {
-                  type: 'image_url',
-                  image_url: { url: imageUrl, detail: 'high' }
-                }
-              ]
-            }
-          ],
-          max_completion_tokens: 2000
-        })
-      });
-
-      if (secondResponse.ok) {
-        const secondData = await secondResponse.json();
-        const secondContent = secondData.choices[0]?.message?.content;
-        if (secondContent) {
-          try {
-            const secondResult = cleanAndParse(secondContent);
-            // Eğer retry daha iyi sonuç verdiyse kullan
-            if (
-              secondResult.detectedFoods &&
-              secondResult.detectedFoods.length > 0 &&
-              (secondResult.confidence > analysisResult.confidence ||
-               secondResult.detectedFoods.length > analysisResult.detectedFoods.length)
-            ) {
-              console.log('Using improved result from o1-mini:', {
-                originalFoods: analysisResult.detectedFoods?.length || 0,
-                newFoods: secondResult.detectedFoods.length,
-                originalConfidence: analysisResult.confidence,
-                newConfidence: secondResult.confidence
-              });
-              analysisResult = secondResult;
-            } else {
-              console.log('o1-mini result not better, keeping original');
-            }
-          } catch (err) {
-            console.log('JSON parse error (o1-mini retry), keeping stage 1 result:', err);
-          }
-        }
-      } else {
-        const errorText = await secondResponse.text();
-        console.error('OpenAI API error (o1-mini retry):', secondResponse.status, errorText);
-      }
-    }
-
-    // --- NUTRITION FİX ---
-    analysisResult.detectedFoods.forEach((food: any, index: number) => {
-      if (!food.name) food.name = `Yemek ${index + 1}`;
-      if (!food.nameEn) food.nameEn = food.name;
-      if (!food.estimatedAmount) food.estimatedAmount = '1 porsiyon';
-
-      if (!food.nutritionPer100g) food.nutritionPer100g = {};
-      if (!food.totalNutrition) food.totalNutrition = {};
-
-      const fields = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium'] as const;
-
-      fields.forEach((field) => {
-        const per100 = food.nutritionPer100g[field];
-        const total = food.totalNutrition[field];
-
-        // sayı değilse veya negatifse 0 yap; 0 ise 0 bırak
-        if (typeof per100 !== 'number' || Number.isNaN(per100) || per100 < 0) {
-          food.nutritionPer100g[field] = 0;
-        }
-        if (typeof total !== 'number' || Number.isNaN(total) || total < 0) {
-          food.totalNutrition[field] = 0;
-        }
-      });
-    });
-
-    if (!analysisResult.suggestions) {
-      analysisResult.suggestions = 'Yemek analizi tamamlandı. Besin değerlerini kontrol ediniz.';
-    }
-
-    console.log('Analysis result validated successfully:', {
-      detectedFoodsCount: analysisResult.detectedFoods.length,
-      confidence: analysisResult.confidence,
-      totalCalories: analysisResult.detectedFoods.reduce(
-        (sum: number, food: any) => sum + (food.totalNutrition?.calories || 0),
-        0
-      )
-    });
-
-    // Increment photo analysis count for trial users
     if (profile.subscription_status === 'trial') {
-      const { error: updateError } = await supabaseClient
-        .from('profiles')
-        .update({
-          trial_photo_analysis_count: profile.trial_photo_analysis_count + 1,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id);
-
-      if (updateError) {
-        console.error('Failed to update trial count:', updateError);
-      } else {
-        console.log(
-          'Trial photo analysis count incremented:',
-          profile.trial_photo_analysis_count + 1
-        );
-      }
+      await supabaseClient.from('profiles').update({
+        trial_photo_analysis_count: profile.trial_photo_analysis_count + 1
+      }).eq('user_id', user.id);
     }
 
     return new Response(JSON.stringify(analysisResult), {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
-      }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
+
   } catch (error) {
-    console.error('Error in analyze-food function:', error);
-
-    const sanitizedError =
-      error instanceof Error
-        ? error.message.includes('API')
-          ? 'Service temporarily unavailable'
-          : 'Analysis failed'
-        : 'Unexpected error occurred';
-
-    const errorResponse = {
-      error: sanitizedError,
+    console.error('Error:', error);
+    return new Response(JSON.stringify({
+      error: 'analysis_failed',
       detectedFoods: [],
       confidence: 0,
-      suggestions:
-        'Görüntü analizi sırasında hata oluştu. Lütfen manuel olarak yemek bilgilerini girin veya tekrar deneyin.'
-    };
-
-    return new Response(JSON.stringify(errorResponse), {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
-      }
-    });
+      suggestions: 'Hata oluştu. Lütfen tekrar deneyin.'
+    }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
