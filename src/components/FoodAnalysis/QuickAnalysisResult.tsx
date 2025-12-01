@@ -120,58 +120,103 @@ export default function QuickAnalysisResult({
         throw new Error('No active session')
       }
 
+      // Validate image size before sending
+      const imageSizeKB = Math.round(capturedImage.length / 1024)
+      console.log('Image size to send:', imageSizeKB, 'KB')
+
+      if (imageSizeKB > 500) {
+        console.warn('Image too large, may cause issues:', imageSizeKB, 'KB')
+      }
+
+      // Prepare request body
+      const requestBody = {
+        imageUrl: capturedImage,
+        mealType: mealType,
+        analysisType: analysisType,
+        detailsData: detailsData
+      }
+
+      console.log('Preparing to send request...')
+      console.log('Request body size:', JSON.stringify(requestBody).length, 'chars')
+
       // Use fetch directly with proper timeout
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 90000) // 90 second timeout
+      const timeoutId = setTimeout(() => {
+        console.error('Request timeout after 90 seconds')
+        controller.abort()
+      }, 90000) // 90 second timeout
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-food`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-          },
-          body: JSON.stringify({
-            imageUrl: capturedImage,
-            mealType: mealType,
-            analysisType: analysisType,
-            detailsData: detailsData
-          }),
-          signal: controller.signal
+      console.log('Sending request to analyze-food function...')
+
+      let response
+      try {
+        response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-food`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+            },
+            body: JSON.stringify(requestBody),
+            signal: controller.signal
+          }
+        )
+      } catch (fetchError) {
+        clearTimeout(timeoutId)
+        console.error('Fetch error:', fetchError)
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          throw new Error('İstek zaman aşımına uğradı. Lütfen tekrar deneyin.')
         }
-      )
+        throw new Error(`Ağ hatası: ${fetchError instanceof Error ? fetchError.message : 'Bilinmeyen hata'}`)
+      }
 
       clearTimeout(timeoutId)
+      console.log('Response received, status:', response.status)
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Edge function error:', errorText)
-        throw new Error(`Request failed: ${response.status}`)
+        console.error('Response not OK, status:', response.status)
+        let errorText = 'No error text'
+        try {
+          errorText = await response.text()
+          console.error('Edge function error response:', errorText)
+        } catch (readError) {
+          console.error('Could not read error response:', readError)
+        }
+        throw new Error(`İstek başarısız: ${response.status} - ${errorText.substring(0, 100)}`)
       }
 
       // Parse response with better error handling
       let data
+      let responseText = ''
       try {
-        const responseText = await response.text()
+        console.log('Reading response text...')
+        responseText = await response.text()
         console.log('Response status:', response.status)
         console.log('Response content-type:', response.headers.get('content-type'))
-        console.log('Response length:', responseText.length)
-        console.log('Raw response (first 500 chars):', responseText.substring(0, 500))
+        console.log('Response text length:', responseText.length)
 
         if (!responseText || responseText.trim().length === 0) {
           throw new Error('Sunucu boş yanıt döndürdü')
         }
 
+        console.log('Raw response (first 500 chars):', responseText.substring(0, 500))
+        console.log('Raw response (last 100 chars):', responseText.substring(Math.max(0, responseText.length - 100)))
+
+        console.log('Parsing JSON...')
         data = JSON.parse(responseText)
+        console.log('JSON parsed successfully')
       } catch (parseError) {
-        console.error('JSON parse error:', parseError)
-        console.error('Parse error details:', {
-          name: parseError instanceof Error ? parseError.name : 'Unknown',
-          message: parseError instanceof Error ? parseError.message : 'Unknown error'
-        })
-        throw new Error('Sunucudan geçersiz yanıt alındı. Lütfen tekrar deneyin.')
+        console.error('Failed to parse response')
+        console.error('Parse error type:', parseError instanceof Error ? parseError.name : typeof parseError)
+        console.error('Parse error message:', parseError instanceof Error ? parseError.message : String(parseError))
+
+        if (responseText) {
+          console.error('Response text sample:', responseText.substring(0, 200))
+        }
+
+        throw new Error(`Sunucudan geçersiz yanıt alındı. ${parseError instanceof Error ? parseError.message : 'JSON parse hatası'}`)
       }
 
       console.log('Analysis result:', data)
