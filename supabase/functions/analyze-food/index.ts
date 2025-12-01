@@ -312,9 +312,25 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
       analysisResult.confidence = analysisResult.confidence / 100;
     }
 
-    // --- 2. AŞAMA: quick + düşük güven → gpt-4o retry ---
-    if (analysisType === 'quick' && analysisResult.confidence < 0.75) {
-      console.log('Low confidence on gpt-4o, retrying with adjusted prompt');
+    // --- 2. AŞAMA: Düşük güven veya yemek bulunamadı → o1-mini ile tekrar dene ---
+    const needsRetry =
+      analysisResult.confidence < 0.7 ||
+      !analysisResult.detectedFoods ||
+      analysisResult.detectedFoods.length === 0;
+
+    if (needsRetry) {
+      console.log('Low confidence or no foods detected, upgrading to o1-mini model');
+
+      const retryPrompt = `${baseUserPrompt}
+
+ÖNCEKİ DENEME SONUCU:
+- Tespit edilen yemek sayısı: ${analysisResult.detectedFoods?.length || 0}
+- Güven skoru: ${(analysisResult.confidence * 100).toFixed(0)}%
+
+Bu sefer daha dikkatli incele:
+1. Fotoğraftaki tüm yiyecek ve içecekleri belirle
+2. Porsiyon tahminlerinde gerçekçi ol
+3. Güven skorunu yükselt`;
 
       const secondResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -323,16 +339,12 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'o1-mini',
           messages: [
-            { role: 'system', content: baseSystemPrompt },
             {
               role: 'user',
               content: [
-                {
-                  type: 'text',
-                  text: baseUserPrompt + '\n\nÖnceki analiz düşük güven verdi, bu sefer daha dikkatli ve yüksek doğrulukla analiz et.'
-                },
+                { type: 'text', text: retryPrompt },
                 {
                   type: 'image_url',
                   image_url: { url: imageUrl, detail: 'high' }
@@ -340,8 +352,7 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
               ]
             }
           ],
-          max_tokens: 1500,
-          temperature: 0.2
+          max_completion_tokens: 2000
         })
       });
 
@@ -351,17 +362,30 @@ Sadece geçerli bir JSON objesi döndür, başka hiçbir metin ekleme:
         if (secondContent) {
           try {
             const secondResult = cleanAndParse(secondContent);
-            if (secondResult.detectedFoods && secondResult.detectedFoods.length > 0) {
-              console.log('Using improved result from retry');
+            // Eğer retry daha iyi sonuç verdiyse kullan
+            if (
+              secondResult.detectedFoods &&
+              secondResult.detectedFoods.length > 0 &&
+              (secondResult.confidence > analysisResult.confidence ||
+               secondResult.detectedFoods.length > analysisResult.detectedFoods.length)
+            ) {
+              console.log('Using improved result from o1-mini:', {
+                originalFoods: analysisResult.detectedFoods?.length || 0,
+                newFoods: secondResult.detectedFoods.length,
+                originalConfidence: analysisResult.confidence,
+                newConfidence: secondResult.confidence
+              });
               analysisResult = secondResult;
+            } else {
+              console.log('o1-mini result not better, keeping original');
             }
           } catch (err) {
-            console.log('JSON parse error (stage 2), keeping stage 1 result:', err);
+            console.log('JSON parse error (o1-mini retry), keeping stage 1 result:', err);
           }
         }
       } else {
         const errorText = await secondResponse.text();
-        console.error('OpenAI API error (stage 2):', secondResponse.status, errorText);
+        console.error('OpenAI API error (o1-mini retry):', secondResponse.status, errorText);
       }
     }
 
