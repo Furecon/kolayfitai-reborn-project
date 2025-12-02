@@ -242,9 +242,19 @@ export class NotificationManager {
     }
 
     try {
+      // Get user notification alert style preference
+      const { data } = await supabase
+        .from('user_preferences')
+        .select('notification_alert_style')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      const alertStyle = data?.notification_alert_style || 'both'
+
       console.log(`📅 Scheduling notification: ${notificationType} at ${at.toISOString()}`)
       console.log(`   Title: ${title}`)
       console.log(`   Body: ${body}`)
+      console.log(`   Alert Style: ${alertStyle}`)
 
       await LocalNotifications.schedule({
         notifications: [
@@ -255,7 +265,8 @@ export class NotificationManager {
             schedule: { at },
             extra: { ...extra, userId, type: notificationType },
             actionTypeId: notificationType,
-            sound: 'default',
+            sound: alertStyle === 'vibrate' ? undefined : 'default',
+            silent: alertStyle === 'vibrate',
           }
         ]
       })

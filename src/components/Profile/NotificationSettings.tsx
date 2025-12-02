@@ -39,6 +39,7 @@ interface NotificationPreferences {
   quiet_hours_start: string
   quiet_hours_end: string
   weekend_notifications_enabled: boolean
+  notification_alert_style: 'sound' | 'vibrate' | 'both'
 }
 
 export function NotificationSettings() {
@@ -90,10 +91,18 @@ export function NotificationSettings() {
           water_reminder_interval: 0,
           quiet_hours_start: '22:00',
           quiet_hours_end: '07:00',
-          weekend_notifications_enabled: true
+          weekend_notifications_enabled: true,
+          notification_alert_style: 'both'
         }
         setPreferences(defaultPrefs)
       } else {
+        console.log('📥 Loaded from DB:', {
+          reminder_times: data.reminder_times,
+          water_reminder_times: data.water_reminder_times,
+          quiet_hours_start: data.quiet_hours_start,
+          quiet_hours_end: data.quiet_hours_end
+        })
+
         setPreferences({
           notification_settings: data.notification_settings as any,
           reminder_times: data.reminder_times as any,
@@ -104,7 +113,8 @@ export function NotificationSettings() {
           water_reminder_interval: data.water_reminder_interval || 0,
           quiet_hours_start: data.quiet_hours_start || '22:00',
           quiet_hours_end: data.quiet_hours_end || '07:00',
-          weekend_notifications_enabled: data.weekend_notifications_enabled ?? true
+          weekend_notifications_enabled: data.weekend_notifications_enabled ?? true,
+          notification_alert_style: data.notification_alert_style || 'both'
         })
       }
     } catch (error) {
@@ -127,6 +137,13 @@ export function NotificationSettings() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      console.log('💾 Saving preferences:', {
+        reminder_times: preferences.reminder_times,
+        water_reminder_times: preferences.water_reminder_times,
+        quiet_hours_start: preferences.quiet_hours_start,
+        quiet_hours_end: preferences.quiet_hours_end
+      })
+
       const { error } = await supabase
         .from('user_preferences')
         .upsert({
@@ -138,7 +155,8 @@ export function NotificationSettings() {
           water_reminder_interval: preferences.water_reminder_interval,
           quiet_hours_start: preferences.quiet_hours_start,
           quiet_hours_end: preferences.quiet_hours_end,
-          weekend_notifications_enabled: preferences.weekend_notifications_enabled
+          weekend_notifications_enabled: preferences.weekend_notifications_enabled,
+          notification_alert_style: preferences.notification_alert_style
         })
 
       if (error) throw error
@@ -417,13 +435,11 @@ export function NotificationSettings() {
               </Button>
 
               <div className="pt-4 border-t">
-                <Label>Veya Otomatik Aralıklarla Hatırlat</Label>
-                <p className="text-sm text-muted-foreground mb-2">
-                  0 = Kapalı, Yukarıdaki saatleri kullan
-                </p>
+                <Label>Otomatik Aralıklarla Hatırlat</Label>
                 <Select
                   value={preferences.water_reminder_interval.toString()}
                   onValueChange={(value) => setPreferences({ ...preferences, water_reminder_interval: parseInt(value) })}
+                  className="mt-2"
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -436,11 +452,6 @@ export function NotificationSettings() {
                     <SelectItem value="4">Her 4 saatte</SelectItem>
                   </SelectContent>
                 </Select>
-                {preferences.water_reminder_interval > 0 && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Otomatik mod aktif: Yukarıdaki manuel saatler kullanılmayacak
-                  </p>
-                )}
               </div>
             </div>
           )}
@@ -541,6 +552,25 @@ export function NotificationSettings() {
               checked={preferences.weekend_notifications_enabled}
               onCheckedChange={(checked) => setPreferences({ ...preferences, weekend_notifications_enabled: checked })}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Bildirim Uyarı Türü</Label>
+            <Select
+              value={preferences.notification_alert_style}
+              onValueChange={(value: 'sound' | 'vibrate' | 'both') =>
+                setPreferences({ ...preferences, notification_alert_style: value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="sound">Sadece Ses</SelectItem>
+                <SelectItem value="vibrate">Sadece Titreşim</SelectItem>
+                <SelectItem value="both">Ses ve Titreşim</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
