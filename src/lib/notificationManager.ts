@@ -236,10 +236,8 @@ export class NotificationManager {
       return
     }
 
-    if (!(await this.shouldSendNotification(userId, notificationType))) {
-      console.log(`⏭️ Notification skipped: ${notificationType}`)
-      return
-    }
+    // Don't check conditions during scheduling
+    // Scheduled notifications will be evaluated when they actually trigger
 
     try {
       if (!Capacitor.isNativePlatform()) {
