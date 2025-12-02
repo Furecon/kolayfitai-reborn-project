@@ -144,7 +144,7 @@ export function NotificationSettings() {
         quiet_hours_end: preferences.quiet_hours_end
       }))
 
-      const { error } = await supabase
+      const { data: upsertData, error } = await supabase
         .from('user_preferences')
         .upsert({
           user_id: user.id,
@@ -158,8 +158,14 @@ export function NotificationSettings() {
           weekend_notifications_enabled: preferences.weekend_notifications_enabled,
           notification_alert_style: preferences.notification_alert_style
         })
+        .select()
 
-      if (error) throw error
+      console.log('✅ Upsert result:', JSON.stringify({ data: upsertData, error }))
+
+      if (error) {
+        console.error('❌ Upsert error:', error)
+        throw error
+      }
 
       // Bildirimleri yeniden planla
       await notificationManager.initializeNotifications(user.id)
