@@ -19,10 +19,14 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
     if (newHour.length > 2) return
 
     // Validate hour range (0-23)
-    const hourNum = parseInt(newHour, 10)
-    if (newHour !== '' && (isNaN(hourNum) || hourNum < 0 || hourNum > 23)) return
+    if (newHour !== '') {
+      const hourNum = parseInt(newHour, 10)
+      if (isNaN(hourNum) || hourNum < 0 || hourNum > 23) return
+    }
 
-    onChange(`${newHour.padStart(2, '0')}:${minutes}`)
+    // Keep as-is during typing, don't pad yet
+    const formattedHour = newHour === '' ? '00' : newHour
+    onChange(`${formattedHour}:${minutes}`)
   }
 
   const handleMinuteChange = (newMinute: string) => {
@@ -33,10 +37,14 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
     if (newMinute.length > 2) return
 
     // Validate minute range (0-59)
-    const minuteNum = parseInt(newMinute, 10)
-    if (newMinute !== '' && (isNaN(minuteNum) || minuteNum < 0 || minuteNum > 59)) return
+    if (newMinute !== '') {
+      const minuteNum = parseInt(newMinute, 10)
+      if (isNaN(minuteNum) || minuteNum < 0 || minuteNum > 59) return
+    }
 
-    onChange(`${hours}:${newMinute.padStart(2, '0')}`)
+    // Keep as-is during typing, don't pad yet
+    const formattedMinute = newMinute === '' ? '00' : newMinute
+    onChange(`${hours}:${formattedMinute}`)
   }
 
   const handleHourBlur = () => {
@@ -51,6 +59,11 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
     onChange(`${hours}:${minuteNum.toString().padStart(2, '0')}`)
   }
 
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Select all text on focus for easy replacement
+    e.target.select()
+  }
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <div className="flex flex-col gap-1.5">
@@ -61,6 +74,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
           inputMode="numeric"
           value={hours}
           onChange={(e) => handleHourChange(e.target.value)}
+          onFocus={handleFocus}
           onBlur={handleHourBlur}
           className="w-16 text-center text-lg font-medium"
           placeholder="00"
@@ -77,6 +91,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
           inputMode="numeric"
           value={minutes}
           onChange={(e) => handleMinuteChange(e.target.value)}
+          onFocus={handleFocus}
           onBlur={handleMinuteBlur}
           className="w-16 text-center text-lg font-medium"
           placeholder="00"
