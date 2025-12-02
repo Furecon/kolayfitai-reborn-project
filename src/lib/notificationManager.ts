@@ -315,35 +315,64 @@ export class NotificationManager {
     )
   }
 
-  async setupSingleWaterReminder(userId: string, preferences: ExtendedUserPreferences) {
-    if (!preferences.notification_settings.water_reminders) return
+  async setupWaterReminders(userId: string, preferences: ExtendedUserPreferences) {
+    if (!preferences.notification_settings.water_reminders) {
+      console.log('💧 Water reminders disabled')
+      return
+    }
 
     const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6
-    if (isWeekend && !preferences.weekend_notifications_enabled) return
+    if (isWeekend && !preferences.weekend_notifications_enabled) {
+      console.log('💧 Weekend - water reminders disabled')
+      return
+    }
 
+    // Cancel all water reminder notifications
     await this.cancelNotificationsRange(2000, 2099)
 
     const waterProgress = await this.getWaterProgress(userId)
-    if (waterProgress >= 0.6) return
-
-    // Check if water_time is defined
-    const waterTime = preferences.reminder_times.water_time || '14:30'
-    const [hours, minutes] = waterTime.split(':').map(Number)
-    const scheduleTime = new Date()
-    scheduleTime.setHours(hours, minutes, 0, 0)
-
-    if (scheduleTime <= new Date()) {
-      scheduleTime.setDate(scheduleTime.getDate() + 1)
+    if (waterProgress >= 0.8) {
+      console.log('💧 Water goal mostly achieved, skipping reminders')
+      return
     }
 
-    await this.scheduleNotification(
-      2001,
-      'Su İçmeyi Unutma',
-      'Günlük su hedefiniz için bir bardak su için',
-      scheduleTime,
-      userId,
-      'water_reminder'
-    )
+    // Get water reminder times from preferences
+    const waterTimes = preferences.water_reminder_times || []
+
+    if (waterTimes.length === 0) {
+      console.log('💧 No water reminder times configured')
+      return
+    }
+
+    console.log(`💧 Setting up ${waterTimes.length} water reminders`)
+
+    const now = new Date()
+    let notificationId = 2001
+
+    for (const waterTime of waterTimes) {
+      try {
+        const [hours, minutes] = waterTime.time.split(':').map(Number)
+        const scheduleTime = new Date()
+        scheduleTime.setHours(hours, minutes, 0, 0)
+
+        // Only schedule if time is in the future (today)
+        // If time has passed today, schedule for tomorrow
+        if (scheduleTime <= now) {
+          scheduleTime.setDate(scheduleTime.getDate() + 1)
+        }
+
+        await this.scheduleNotification(
+          notificationId++,
+          '💧 Su İçmeyi Unutma',
+          'Günlük su hedefiniz için bir bardak su için',
+          scheduleTime,
+          userId,
+          'water_reminder'
+        )
+      } catch (error) {
+        console.error(`💧 Error scheduling water reminder for ${waterTime.time}:`, error)
+      }
+    }
   }
 
   async checkAndSendGoalNotification(userId: string, preferences: ExtendedUserPreferences) {
@@ -664,6 +693,7 @@ export class NotificationManager {
       return {
         notification_settings: data.notification_settings as NotificationPreferences,
         reminder_times: data.reminder_times as ReminderTimes,
+        water_reminder_times: data.water_reminder_times || [{ id: '1', time: '14:30' }],
         quiet_hours_start: data.quiet_hours_start || '22:00',
         quiet_hours_end: data.quiet_hours_end || '07:00',
         primary_meal_reminder: data.primary_meal_reminder || 'lunch',
@@ -703,7 +733,7 @@ export class NotificationManager {
 
     await Promise.all([
       this.setupPrimaryMealReminder(userId, preferences),
-      this.setupSingleWaterReminder(userId, preferences),
+      this.setupWaterReminders(userId, preferences),
     ])
   }
 

@@ -624,22 +624,13 @@ export function NotificationSettings() {
         </CardContent>
       </Card>
 
-      <div className="flex justify-between gap-3">
-        <Button
-          variant="secondary"
-          onClick={testNotification}
-          disabled={testingNotification || saving}
-        >
-          {testingNotification ? 'Test Ediliyor...' : '🧪 Test Bildirimi Gönder'}
+      <div className="flex justify-end gap-3">
+        <Button variant="outline" onClick={loadPreferences} disabled={saving}>
+          İptal
         </Button>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={loadPreferences} disabled={saving}>
-            İptal
-          </Button>
-          <Button onClick={savePreferences} disabled={saving}>
-            {saving ? 'Kaydediliyor...' : 'Kaydet'}
-          </Button>
-        </div>
+        <Button onClick={savePreferences} disabled={saving}>
+          {saving ? 'Kaydediliyor...' : 'Kaydet'}
+        </Button>
       </div>
     </div>
   )
