@@ -154,18 +154,24 @@ export function NotificationSettings() {
 
       const { data: upsertData, error } = await supabase
         .from('user_preferences')
-        .upsert({
-          user_id: user.id,
-          notification_settings: preferences.notification_settings,
-          reminder_times: preferences.reminder_times,
-          meal_reminders_enabled: preferences.meal_reminders_enabled,
-          water_reminder_times: preferences.water_reminder_times,
-          water_reminder_interval: preferences.water_reminder_interval,
-          quiet_hours_start: preferences.quiet_hours_start,
-          quiet_hours_end: preferences.quiet_hours_end,
-          weekend_notifications_enabled: preferences.weekend_notifications_enabled,
-          notification_alert_style: preferences.notification_alert_style
-        })
+        .upsert(
+          {
+            user_id: user.id,
+            notification_settings: preferences.notification_settings,
+            reminder_times: preferences.reminder_times,
+            meal_reminders_enabled: preferences.meal_reminders_enabled,
+            water_reminder_times: preferences.water_reminder_times,
+            water_reminder_interval: preferences.water_reminder_interval,
+            quiet_hours_start: preferences.quiet_hours_start,
+            quiet_hours_end: preferences.quiet_hours_end,
+            weekend_notifications_enabled: preferences.weekend_notifications_enabled,
+            notification_alert_style: preferences.notification_alert_style
+          },
+          {
+            onConflict: 'user_id',
+            ignoreDuplicates: false
+          }
+        )
         .select()
 
       console.log('✅ Upsert result:', JSON.stringify({ data: upsertData, error }))
