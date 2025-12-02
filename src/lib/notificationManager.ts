@@ -284,46 +284,64 @@ export class NotificationManager {
   }
 
   async setupPrimaryMealReminder(userId: string, preferences: ExtendedUserPreferences) {
-    if (!preferences.notification_settings.meal_reminders) return
-
-    // Default to lunch if not set
-    const primaryMeal = preferences.primary_meal_reminder || 'lunch'
-    if (primaryMeal === 'none') return
+    if (!preferences.notification_settings.meal_reminders) {
+      console.log('🍽️ Meal reminders disabled globally')
+      return
+    }
 
     const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6
-    if (isWeekend && !preferences.weekend_notifications_enabled) return
+    if (isWeekend && !preferences.weekend_notifications_enabled) {
+      console.log('📅 Weekend notifications disabled')
+      return
+    }
 
     await this.cancelNotificationsRange(1000, 1099)
 
     const mealConfig = {
-      breakfast: { time: preferences.reminder_times.breakfast, label: 'Kahvaltı', emoji: '🌅' },
-      lunch: { time: preferences.reminder_times.lunch, label: 'Öğle Yemeği', emoji: '🍽️' },
-      dinner: { time: preferences.reminder_times.dinner, label: 'Akşam Yemeği', emoji: '🌙' }
+      breakfast: { time: preferences.reminder_times.breakfast, label: 'Kahvaltı', emoji: '🌅', id: 1001 },
+      lunch: { time: preferences.reminder_times.lunch, label: 'Öğle Yemeği', emoji: '🍽️', id: 1002 },
+      dinner: { time: preferences.reminder_times.dinner, label: 'Akşam Yemeği', emoji: '🌙', id: 1003 }
     }
 
-    const selectedMeal = mealConfig[primaryMeal]
-    if (!selectedMeal) return
-
-    const hasMealLogged = await this.checkIfMealLogged(userId, preferences.primary_meal_reminder)
-    if (hasMealLogged) return
-
-    const [hours, minutes] = selectedMeal.time.split(':').map(Number)
-    const scheduleTime = new Date()
-    scheduleTime.setHours(hours, minutes, 0, 0)
-
-    if (scheduleTime <= new Date()) {
-      scheduleTime.setDate(scheduleTime.getDate() + 1)
+    const mealRemindersEnabled = preferences.meal_reminders_enabled || {
+      breakfast: true,
+      lunch: true,
+      dinner: true
     }
 
-    await this.scheduleNotification(
-      1001,
-      `${selectedMeal.emoji} ${selectedMeal.label} Zamanı`,
-      'Öğününüzü kaydederek günlük takibinizi yapın',
-      scheduleTime,
-      userId,
-      'meal_reminder',
-      { meal: primaryMeal }
-    )
+    console.log('🍽️ Setting up meal reminders:', JSON.stringify({
+      enabled: mealRemindersEnabled,
+      times: preferences.reminder_times
+    }))
+
+    for (const [mealType, config] of Object.entries(mealConfig)) {
+      const isEnabled = mealRemindersEnabled[mealType as keyof MealReminders]
+
+      if (!isEnabled) {
+        console.log(`   ⏭️ Skipping ${mealType} - disabled by user`)
+        continue
+      }
+
+      const [hours, minutes] = config.time.split(':').map(Number)
+      const scheduleTime = new Date()
+      scheduleTime.setHours(hours, minutes, 0, 0)
+
+      if (scheduleTime <= new Date()) {
+        scheduleTime.setDate(scheduleTime.getDate() + 1)
+      }
+
+      console.log(`   📅 Scheduling ${mealType} for ${config.time}`)
+
+      await this.scheduleNotification(
+        config.id,
+        `${config.emoji} ${config.label} Zamanı`,
+        'Öğününüzü kaydederek günlük takibinizi yapın',
+        scheduleTime,
+        userId,
+        'meal_reminder',
+        { meal: mealType }
+      )
+    }
   }
 
   async setupWaterReminders(userId: string, preferences: ExtendedUserPreferences) {

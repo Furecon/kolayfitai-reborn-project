@@ -12,6 +12,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
   const [minutes, setMinutes] = useState('00')
   const hourRef = useRef<HTMLDivElement>(null)
   const minuteRef = useRef<HTMLDivElement>(null)
+  const scrollTimeoutRef = useRef<NodeJS.Timeout>()
 
   // Parse initial value
   useEffect(() => {
@@ -27,41 +28,38 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
     onChange(`${hours}:${minutes}`)
   }, [hours, minutes, onChange])
 
-  const hourOptions = Array.from({ length: 24 }, (_, i) =>
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  // Create circular lists - repeat 3 times for infinite feel
+  const baseHours = Array.from({ length: 24 }, (_, i) =>
     i.toString().padStart(2, '0')
   )
-  const minuteOptions = Array.from({ length: 60 }, (_, i) =>
+  const baseMinutes = Array.from({ length: 60 }, (_, i) =>
     i.toString().padStart(2, '0')
   )
 
-  const handleScrollEnd = (
-    ref: React.RefObject<HTMLDivElement>,
-    options: string[],
-    setValue: (val: string) => void
-  ) => {
-    if (!ref.current) return
-
-    const container = ref.current
-    const itemHeight = 48
-    const scrollTop = container.scrollTop
-    const index = Math.round(scrollTop / itemHeight)
-    const clampedIndex = Math.max(0, Math.min(index, options.length - 1))
-
-    setValue(options[clampedIndex])
-
-    // Snap to position
-    container.scrollTo({
-      top: clampedIndex * itemHeight,
-      behavior: 'smooth'
-    })
-  }
+  const hourOptions = [...baseHours, ...baseHours, ...baseHours]
+  const minuteOptions = [...baseMinutes, ...baseMinutes, ...baseMinutes]
 
   const handleScroll = (
     ref: React.RefObject<HTMLDivElement>,
     options: string[],
-    setValue: (val: string) => void
+    setValue: (val: string) => void,
+    baseLength: number
   ) => {
     if (!ref.current) return
+
+    // Clear existing timeout
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current)
+    }
 
     const container = ref.current
     const itemHeight = 48
@@ -69,27 +67,51 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
     const index = Math.round(scrollTop / itemHeight)
     const clampedIndex = Math.max(0, Math.min(index, options.length - 1))
 
-    setValue(options[clampedIndex])
+    // Get the actual value (modulo for circular)
+    const actualValue = options[clampedIndex]
+    setValue(actualValue)
+
+    // Handle wraparound - if at edges, jump to middle section
+    scrollTimeoutRef.current = setTimeout(() => {
+      if (!ref.current) return
+
+      const currentIndex = Math.round(ref.current.scrollTop / itemHeight)
+
+      // If scrolled to first set, jump to middle set
+      if (currentIndex < baseLength / 2) {
+        ref.current.scrollTop = (currentIndex + baseLength) * itemHeight
+      }
+      // If scrolled to last set, jump to middle set
+      else if (currentIndex >= baseLength * 2.5) {
+        ref.current.scrollTop = (currentIndex - baseLength) * itemHeight
+      }
+      // Otherwise just snap
+      else {
+        ref.current.scrollTo({
+          top: clampedIndex * itemHeight,
+          behavior: 'smooth'
+        })
+      }
+    }, 150)
   }
 
   const scrollToValue = (
     ref: React.RefObject<HTMLDivElement>,
     value: string,
-    options: string[]
+    baseLength: number
   ) => {
     if (!ref.current) return
-    const index = options.indexOf(value)
-    if (index !== -1) {
-      ref.current.scrollTop = index * 48
-    }
+    // Always scroll to middle section for circular effect
+    const middleSetIndex = baseLength + parseInt(value, 10)
+    ref.current.scrollTop = middleSetIndex * 48
   }
 
   useEffect(() => {
-    scrollToValue(hourRef, hours, hourOptions)
+    scrollToValue(hourRef, hours, 24)
   }, [hours])
 
   useEffect(() => {
-    scrollToValue(minuteRef, minutes, minuteOptions)
+    scrollToValue(minuteRef, minutes, 60)
   }, [minutes])
 
   return (
@@ -109,9 +131,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         <div
           ref={hourRef}
           className="h-full overflow-y-scroll scrollbar-hide"
-          onScroll={() => handleScroll(hourRef, hourOptions, setHours)}
-          onScrollEnd={() => handleScrollEnd(hourRef, hourOptions, setHours)}
-          onTouchEnd={() => handleScrollEnd(hourRef, hourOptions, setHours)}
+          onScroll={() => handleScroll(hourRef, hourOptions, setHours, 24)}
           style={{
             scrollSnapType: 'y mandatory',
             WebkitOverflowScrolling: 'touch'
@@ -120,9 +140,9 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
           {/* Top padding */}
           <div className="h-[96px]" />
 
-          {hourOptions.map((hour) => (
+          {hourOptions.map((hour, idx) => (
             <div
-              key={hour}
+              key={`hour-${idx}`}
               className={cn(
                 "h-[48px] flex items-center justify-center text-2xl font-medium snap-start transition-all",
                 hour === hours ? "text-foreground scale-110" : "text-muted-foreground"
@@ -155,9 +175,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         <div
           ref={minuteRef}
           className="h-full overflow-y-scroll scrollbar-hide"
-          onScroll={() => handleScroll(minuteRef, minuteOptions, setMinutes)}
-          onScrollEnd={() => handleScrollEnd(minuteRef, minuteOptions, setMinutes)}
-          onTouchEnd={() => handleScrollEnd(minuteRef, minuteOptions, setMinutes)}
+          onScroll={() => handleScroll(minuteRef, minuteOptions, setMinutes, 60)}
           style={{
             scrollSnapType: 'y mandatory',
             WebkitOverflowScrolling: 'touch'
@@ -166,9 +184,9 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
           {/* Top padding */}
           <div className="h-[96px]" />
 
-          {minuteOptions.map((minute) => (
+          {minuteOptions.map((minute, idx) => (
             <div
-              key={minute}
+              key={`minute-${idx}`}
               className={cn(
                 "h-[48px] flex items-center justify-center text-2xl font-medium snap-start transition-all",
                 minute === minutes ? "text-foreground scale-110" : "text-muted-foreground"
