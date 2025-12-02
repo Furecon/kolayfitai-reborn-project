@@ -553,7 +553,9 @@ export function NotificationSettings() {
           <div className="flex items-center justify-between">
             <Label>Başlangıç</Label>
             <Input
-              type="time"
+              type="text"
+              inputMode="numeric"
+              placeholder="22:00"
               value={preferences.quiet_hours_start}
               onChange={(e) => {
                 const cleanTime = e.target.value.substring(0, 5)
@@ -561,13 +563,16 @@ export function NotificationSettings() {
                 setPreferences({ ...preferences, quiet_hours_start: cleanTime })
               }}
               className="w-32"
+              maxLength={5}
             />
           </div>
 
           <div className="flex items-center justify-between">
             <Label>Bitiş</Label>
             <Input
-              type="time"
+              type="text"
+              inputMode="numeric"
+              placeholder="07:00"
               value={preferences.quiet_hours_end}
               onChange={(e) => {
                 const cleanTime = e.target.value.substring(0, 5)
@@ -575,6 +580,7 @@ export function NotificationSettings() {
                 setPreferences({ ...preferences, quiet_hours_end: cleanTime })
               }}
               className="w-32"
+              maxLength={5}
             />
           </div>
         </CardContent>
