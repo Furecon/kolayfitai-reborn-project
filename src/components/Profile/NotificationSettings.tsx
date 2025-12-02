@@ -99,6 +99,9 @@ export function NotificationSettings() {
         console.log('📥 Loaded from DB:', {
           reminder_times: data.reminder_times,
           water_reminder_times: data.water_reminder_times,
+          water_reminder_times_type: typeof data.water_reminder_times,
+          water_reminder_times_is_array: Array.isArray(data.water_reminder_times),
+          water_reminder_times_stringified: JSON.stringify(data.water_reminder_times),
           quiet_hours_start: data.quiet_hours_start,
           quiet_hours_end: data.quiet_hours_end
         })
@@ -140,6 +143,7 @@ export function NotificationSettings() {
       console.log('💾 Saving preferences:', {
         reminder_times: preferences.reminder_times,
         water_reminder_times: preferences.water_reminder_times,
+        water_reminder_times_stringified: JSON.stringify(preferences.water_reminder_times),
         quiet_hours_start: preferences.quiet_hours_start,
         quiet_hours_end: preferences.quiet_hours_end
       })
@@ -236,11 +240,18 @@ export function NotificationSettings() {
 
   const updateReminderTime = (meal: keyof typeof preferences.reminder_times, time: string) => {
     if (!preferences) return
+    // Ensure time is in HH:MM format (remove seconds if present)
+    const cleanTime = time.substring(0, 5)
+    console.log('🍽️ Updating meal reminder time:', {
+      meal,
+      originalTime: time,
+      cleanTime
+    })
     setPreferences({
       ...preferences,
       reminder_times: {
         ...preferences.reminder_times,
-        [meal]: time
+        [meal]: cleanTime
       }
     })
   }
@@ -267,10 +278,18 @@ export function NotificationSettings() {
 
   const updateWaterReminderTime = (id: string, time: string) => {
     if (!preferences) return
+    // Ensure time is in HH:MM format (remove seconds if present)
+    const cleanTime = time.substring(0, 5)
+    console.log('⏰ Updating water reminder time:', {
+      id,
+      originalTime: time,
+      cleanTime,
+      type: typeof time
+    })
     setPreferences({
       ...preferences,
       water_reminder_times: preferences.water_reminder_times.map(r =>
-        r.id === id ? { ...r, time } : r
+        r.id === id ? { ...r, time: cleanTime } : r
       )
     })
   }
@@ -512,7 +531,11 @@ export function NotificationSettings() {
             <Input
               type="time"
               value={preferences.quiet_hours_start}
-              onChange={(e) => setPreferences({ ...preferences, quiet_hours_start: e.target.value })}
+              onChange={(e) => {
+                const cleanTime = e.target.value.substring(0, 5)
+                console.log('🌙 Updating quiet hours start:', { original: e.target.value, clean: cleanTime })
+                setPreferences({ ...preferences, quiet_hours_start: cleanTime })
+              }}
               className="w-32"
             />
           </div>
@@ -522,7 +545,11 @@ export function NotificationSettings() {
             <Input
               type="time"
               value={preferences.quiet_hours_end}
-              onChange={(e) => setPreferences({ ...preferences, quiet_hours_end: e.target.value })}
+              onChange={(e) => {
+                const cleanTime = e.target.value.substring(0, 5)
+                console.log('☀️ Updating quiet hours end:', { original: e.target.value, clean: cleanTime })
+                setPreferences({ ...preferences, quiet_hours_end: cleanTime })
+              }}
               className="w-32"
             />
           </div>
