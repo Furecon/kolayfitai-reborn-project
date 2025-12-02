@@ -61,38 +61,31 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
       clearTimeout(scrollTimeoutRef.current)
     }
 
-    const container = ref.current
-    const itemHeight = 48
-    const scrollTop = container.scrollTop
-    const index = Math.round(scrollTop / itemHeight)
-    const clampedIndex = Math.max(0, Math.min(index, options.length - 1))
-
-    // Get the actual value (modulo for circular)
-    const actualValue = options[clampedIndex]
-    setValue(actualValue)
-
-    // Handle wraparound - if at edges, jump to middle section
+    // Debounce the value update
     scrollTimeoutRef.current = setTimeout(() => {
       if (!ref.current) return
 
-      const currentIndex = Math.round(ref.current.scrollTop / itemHeight)
+      const container = ref.current
+      const itemHeight = 48
+      const scrollTop = container.scrollTop
+      const index = Math.round(scrollTop / itemHeight)
+      const clampedIndex = Math.max(0, Math.min(index, options.length - 1))
 
-      // If scrolled to first set, jump to middle set
+      // Update value
+      setValue(options[clampedIndex])
+
+      // Handle circular wraparound - jump to middle section
+      const currentIndex = Math.round(container.scrollTop / itemHeight)
+
+      // If near start, jump to middle
       if (currentIndex < baseLength / 2) {
-        ref.current.scrollTop = (currentIndex + baseLength) * itemHeight
+        container.scrollTop = (currentIndex + baseLength) * itemHeight
       }
-      // If scrolled to last set, jump to middle set
+      // If near end, jump to middle
       else if (currentIndex >= baseLength * 2.5) {
-        ref.current.scrollTop = (currentIndex - baseLength) * itemHeight
+        container.scrollTop = (currentIndex - baseLength) * itemHeight
       }
-      // Otherwise just snap
-      else {
-        ref.current.scrollTo({
-          top: clampedIndex * itemHeight,
-          behavior: 'smooth'
-        })
-      }
-    }, 150)
+    }, 100)
   }
 
   const scrollToValue = (

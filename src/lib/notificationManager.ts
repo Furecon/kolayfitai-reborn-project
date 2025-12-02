@@ -242,6 +242,11 @@ export class NotificationManager {
     }
 
     try {
+      if (!Capacitor.isNativePlatform()) {
+        console.log('⚠️ Not on native platform, skipping notification scheduling')
+        return
+      }
+
       // Get user notification alert style preference
       const { data } = await supabase
         .from('user_preferences')
@@ -252,11 +257,12 @@ export class NotificationManager {
       const alertStyle = data?.notification_alert_style || 'both'
 
       console.log(`📅 Scheduling notification: ${notificationType} at ${at.toISOString()}`)
+      console.log(`   ID: ${id}`)
       console.log(`   Title: ${title}`)
       console.log(`   Body: ${body}`)
       console.log(`   Alert Style: ${alertStyle}`)
 
-      await LocalNotifications.schedule({
+      const result = await LocalNotifications.schedule({
         notifications: [
           {
             id,
@@ -271,7 +277,8 @@ export class NotificationManager {
         ]
       })
 
-      console.log(`✅ Notification scheduled successfully: ${notificationType} (ID: ${id})`)
+      console.log(`✅ Notification scheduled successfully:`, JSON.stringify(result))
+      console.log(`   Type: ${notificationType}, ID: ${id}`)
       this.dailyNotificationCount++
 
       await this.updateLastNotificationSent(userId, notificationType)
@@ -280,6 +287,7 @@ export class NotificationManager {
 
     } catch (error) {
       console.error('❌ Error scheduling notification:', error)
+      console.error('   Error details:', JSON.stringify(error))
     }
   }
 

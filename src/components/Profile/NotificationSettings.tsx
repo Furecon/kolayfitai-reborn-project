@@ -182,7 +182,9 @@ export function NotificationSettings() {
       }
 
       // Bildirimleri yeniden planla
+      console.log('📲 Initializing notifications for user:', user.id)
       await notificationManager.initializeNotifications(user.id)
+      console.log('✅ Notifications initialized successfully')
 
       // Database'den güncel değerleri yeniden yükle
       await loadPreferences()
