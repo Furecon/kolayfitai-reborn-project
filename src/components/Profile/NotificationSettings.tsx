@@ -43,6 +43,7 @@ interface NotificationPreferences {
 export function NotificationSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [testingNotification, setTestingNotification] = useState(false)
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null)
   const { toast } = useToast()
 
@@ -157,6 +158,38 @@ export function NotificationSettings() {
       })
     } finally {
       setSaving(false)
+    }
+  }
+
+  const testNotification = async () => {
+    setTestingNotification(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const success = await notificationManager.sendTestNotification(user.id)
+
+      if (success) {
+        toast({
+          title: 'Test Bildirimi Gönderildi',
+          description: '5 saniye içinde bir test bildirimi alacaksınız'
+        })
+      } else {
+        toast({
+          title: 'Hata',
+          description: 'Bildirim izinleri verilmemiş. Lütfen cihaz ayarlarından bildirim izinlerini kontrol edin.',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      console.error('Error testing notification:', error)
+      toast({
+        title: 'Hata',
+        description: 'Test bildirimi gönderilemedi',
+        variant: 'destructive'
+      })
+    } finally {
+      setTestingNotification(false)
     }
   }
 
@@ -591,13 +624,22 @@ export function NotificationSettings() {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end gap-3">
-        <Button variant="outline" onClick={loadPreferences} disabled={saving}>
-          İptal
+      <div className="flex justify-between gap-3">
+        <Button
+          variant="secondary"
+          onClick={testNotification}
+          disabled={testingNotification || saving}
+        >
+          {testingNotification ? 'Test Ediliyor...' : '🧪 Test Bildirimi Gönder'}
         </Button>
-        <Button onClick={savePreferences} disabled={saving}>
-          {saving ? 'Kaydediliyor...' : 'Kaydet'}
-        </Button>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={loadPreferences} disabled={saving}>
+            İptal
+          </Button>
+          <Button onClick={savePreferences} disabled={saving}>
+            {saving ? 'Kaydediliyor...' : 'Kaydet'}
+          </Button>
+        </div>
       </div>
     </div>
   )

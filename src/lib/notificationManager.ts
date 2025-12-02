@@ -78,17 +78,32 @@ export class NotificationManager {
 
   private async checkSupport() {
     if (Capacitor.isNativePlatform()) {
+      console.log('📱 Running on native platform, checking notification support')
       this.isSupported = true
-      await this.requestPermissions()
+      const hasPermission = await this.requestPermissions()
+      if (!hasPermission) {
+        console.warn('⚠️ Notification permissions not granted. Notifications will not work.')
+      }
+    } else {
+      console.log('🌐 Running on web platform, notifications not supported')
     }
   }
 
   private async requestPermissions() {
     try {
+      console.log('🔔 Requesting notification permissions...')
       const permissionStatus = await LocalNotifications.requestPermissions()
-      return permissionStatus.display === 'granted'
+      console.log('🔔 Permission status:', permissionStatus)
+
+      if (permissionStatus.display === 'granted') {
+        console.log('✅ Notification permissions granted')
+        return true
+      } else {
+        console.warn('⚠️ Notification permissions denied:', permissionStatus.display)
+        return false
+      }
     } catch (error) {
-      console.error('Error requesting notification permissions:', error)
+      console.error('❌ Error requesting notification permissions:', error)
       return false
     }
   }
@@ -216,14 +231,21 @@ export class NotificationManager {
     notificationType: string,
     extra?: any
   ) {
-    if (!this.isSupported) return
+    if (!this.isSupported) {
+      console.log('🚫 Notifications not supported on this platform')
+      return
+    }
 
     if (!(await this.shouldSendNotification(userId, notificationType))) {
-      console.log(`Notification skipped: ${notificationType}`)
+      console.log(`⏭️ Notification skipped: ${notificationType}`)
       return
     }
 
     try {
+      console.log(`📅 Scheduling notification: ${notificationType} at ${at.toISOString()}`)
+      console.log(`   Title: ${title}`)
+      console.log(`   Body: ${body}`)
+
       await LocalNotifications.schedule({
         notifications: [
           {
@@ -238,6 +260,7 @@ export class NotificationManager {
         ]
       })
 
+      console.log(`✅ Notification scheduled successfully: ${notificationType} (ID: ${id})`)
       this.dailyNotificationCount++
 
       await this.updateLastNotificationSent(userId, notificationType)
@@ -245,13 +268,16 @@ export class NotificationManager {
       await this.logNotificationScheduled(userId, notificationType, title, body, at)
 
     } catch (error) {
-      console.error('Error scheduling notification:', error)
+      console.error('❌ Error scheduling notification:', error)
     }
   }
 
   async setupPrimaryMealReminder(userId: string, preferences: ExtendedUserPreferences) {
     if (!preferences.notification_settings.meal_reminders) return
-    if (preferences.primary_meal_reminder === 'none') return
+
+    // Default to lunch if not set
+    const primaryMeal = preferences.primary_meal_reminder || 'lunch'
+    if (primaryMeal === 'none') return
 
     const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6
     if (isWeekend && !preferences.weekend_notifications_enabled) return
@@ -264,7 +290,7 @@ export class NotificationManager {
       dinner: { time: preferences.reminder_times.dinner, label: 'Akşam Yemeği', emoji: '🌙' }
     }
 
-    const selectedMeal = mealConfig[preferences.primary_meal_reminder]
+    const selectedMeal = mealConfig[primaryMeal]
     if (!selectedMeal) return
 
     const hasMealLogged = await this.checkIfMealLogged(userId, preferences.primary_meal_reminder)
@@ -285,7 +311,7 @@ export class NotificationManager {
       scheduleTime,
       userId,
       'meal_reminder',
-      { meal: preferences.primary_meal_reminder }
+      { meal: primaryMeal }
     )
   }
 
@@ -300,7 +326,9 @@ export class NotificationManager {
     const waterProgress = await this.getWaterProgress(userId)
     if (waterProgress >= 0.6) return
 
-    const [hours, minutes] = preferences.reminder_times.water_time.split(':').map(Number)
+    // Check if water_time is defined
+    const waterTime = preferences.reminder_times.water_time || '14:30'
+    const [hours, minutes] = waterTime.split(':').map(Number)
     const scheduleTime = new Date()
     scheduleTime.setHours(hours, minutes, 0, 0)
 
@@ -584,6 +612,45 @@ export class NotificationManager {
     }
   }
 
+  async sendTestNotification(userId: string): Promise<boolean> {
+    if (!this.isSupported) {
+      console.log('🚫 Notifications not supported on this platform')
+      return false
+    }
+
+    try {
+      // Check permissions
+      const permissionStatus = await LocalNotifications.checkPermissions()
+      if (permissionStatus.display !== 'granted') {
+        console.warn('⚠️ No notification permissions')
+        return false
+      }
+
+      // Schedule a test notification 5 seconds from now
+      const scheduleTime = new Date(Date.now() + 5000)
+
+      console.log('🧪 Scheduling test notification...')
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: 9999,
+            title: 'Test Bildirimi ✅',
+            body: 'Bildirimler başarıyla çalışıyor!',
+            schedule: { at: scheduleTime },
+            extra: { userId, type: 'test' },
+            sound: 'default',
+          }
+        ]
+      })
+
+      console.log('✅ Test notification scheduled for:', scheduleTime.toISOString())
+      return true
+    } catch (error) {
+      console.error('❌ Error sending test notification:', error)
+      return false
+    }
+  }
+
   async getUserPreferences(userId: string): Promise<ExtendedUserPreferences | null> {
     try {
       const { data, error } = await supabase
@@ -641,8 +708,26 @@ export class NotificationManager {
   }
 
   async initializeNotifications(userId: string) {
+    console.log('🔔 Initializing notifications for user:', userId)
+
+    // Check permissions first
+    if (Capacitor.isNativePlatform()) {
+      const permissionStatus = await LocalNotifications.checkPermissions()
+      console.log('📋 Current permission status:', permissionStatus)
+
+      if (permissionStatus.display !== 'granted') {
+        console.warn('⚠️ Notifications not granted. Requesting permissions...')
+        const newStatus = await this.requestPermissions()
+        if (!newStatus) {
+          console.error('❌ User denied notification permissions')
+          return
+        }
+      }
+    }
+
     const preferences = await this.getUserPreferences(userId)
     if (!preferences) {
+      console.log('📝 No preferences found, creating defaults')
       const defaultPreferences: ExtendedUserPreferences = {
         notification_settings: {
           meal_reminders: true,
@@ -668,7 +753,17 @@ export class NotificationManager {
       return
     }
 
+    console.log('✅ User preferences loaded, scheduling notifications')
     await this.rescheduleAllNotifications(userId, preferences)
+
+    // Log pending notifications
+    if (Capacitor.isNativePlatform()) {
+      const pending = await LocalNotifications.getPending()
+      console.log(`📊 Total pending notifications: ${pending.notifications.length}`)
+      pending.notifications.forEach(n => {
+        console.log(`   - ID: ${n.id}, Title: ${n.title}, Schedule: ${JSON.stringify(n.schedule)}`)
+      })
+    }
   }
 }
 
