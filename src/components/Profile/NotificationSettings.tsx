@@ -245,10 +245,27 @@ export function NotificationSettings() {
     })
   }
 
+  // Format time input: "1915" -> "19:15", "830" -> "08:30"
+  const formatTimeInput = (input: string): string => {
+    // Remove non-digits
+    const digits = input.replace(/\D/g, '')
+
+    if (digits.length === 0) return ''
+    if (digits.length <= 2) {
+      // Just hours: "8" -> "08", "19" -> "19"
+      return digits.padStart(2, '0')
+    }
+    if (digits.length === 3) {
+      // "830" -> "08:30"
+      return `${digits[0].padStart(2, '0')}:${digits.slice(1)}`
+    }
+    // "1915" -> "19:15"
+    return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`
+  }
+
   const updateReminderTime = (meal: keyof typeof preferences.reminder_times, time: string) => {
     if (!preferences) return
-    // Ensure time is in HH:MM format (remove seconds if present)
-    const cleanTime = time.substring(0, 5)
+    const cleanTime = formatTimeInput(time)
     console.log('🍽️ Updating meal reminder time:', JSON.stringify({
       meal,
       originalTime: time,
@@ -285,8 +302,7 @@ export function NotificationSettings() {
 
   const updateWaterReminderTime = (id: string, time: string) => {
     if (!preferences) return
-    // Ensure time is in HH:MM format (remove seconds if present)
-    const cleanTime = time.substring(0, 5)
+    const cleanTime = formatTimeInput(time)
     console.log('⏰ Updating water reminder time:', JSON.stringify({
       id,
       originalTime: time,
@@ -354,7 +370,7 @@ export function NotificationSettings() {
                   <Input
                     type="text"
                     inputMode="numeric"
-                    placeholder="08:00"
+                    placeholder="0800"
                     value={preferences.reminder_times.breakfast}
                     onChange={(e) => updateReminderTime('breakfast', e.target.value)}
                     disabled={!preferences.meal_reminders_enabled.breakfast}
@@ -376,7 +392,7 @@ export function NotificationSettings() {
                   <Input
                     type="text"
                     inputMode="numeric"
-                    placeholder="12:30"
+                    placeholder="1230"
                     value={preferences.reminder_times.lunch}
                     onChange={(e) => updateReminderTime('lunch', e.target.value)}
                     disabled={!preferences.meal_reminders_enabled.lunch}
@@ -398,7 +414,7 @@ export function NotificationSettings() {
                   <Input
                     type="text"
                     inputMode="numeric"
-                    placeholder="19:00"
+                    placeholder="1900"
                     value={preferences.reminder_times.dinner}
                     onChange={(e) => updateReminderTime('dinner', e.target.value)}
                     disabled={!preferences.meal_reminders_enabled.dinner}
@@ -449,7 +465,7 @@ export function NotificationSettings() {
                     <Input
                       type="text"
                       inputMode="numeric"
-                      placeholder="18:30"
+                      placeholder="1830"
                       value={reminder.time}
                       onChange={(e) => updateWaterReminderTime(reminder.id, e.target.value)}
                       className="flex-1"
@@ -555,10 +571,10 @@ export function NotificationSettings() {
             <Input
               type="text"
               inputMode="numeric"
-              placeholder="22:00"
+              placeholder="2200"
               value={preferences.quiet_hours_start}
               onChange={(e) => {
-                const cleanTime = e.target.value.substring(0, 5)
+                const cleanTime = formatTimeInput(e.target.value)
                 console.log('🌙 Updating quiet hours start:', JSON.stringify({ original: e.target.value, clean: cleanTime }))
                 setPreferences({ ...preferences, quiet_hours_start: cleanTime })
               }}
@@ -572,10 +588,10 @@ export function NotificationSettings() {
             <Input
               type="text"
               inputMode="numeric"
-              placeholder="07:00"
+              placeholder="0700"
               value={preferences.quiet_hours_end}
               onChange={(e) => {
-                const cleanTime = e.target.value.substring(0, 5)
+                const cleanTime = formatTimeInput(e.target.value)
                 console.log('☀️ Updating quiet hours end:', JSON.stringify({ original: e.target.value, clean: cleanTime }))
                 setPreferences({ ...preferences, quiet_hours_end: cleanTime })
               }}
