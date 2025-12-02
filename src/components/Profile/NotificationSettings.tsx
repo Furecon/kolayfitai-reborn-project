@@ -96,15 +96,12 @@ export function NotificationSettings() {
         }
         setPreferences(defaultPrefs)
       } else {
-        console.log('📥 Loaded from DB:', {
+        console.log('📥 Loaded from DB:', JSON.stringify({
           reminder_times: data.reminder_times,
           water_reminder_times: data.water_reminder_times,
-          water_reminder_times_type: typeof data.water_reminder_times,
-          water_reminder_times_is_array: Array.isArray(data.water_reminder_times),
-          water_reminder_times_stringified: JSON.stringify(data.water_reminder_times),
           quiet_hours_start: data.quiet_hours_start,
           quiet_hours_end: data.quiet_hours_end
-        })
+        }))
 
         setPreferences({
           notification_settings: data.notification_settings as any,
@@ -140,13 +137,12 @@ export function NotificationSettings() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      console.log('💾 Saving preferences:', {
+      console.log('💾 Saving preferences:', JSON.stringify({
         reminder_times: preferences.reminder_times,
         water_reminder_times: preferences.water_reminder_times,
-        water_reminder_times_stringified: JSON.stringify(preferences.water_reminder_times),
         quiet_hours_start: preferences.quiet_hours_start,
         quiet_hours_end: preferences.quiet_hours_end
-      })
+      }))
 
       const { error } = await supabase
         .from('user_preferences')
@@ -242,11 +238,11 @@ export function NotificationSettings() {
     if (!preferences) return
     // Ensure time is in HH:MM format (remove seconds if present)
     const cleanTime = time.substring(0, 5)
-    console.log('🍽️ Updating meal reminder time:', {
+    console.log('🍽️ Updating meal reminder time:', JSON.stringify({
       meal,
       originalTime: time,
       cleanTime
-    })
+    }))
     setPreferences({
       ...preferences,
       reminder_times: {
@@ -280,12 +276,12 @@ export function NotificationSettings() {
     if (!preferences) return
     // Ensure time is in HH:MM format (remove seconds if present)
     const cleanTime = time.substring(0, 5)
-    console.log('⏰ Updating water reminder time:', {
+    console.log('⏰ Updating water reminder time:', JSON.stringify({
       id,
       originalTime: time,
       cleanTime,
       type: typeof time
-    })
+    }))
     setPreferences({
       ...preferences,
       water_reminder_times: preferences.water_reminder_times.map(r =>
@@ -533,7 +529,7 @@ export function NotificationSettings() {
               value={preferences.quiet_hours_start}
               onChange={(e) => {
                 const cleanTime = e.target.value.substring(0, 5)
-                console.log('🌙 Updating quiet hours start:', { original: e.target.value, clean: cleanTime })
+                console.log('🌙 Updating quiet hours start:', JSON.stringify({ original: e.target.value, clean: cleanTime }))
                 setPreferences({ ...preferences, quiet_hours_start: cleanTime })
               }}
               className="w-32"
@@ -547,7 +543,7 @@ export function NotificationSettings() {
               value={preferences.quiet_hours_end}
               onChange={(e) => {
                 const cleanTime = e.target.value.substring(0, 5)
-                console.log('☀️ Updating quiet hours end:', { original: e.target.value, clean: cleanTime })
+                console.log('☀️ Updating quiet hours end:', JSON.stringify({ original: e.target.value, clean: cleanTime }))
                 setPreferences({ ...preferences, quiet_hours_end: cleanTime })
               }}
               className="w-32"
