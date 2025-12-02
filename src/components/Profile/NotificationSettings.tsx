@@ -352,11 +352,14 @@ export function NotificationSettings() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Input
-                    type="time"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="08:00"
                     value={preferences.reminder_times.breakfast}
                     onChange={(e) => updateReminderTime('breakfast', e.target.value)}
                     disabled={!preferences.meal_reminders_enabled.breakfast}
                     className="w-32"
+                    maxLength={5}
                   />
                   <Switch
                     checked={preferences.meal_reminders_enabled.breakfast}
@@ -371,11 +374,14 @@ export function NotificationSettings() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Input
-                    type="time"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="12:30"
                     value={preferences.reminder_times.lunch}
                     onChange={(e) => updateReminderTime('lunch', e.target.value)}
                     disabled={!preferences.meal_reminders_enabled.lunch}
                     className="w-32"
+                    maxLength={5}
                   />
                   <Switch
                     checked={preferences.meal_reminders_enabled.lunch}
@@ -390,11 +396,14 @@ export function NotificationSettings() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Input
-                    type="time"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="19:00"
                     value={preferences.reminder_times.dinner}
                     onChange={(e) => updateReminderTime('dinner', e.target.value)}
                     disabled={!preferences.meal_reminders_enabled.dinner}
                     className="w-32"
+                    maxLength={5}
                   />
                   <Switch
                     checked={preferences.meal_reminders_enabled.dinner}
@@ -438,10 +447,13 @@ export function NotificationSettings() {
                 {preferences.water_reminder_times.map((reminder) => (
                   <div key={reminder.id} className="flex items-center gap-2">
                     <Input
-                      type="time"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="18:30"
                       value={reminder.time}
                       onChange={(e) => updateWaterReminderTime(reminder.id, e.target.value)}
                       className="flex-1"
+                      maxLength={5}
                     />
                     <Button
                       variant="ghost"
