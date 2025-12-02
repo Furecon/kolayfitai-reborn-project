@@ -310,21 +310,29 @@ export function NotificationSettings() {
     if (!editingTime || !preferences) return
 
     const { type, waterId } = editingTime
+    console.log('⏰ Time confirmed:', JSON.stringify({ type, waterId, time }))
 
     if (type === 'breakfast' || type === 'lunch' || type === 'dinner') {
-      setPreferences({
+      const newPrefs = {
         ...preferences,
         reminder_times: {
           ...preferences.reminder_times,
           [type]: time
         }
-      })
+      }
+      console.log('🍽️ Updated meal time:', JSON.stringify({ type, time, newTimes: newPrefs.reminder_times }))
+      setPreferences(newPrefs)
     } else if (type === 'water' && waterId) {
       updateWaterReminderTime(waterId, time)
+      console.log('💧 Updated water time:', JSON.stringify({ waterId, time }))
     } else if (type === 'quiet_start') {
-      setPreferences({ ...preferences, quiet_hours_start: time })
+      const newPrefs = { ...preferences, quiet_hours_start: time }
+      console.log('🌙 Updated quiet start:', JSON.stringify({ time }))
+      setPreferences(newPrefs)
     } else if (type === 'quiet_end') {
-      setPreferences({ ...preferences, quiet_hours_end: time })
+      const newPrefs = { ...preferences, quiet_hours_end: time }
+      console.log('☀️ Updated quiet end:', JSON.stringify({ time }))
+      setPreferences(newPrefs)
     }
 
     setEditingTime(null)

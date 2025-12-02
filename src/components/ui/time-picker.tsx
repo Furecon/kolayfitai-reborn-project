@@ -34,6 +34,28 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
     i.toString().padStart(2, '0')
   )
 
+  const handleScrollEnd = (
+    ref: React.RefObject<HTMLDivElement>,
+    options: string[],
+    setValue: (val: string) => void
+  ) => {
+    if (!ref.current) return
+
+    const container = ref.current
+    const itemHeight = 48
+    const scrollTop = container.scrollTop
+    const index = Math.round(scrollTop / itemHeight)
+    const clampedIndex = Math.max(0, Math.min(index, options.length - 1))
+
+    setValue(options[clampedIndex])
+
+    // Snap to position
+    container.scrollTo({
+      top: clampedIndex * itemHeight,
+      behavior: 'smooth'
+    })
+  }
+
   const handleScroll = (
     ref: React.RefObject<HTMLDivElement>,
     options: string[],
@@ -42,18 +64,12 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
     if (!ref.current) return
 
     const container = ref.current
-    const itemHeight = 48 // height of each item
+    const itemHeight = 48
     const scrollTop = container.scrollTop
     const index = Math.round(scrollTop / itemHeight)
     const clampedIndex = Math.max(0, Math.min(index, options.length - 1))
 
     setValue(options[clampedIndex])
-
-    // Smooth snap to position
-    container.scrollTo({
-      top: clampedIndex * itemHeight,
-      behavior: 'smooth'
-    })
   }
 
   const scrollToValue = (
@@ -92,9 +108,14 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         {/* Scrollable hours */}
         <div
           ref={hourRef}
-          className="h-full overflow-y-scroll scrollbar-hide snap-y snap-mandatory"
+          className="h-full overflow-y-scroll scrollbar-hide"
           onScroll={() => handleScroll(hourRef, hourOptions, setHours)}
-          style={{ scrollSnapType: 'y mandatory' }}
+          onScrollEnd={() => handleScrollEnd(hourRef, hourOptions, setHours)}
+          onTouchEnd={() => handleScrollEnd(hourRef, hourOptions, setHours)}
+          style={{
+            scrollSnapType: 'y mandatory',
+            WebkitOverflowScrolling: 'touch'
+          }}
         >
           {/* Top padding */}
           <div className="h-[96px]" />
@@ -133,9 +154,14 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         {/* Scrollable minutes */}
         <div
           ref={minuteRef}
-          className="h-full overflow-y-scroll scrollbar-hide snap-y snap-mandatory"
+          className="h-full overflow-y-scroll scrollbar-hide"
           onScroll={() => handleScroll(minuteRef, minuteOptions, setMinutes)}
-          style={{ scrollSnapType: 'y mandatory' }}
+          onScrollEnd={() => handleScrollEnd(minuteRef, minuteOptions, setMinutes)}
+          onTouchEnd={() => handleScrollEnd(minuteRef, minuteOptions, setMinutes)}
+          style={{
+            scrollSnapType: 'y mandatory',
+            WebkitOverflowScrolling: 'touch'
+          }}
         >
           {/* Top padding */}
           <div className="h-[96px]" />

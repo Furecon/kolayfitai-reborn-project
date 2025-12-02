@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -25,13 +25,23 @@ export function TimePickerDialog({
 }: TimePickerDialogProps) {
   const [selectedTime, setSelectedTime] = useState(value)
 
+  // Reset selectedTime when dialog opens with new value
+  useEffect(() => {
+    if (open) {
+      console.log('🕐 Dialog opened with value:', value)
+      setSelectedTime(value)
+    }
+  }, [open, value])
+
   const handleConfirm = () => {
+    console.log('✅ Confirming time:', selectedTime)
     onConfirm(selectedTime)
     onOpenChange(false)
   }
 
   const handleCancel = () => {
-    setSelectedTime(value) // Reset to original value
+    console.log('❌ Cancelling, resetting to:', value)
+    setSelectedTime(value)
     onOpenChange(false)
   }
 
