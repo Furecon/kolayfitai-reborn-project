@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { Bell, Clock, Calendar, Plus, Trash2, Droplet } from 'lucide-react'
@@ -256,17 +256,6 @@ export function NotificationSettings() {
     })
   }
 
-  const generateTimeOptions = () => {
-    const options = []
-    for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-        options.push(time)
-      }
-    }
-    return options
-  }
-
   if (loading || !preferences) {
     return (
       <Card>
@@ -309,30 +298,16 @@ export function NotificationSettings() {
             <div className="space-y-4 ml-6 border-l-2 pl-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div>
-                    <Label>Kahvaltı</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {preferences.reminder_times.breakfast}
-                    </p>
-                  </div>
+                  <Label>Kahvaltı</Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Select
+                  <Input
+                    type="time"
                     value={preferences.reminder_times.breakfast}
-                    onValueChange={(value) => updateReminderTime('breakfast', value)}
+                    onChange={(e) => updateReminderTime('breakfast', e.target.value)}
                     disabled={!preferences.meal_reminders_enabled.breakfast}
-                  >
-                    <SelectTrigger className="w-28">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {generateTimeOptions().map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    className="w-32"
+                  />
                   <Switch
                     checked={preferences.meal_reminders_enabled.breakfast}
                     onCheckedChange={(checked) => updateMealReminder('breakfast', checked)}
@@ -342,30 +317,16 @@ export function NotificationSettings() {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div>
-                    <Label>Öğle Yemeği</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {preferences.reminder_times.lunch}
-                    </p>
-                  </div>
+                  <Label>Öğle Yemeği</Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Select
+                  <Input
+                    type="time"
                     value={preferences.reminder_times.lunch}
-                    onValueChange={(value) => updateReminderTime('lunch', value)}
+                    onChange={(e) => updateReminderTime('lunch', e.target.value)}
                     disabled={!preferences.meal_reminders_enabled.lunch}
-                  >
-                    <SelectTrigger className="w-28">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {generateTimeOptions().map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    className="w-32"
+                  />
                   <Switch
                     checked={preferences.meal_reminders_enabled.lunch}
                     onCheckedChange={(checked) => updateMealReminder('lunch', checked)}
@@ -375,30 +336,16 @@ export function NotificationSettings() {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div>
-                    <Label>Akşam Yemeği</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {preferences.reminder_times.dinner}
-                    </p>
-                  </div>
+                  <Label>Akşam Yemeği</Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Select
+                  <Input
+                    type="time"
                     value={preferences.reminder_times.dinner}
-                    onValueChange={(value) => updateReminderTime('dinner', value)}
+                    onChange={(e) => updateReminderTime('dinner', e.target.value)}
                     disabled={!preferences.meal_reminders_enabled.dinner}
-                  >
-                    <SelectTrigger className="w-28">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {generateTimeOptions().map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    className="w-32"
+                  />
                   <Switch
                     checked={preferences.meal_reminders_enabled.dinner}
                     onCheckedChange={(checked) => updateMealReminder('dinner', checked)}
@@ -440,21 +387,12 @@ export function NotificationSettings() {
               <div className="space-y-3">
                 {preferences.water_reminder_times.map((reminder) => (
                   <div key={reminder.id} className="flex items-center gap-2">
-                    <Select
+                    <Input
+                      type="time"
                       value={reminder.time}
-                      onValueChange={(value) => updateWaterReminderTime(reminder.id, value)}
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {generateTimeOptions().map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(e) => updateWaterReminderTime(reminder.id, e.target.value)}
+                      className="flex-1"
+                    />
                     <Button
                       variant="ghost"
                       size="icon"
@@ -559,40 +497,22 @@ export function NotificationSettings() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <Label>Başlangıç</Label>
-            <Select
+            <Input
+              type="time"
               value={preferences.quiet_hours_start}
-              onValueChange={(value) => setPreferences({ ...preferences, quiet_hours_start: value })}
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {generateTimeOptions().map((time) => (
-                  <SelectItem key={time} value={time}>
-                    {time}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(e) => setPreferences({ ...preferences, quiet_hours_start: e.target.value })}
+              className="w-32"
+            />
           </div>
 
           <div className="flex items-center justify-between">
             <Label>Bitiş</Label>
-            <Select
+            <Input
+              type="time"
               value={preferences.quiet_hours_end}
-              onValueChange={(value) => setPreferences({ ...preferences, quiet_hours_end: value })}
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {generateTimeOptions().map((time) => (
-                  <SelectItem key={time} value={time}>
-                    {time}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(e) => setPreferences({ ...preferences, quiet_hours_end: e.target.value })}
+              className="w-32"
+            />
           </div>
         </CardContent>
       </Card>
