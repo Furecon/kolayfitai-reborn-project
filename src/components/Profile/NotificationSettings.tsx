@@ -3,8 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { TimePickerDialog } from '@/components/ui/time-picker-dialog'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { Bell, Clock, Calendar, Plus, Trash2, Droplet } from 'lucide-react'
@@ -47,6 +47,12 @@ export function NotificationSettings() {
   const [saving, setSaving] = useState(false)
   const [testingNotification, setTestingNotification] = useState(false)
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null)
+  const [timePickerOpen, setTimePickerOpen] = useState(false)
+  const [editingTime, setEditingTime] = useState<{
+    type: 'breakfast' | 'lunch' | 'dinner' | 'water' | 'quiet_start' | 'quiet_end'
+    waterId?: string
+    value: string
+  } | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -245,45 +251,6 @@ export function NotificationSettings() {
     })
   }
 
-  // Format time input: "1915" -> "19:15", "830" -> "08:30"
-  const formatTimeInput = (input: string): string => {
-    // Remove non-digits
-    const digits = input.replace(/\D/g, '')
-
-    if (digits.length === 0) return ''
-    if (digits.length <= 2) {
-      // Just hours: "8" -> "08", "19" -> "19"
-      return digits.padStart(2, '0')
-    }
-    if (digits.length === 3) {
-      // "830" -> "08:30"
-      return `${digits[0].padStart(2, '0')}:${digits.slice(1)}`
-    }
-    // "1915" or longer -> "19:15"
-    return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`
-  }
-
-  // Display time in editable format: "19:15" -> "1915"
-  const displayTimeInput = (time: string): string => {
-    return time.replace(/:/g, '')
-  }
-
-  const updateReminderTime = (meal: keyof typeof preferences.reminder_times, time: string) => {
-    if (!preferences) return
-    const cleanTime = formatTimeInput(time)
-    console.log('🍽️ Updating meal reminder time:', JSON.stringify({
-      meal,
-      originalTime: time,
-      cleanTime
-    }))
-    setPreferences({
-      ...preferences,
-      reminder_times: {
-        ...preferences.reminder_times,
-        [meal]: cleanTime
-      }
-    })
-  }
 
   const addWaterReminder = () => {
     if (!preferences) return
@@ -307,24 +274,60 @@ export function NotificationSettings() {
 
   const updateWaterReminderTime = (id: string, time: string) => {
     if (!preferences) return
-    const cleanTime = formatTimeInput(time)
-    console.log('⏰ Updating water reminder time:', JSON.stringify({
-      id,
-      originalTime: time,
-      cleanTime,
-      type: typeof time
-    }))
-
     const updatedTimes = preferences.water_reminder_times.map(r =>
-      r.id === id ? { ...r, time: cleanTime } : r
+      r.id === id ? { ...r, time } : r
     )
-
-    console.log('📝 Updated water times array:', JSON.stringify(updatedTimes))
 
     setPreferences({
       ...preferences,
       water_reminder_times: updatedTimes
     })
+  }
+
+  const openTimePicker = (
+    type: 'breakfast' | 'lunch' | 'dinner' | 'water' | 'quiet_start' | 'quiet_end',
+    waterId?: string
+  ) => {
+    if (!preferences) return
+
+    let value = '14:00'
+    if (type === 'breakfast' || type === 'lunch' || type === 'dinner') {
+      value = preferences.reminder_times[type]
+    } else if (type === 'water' && waterId) {
+      const reminder = preferences.water_reminder_times.find(r => r.id === waterId)
+      value = reminder?.time || '14:00'
+    } else if (type === 'quiet_start') {
+      value = preferences.quiet_hours_start
+    } else if (type === 'quiet_end') {
+      value = preferences.quiet_hours_end
+    }
+
+    setEditingTime({ type, waterId, value })
+    setTimePickerOpen(true)
+  }
+
+  const handleTimeConfirm = (time: string) => {
+    if (!editingTime || !preferences) return
+
+    const { type, waterId } = editingTime
+
+    if (type === 'breakfast' || type === 'lunch' || type === 'dinner') {
+      setPreferences({
+        ...preferences,
+        reminder_times: {
+          ...preferences.reminder_times,
+          [type]: time
+        }
+      })
+    } else if (type === 'water' && waterId) {
+      updateWaterReminderTime(waterId, time)
+    } else if (type === 'quiet_start') {
+      setPreferences({ ...preferences, quiet_hours_start: time })
+    } else if (type === 'quiet_end') {
+      setPreferences({ ...preferences, quiet_hours_end: time })
+    }
+
+    setEditingTime(null)
   }
 
   if (loading || !preferences) {
@@ -372,16 +375,14 @@ export function NotificationSettings() {
                   <Label>Kahvaltı</Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="0800"
-                    value={displayTimeInput(preferences.reminder_times.breakfast)}
-                    onChange={(e) => updateReminderTime('breakfast', e.target.value)}
+                  <Button
+                    variant="outline"
+                    onClick={() => openTimePicker('breakfast')}
                     disabled={!preferences.meal_reminders_enabled.breakfast}
-                    className="w-32"
-                    maxLength={4}
-                  />
+                    className="w-24 font-mono"
+                  >
+                    {preferences.reminder_times.breakfast}
+                  </Button>
                   <Switch
                     checked={preferences.meal_reminders_enabled.breakfast}
                     onCheckedChange={(checked) => updateMealReminder('breakfast', checked)}
@@ -394,16 +395,14 @@ export function NotificationSettings() {
                   <Label>Öğle Yemeği</Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="1230"
-                    value={displayTimeInput(preferences.reminder_times.lunch)}
-                    onChange={(e) => updateReminderTime('lunch', e.target.value)}
+                  <Button
+                    variant="outline"
+                    onClick={() => openTimePicker('lunch')}
                     disabled={!preferences.meal_reminders_enabled.lunch}
-                    className="w-32"
-                    maxLength={4}
-                  />
+                    className="w-24 font-mono"
+                  >
+                    {preferences.reminder_times.lunch}
+                  </Button>
                   <Switch
                     checked={preferences.meal_reminders_enabled.lunch}
                     onCheckedChange={(checked) => updateMealReminder('lunch', checked)}
@@ -416,16 +415,14 @@ export function NotificationSettings() {
                   <Label>Akşam Yemeği</Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="1900"
-                    value={displayTimeInput(preferences.reminder_times.dinner)}
-                    onChange={(e) => updateReminderTime('dinner', e.target.value)}
+                  <Button
+                    variant="outline"
+                    onClick={() => openTimePicker('dinner')}
                     disabled={!preferences.meal_reminders_enabled.dinner}
-                    className="w-32"
-                    maxLength={4}
-                  />
+                    className="w-24 font-mono"
+                  >
+                    {preferences.reminder_times.dinner}
+                  </Button>
                   <Switch
                     checked={preferences.meal_reminders_enabled.dinner}
                     onCheckedChange={(checked) => updateMealReminder('dinner', checked)}
@@ -467,15 +464,13 @@ export function NotificationSettings() {
               <div className="space-y-3">
                 {preferences.water_reminder_times.map((reminder) => (
                   <div key={reminder.id} className="flex items-center gap-2">
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="1830"
-                      value={displayTimeInput(reminder.time)}
-                      onChange={(e) => updateWaterReminderTime(reminder.id, e.target.value)}
-                      className="flex-1"
-                      maxLength={4}
-                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => openTimePicker('water', reminder.id)}
+                      className="flex-1 font-mono"
+                    >
+                      {reminder.time}
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -573,36 +568,24 @@ export function NotificationSettings() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <Label>Başlangıç</Label>
-            <Input
-              type="text"
-              inputMode="numeric"
-              placeholder="2200"
-              value={displayTimeInput(preferences.quiet_hours_start)}
-              onChange={(e) => {
-                const cleanTime = formatTimeInput(e.target.value)
-                console.log('🌙 Updating quiet hours start:', JSON.stringify({ original: e.target.value, clean: cleanTime }))
-                setPreferences({ ...preferences, quiet_hours_start: cleanTime })
-              }}
-              className="w-32"
-              maxLength={4}
-            />
+            <Button
+              variant="outline"
+              onClick={() => openTimePicker('quiet_start')}
+              className="w-24 font-mono"
+            >
+              {preferences.quiet_hours_start}
+            </Button>
           </div>
 
           <div className="flex items-center justify-between">
             <Label>Bitiş</Label>
-            <Input
-              type="text"
-              inputMode="numeric"
-              placeholder="0700"
-              value={displayTimeInput(preferences.quiet_hours_end)}
-              onChange={(e) => {
-                const cleanTime = formatTimeInput(e.target.value)
-                console.log('☀️ Updating quiet hours end:', JSON.stringify({ original: e.target.value, clean: cleanTime }))
-                setPreferences({ ...preferences, quiet_hours_end: cleanTime })
-              }}
-              className="w-32"
-              maxLength={4}
-            />
+            <Button
+              variant="outline"
+              onClick={() => openTimePicker('quiet_end')}
+              className="w-24 font-mono"
+            >
+              {preferences.quiet_hours_end}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -661,6 +644,14 @@ export function NotificationSettings() {
           {saving ? 'Kaydediliyor...' : 'Kaydet'}
         </Button>
       </div>
+
+      <TimePickerDialog
+        open={timePickerOpen}
+        onOpenChange={setTimePickerOpen}
+        value={editingTime?.value || '14:00'}
+        onConfirm={handleTimeConfirm}
+        title="Saat Seçin"
+      />
     </div>
   )
 }
