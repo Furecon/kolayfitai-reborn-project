@@ -99,6 +99,8 @@ export function NotificationSettings() {
         console.log('📥 Loaded from DB:', JSON.stringify({
           reminder_times: data.reminder_times,
           water_reminder_times: data.water_reminder_times,
+          water_reminder_times_type: typeof data.water_reminder_times,
+          water_reminder_times_length: Array.isArray(data.water_reminder_times) ? data.water_reminder_times.length : 'not array',
           quiet_hours_start: data.quiet_hours_start,
           quiet_hours_end: data.quiet_hours_end
         }))
@@ -169,6 +171,9 @@ export function NotificationSettings() {
 
       // Bildirimleri yeniden planla
       await notificationManager.initializeNotifications(user.id)
+
+      // Database'den güncel değerleri yeniden yükle
+      await loadPreferences()
 
       toast({
         title: 'Başarılı',
@@ -288,11 +293,16 @@ export function NotificationSettings() {
       cleanTime,
       type: typeof time
     }))
+
+    const updatedTimes = preferences.water_reminder_times.map(r =>
+      r.id === id ? { ...r, time: cleanTime } : r
+    )
+
+    console.log('📝 Updated water times array:', JSON.stringify(updatedTimes))
+
     setPreferences({
       ...preferences,
-      water_reminder_times: preferences.water_reminder_times.map(r =>
-        r.id === id ? { ...r, time: cleanTime } : r
-      )
+      water_reminder_times: updatedTimes
     })
   }
 
