@@ -259,8 +259,13 @@ export function NotificationSettings() {
       // "830" -> "08:30"
       return `${digits[0].padStart(2, '0')}:${digits.slice(1)}`
     }
-    // "1915" -> "19:15"
+    // "1915" or longer -> "19:15"
     return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`
+  }
+
+  // Display time in editable format: "19:15" -> "1915"
+  const displayTimeInput = (time: string): string => {
+    return time.replace(/:/g, '')
   }
 
   const updateReminderTime = (meal: keyof typeof preferences.reminder_times, time: string) => {
@@ -371,11 +376,11 @@ export function NotificationSettings() {
                     type="text"
                     inputMode="numeric"
                     placeholder="0800"
-                    value={preferences.reminder_times.breakfast}
+                    value={displayTimeInput(preferences.reminder_times.breakfast)}
                     onChange={(e) => updateReminderTime('breakfast', e.target.value)}
                     disabled={!preferences.meal_reminders_enabled.breakfast}
                     className="w-32"
-                    maxLength={5}
+                    maxLength={4}
                   />
                   <Switch
                     checked={preferences.meal_reminders_enabled.breakfast}
@@ -393,11 +398,11 @@ export function NotificationSettings() {
                     type="text"
                     inputMode="numeric"
                     placeholder="1230"
-                    value={preferences.reminder_times.lunch}
+                    value={displayTimeInput(preferences.reminder_times.lunch)}
                     onChange={(e) => updateReminderTime('lunch', e.target.value)}
                     disabled={!preferences.meal_reminders_enabled.lunch}
                     className="w-32"
-                    maxLength={5}
+                    maxLength={4}
                   />
                   <Switch
                     checked={preferences.meal_reminders_enabled.lunch}
@@ -415,11 +420,11 @@ export function NotificationSettings() {
                     type="text"
                     inputMode="numeric"
                     placeholder="1900"
-                    value={preferences.reminder_times.dinner}
+                    value={displayTimeInput(preferences.reminder_times.dinner)}
                     onChange={(e) => updateReminderTime('dinner', e.target.value)}
                     disabled={!preferences.meal_reminders_enabled.dinner}
                     className="w-32"
-                    maxLength={5}
+                    maxLength={4}
                   />
                   <Switch
                     checked={preferences.meal_reminders_enabled.dinner}
@@ -466,10 +471,10 @@ export function NotificationSettings() {
                       type="text"
                       inputMode="numeric"
                       placeholder="1830"
-                      value={reminder.time}
+                      value={displayTimeInput(reminder.time)}
                       onChange={(e) => updateWaterReminderTime(reminder.id, e.target.value)}
                       className="flex-1"
-                      maxLength={5}
+                      maxLength={4}
                     />
                     <Button
                       variant="ghost"
@@ -572,14 +577,14 @@ export function NotificationSettings() {
               type="text"
               inputMode="numeric"
               placeholder="2200"
-              value={preferences.quiet_hours_start}
+              value={displayTimeInput(preferences.quiet_hours_start)}
               onChange={(e) => {
                 const cleanTime = formatTimeInput(e.target.value)
                 console.log('🌙 Updating quiet hours start:', JSON.stringify({ original: e.target.value, clean: cleanTime }))
                 setPreferences({ ...preferences, quiet_hours_start: cleanTime })
               }}
               className="w-32"
-              maxLength={5}
+              maxLength={4}
             />
           </div>
 
@@ -589,14 +594,14 @@ export function NotificationSettings() {
               type="text"
               inputMode="numeric"
               placeholder="0700"
-              value={preferences.quiet_hours_end}
+              value={displayTimeInput(preferences.quiet_hours_end)}
               onChange={(e) => {
                 const cleanTime = formatTimeInput(e.target.value)
                 console.log('☀️ Updating quiet hours end:', JSON.stringify({ original: e.target.value, clean: cleanTime }))
                 setPreferences({ ...preferences, quiet_hours_end: cleanTime })
               }}
               className="w-32"
-              maxLength={5}
+              maxLength={4}
             />
           </div>
         </CardContent>
