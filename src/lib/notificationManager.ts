@@ -97,6 +97,23 @@ export class NotificationManager {
 
       if (permissionStatus.display === 'granted') {
         console.log('✅ Notification permissions granted')
+
+        // Create notification channel with sound and vibration
+        if (Capacitor.getPlatform() === 'android') {
+          await LocalNotifications.createChannel({
+            id: 'kolayfit_default',
+            name: 'KolayFit Bildirimleri',
+            description: 'Öğün ve su hatırlatmaları',
+            importance: 5, // IMPORTANCE_HIGH
+            sound: 'default', // Use system default notification sound
+            vibration: true,
+            visibility: 1, // PUBLIC
+            lights: true,
+            lightColor: '#4CAF50',
+          })
+          console.log('✅ Notification channel created with sound and vibration')
+        }
+
         return true
       } else {
         console.warn('⚠️ Notification permissions denied:', permissionStatus.display)
@@ -269,8 +286,11 @@ export class NotificationManager {
             schedule: { at },
             extra: { ...extra, userId, type: notificationType },
             actionTypeId: notificationType,
+            channelId: 'kolayfit_default',
             sound: alertStyle === 'vibrate' ? undefined : 'default',
             silent: alertStyle === 'vibrate',
+            smallIcon: 'ic_stat_notifications',
+            largeIcon: 'ic_launcher',
           }
         ]
       })
