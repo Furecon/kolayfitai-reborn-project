@@ -39,7 +39,7 @@ interface NotificationPreferences {
   quiet_hours_start: string
   quiet_hours_end: string
   weekend_notifications_enabled: boolean
-  notification_alert_style: 'sound' | 'vibrate' | 'both'
+  notification_alert_style: 'sound' | 'vibrate'
 }
 
 export function NotificationSettings() {
@@ -98,7 +98,7 @@ export function NotificationSettings() {
           quiet_hours_start: '22:00',
           quiet_hours_end: '07:00',
           weekend_notifications_enabled: true,
-          notification_alert_style: 'both'
+          notification_alert_style: 'vibrate'
         }
         setPreferences(defaultPrefs)
       } else {
@@ -122,7 +122,7 @@ export function NotificationSettings() {
           quiet_hours_start: data.quiet_hours_start || '22:00',
           quiet_hours_end: data.quiet_hours_end || '07:00',
           weekend_notifications_enabled: data.weekend_notifications_enabled ?? true,
-          notification_alert_style: data.notification_alert_style || 'both'
+          notification_alert_style: data.notification_alert_style || 'vibrate'
         })
       }
     } catch (error) {
@@ -631,23 +631,20 @@ export function NotificationSettings() {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Bildirim Uyarı Türü</Label>
-            <Select
-              value={preferences.notification_alert_style}
-              onValueChange={(value: 'sound' | 'vibrate' | 'both') =>
-                setPreferences({ ...preferences, notification_alert_style: value })
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="vibration">Titreşim</Label>
+              <p className="text-sm text-muted-foreground">
+                Bildirimler geldiğinde titreşim olsun
+              </p>
+            </div>
+            <Switch
+              id="vibration"
+              checked={preferences.notification_alert_style !== 'sound'}
+              onCheckedChange={(checked) =>
+                setPreferences({ ...preferences, notification_alert_style: checked ? 'vibrate' : 'sound' })
               }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="sound">Sadece Ses</SelectItem>
-                <SelectItem value="vibrate">Sadece Titreşim</SelectItem>
-                <SelectItem value="both">Ses ve Titreşim</SelectItem>
-              </SelectContent>
-            </Select>
+            />
           </div>
         </CardContent>
       </Card>
