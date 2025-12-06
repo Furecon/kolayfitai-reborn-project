@@ -27,6 +27,9 @@ workflows:
         script: |
           npx cap sync ios
           cd ios/App && pod install
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles
       - name: Build ipa for distribution
         script: |
           xcode-project build-ipa \
