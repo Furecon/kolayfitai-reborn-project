@@ -48,13 +48,9 @@ workflows:
           success: true
           failure: true
       app_store_connect:
-        api_key: MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgVHMA0pQeO8d9iFqt
-sSmh/DQAFGc7IK9dF4GCnJltDkegCgYIKoZIzj0DAQehRANCAAT0NAbs+aq7Z5SH
-0fqZ+nL8ZnILRmauedqh3AfA/5F58h+Tuj8joOeeuD1HsFcHD1kewl8H0b9DCj+9
-YVISecQB
+        api_key: MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgVHMA0pQeO8d9iFqtsSmh/DQAFGc7IK9dF4GCnJltDkegCgYIKoZIzj0DAQehRANCAAT0NAbs+aq7Z5SH0fqZ+nL8ZnILRmauedqh3AfA/5F58h+Tuj8joOeeuD1HsFcHD1kewl8H0b9DCj+9YVISecQB
         key_id: RS938XGLAM
         issuer_id: aa4427d3-0579-4261-b9c2-11666280caf3
-        
         submit_to_testflight: true
         beta_groups:
           - Beta Testers
