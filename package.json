@@ -10,15 +10,20 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "cap:add:android": "npx cap add android",
+    "cap:add:ios": "npx cap add ios",
     "cap:sync": "npx cap sync",
     "cap:sync:android": "npm run build && npx cap sync android",
+    "cap:sync:ios": "npm run build && npx cap sync ios",
     "cap:open:android": "npx cap open android",
-    "android": "npm run build && npx cap sync android && npx cap open android"
+    "cap:open:ios": "npx cap open ios",
+    "android": "npm run build && npx cap sync android && npx cap open android",
+    "ios": "npm run build && npx cap sync ios && npx cap open ios"
   },
   "dependencies": {
     "@capacitor/android": "^6.1.2",
     "@capacitor/app": "^6.0.1",
     "@capacitor/core": "^6.1.2",
+    "@capacitor/ios": "^6.1.2",
     "@capacitor/local-notifications": "^7.0.3",
     "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "@hookform/resolvers": "^3.9.0",
