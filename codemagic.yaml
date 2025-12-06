@@ -14,7 +14,7 @@ workflows:
         XCODE_SCHEME: "App"
         APP_STORE_APPLE_ID: YOUR_APPLE_ID
       node: 18
-      xcode: 15.4
+      xcode: latest
       cocoapods: default
     scripts:
       - name: Install dependencies
