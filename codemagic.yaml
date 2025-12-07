@@ -26,6 +26,10 @@ workflows:
         script: |
           npx cap sync ios
           cd ios/App && pod install
+      - name: Increment build number
+        script: |
+          cd ios/App
+          agvtool new-version -all $(($BUILD_NUMBER + 1))
       - name: Set up code signing settings on Xcode project
         script: |
           xcode-project use-profiles
