@@ -26,6 +26,9 @@ workflows:
         script: |
           npx cap sync ios
           cd ios/App && pod install
+      - name: Add privacy manifests to frameworks
+        script: |
+          cd ios && bash add-privacy-manifests.sh
       - name: Increment build number
         script: |
           cd ios/App

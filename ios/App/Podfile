@@ -26,7 +26,7 @@ end
 post_install do |installer|
   assertDeploymentTarget(installer)
 
-  # Add privacy manifests to Google Sign-In frameworks
+  # Privacy manifest content
   privacy_manifest_content = <<-XML
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -61,30 +61,42 @@ post_install do |installer|
 </plist>
   XML
 
-  ['GoogleSignIn', 'GTMAppAuth', 'GTMSessionFetcher'].each do |framework_name|
-    installer.pods_project.targets.each do |target|
-      if target.name == framework_name
-        puts "Adding PrivacyInfo.xcprivacy to #{framework_name}"
+  # Write privacy manifest to a temporary file
+  temp_manifest = File.join(Dir.tmpdir, 'PrivacyInfo.xcprivacy')
+  File.write(temp_manifest, privacy_manifest_content)
 
-        # Find the framework's resource bundle path
-        framework_path = "Pods/#{framework_name}"
-        privacy_file_path = File.join(framework_path, "Resources/PrivacyInfo.xcprivacy")
+  puts "🔍 Searching for Google Sign-In frameworks..."
 
-        # Create Resources directory if it doesn't exist
-        resources_dir = File.join(framework_path, "Resources")
-        FileUtils.mkdir_p(resources_dir) unless File.directory?(resources_dir)
+  # Find and patch frameworks in Pods directory
+  ['GoogleSignIn', 'GTMAppAuth', 'GTMSessionFetcher'].each do |framework_base_name|
+    framework_name = "#{framework_base_name}.framework"
 
-        # Write the privacy manifest
-        File.write(privacy_file_path, privacy_manifest_content)
+    # Search in common CocoaPods locations
+    search_paths = [
+      "Pods/#{framework_base_name}/Frameworks/#{framework_name}",
+      "Pods/#{framework_base_name}/#{framework_name}",
+      "Pods/GoogleSignIn/Frameworks/#{framework_name}",
+      "Pods/GoogleSignIn/Products/#{framework_name}"
+    ]
 
-        # Add to target's resources
-        privacy_file_ref = target.project.main_group.find_file_by_path(privacy_file_path)
-        unless privacy_file_ref
-          privacy_file_ref = target.project.main_group.new_reference(privacy_file_path)
+    search_paths.each do |path|
+      framework_path = File.join(installer.sandbox.root, '..', path)
+
+      if File.directory?(framework_path)
+        privacy_file = File.join(framework_path, 'PrivacyInfo.xcprivacy')
+        FileUtils.cp(temp_manifest, privacy_file)
+        puts "✅ Added PrivacyInfo.xcprivacy to #{framework_name} at #{path}"
+
+        # Also add to Resources if it exists
+        resources_dir = File.join(framework_path, 'Resources')
+        if File.directory?(resources_dir)
+          resources_privacy_file = File.join(resources_dir, 'PrivacyInfo.xcprivacy')
+          FileUtils.cp(temp_manifest, resources_privacy_file)
+          puts "✅ Added PrivacyInfo.xcprivacy to #{framework_name}/Resources"
         end
-
-        target.resources_build_phase.add_file_reference(privacy_file_ref) unless target.resources_build_phase.files_references.include?(privacy_file_ref)
       end
     end
   end
+
+  FileUtils.rm_f(temp_manifest)
 end
