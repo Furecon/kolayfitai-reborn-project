@@ -48,12 +48,7 @@ workflows:
           success: true
           failure: true
       app_store_connect:
-        api_key: -----BEGIN PRIVATE KEY-----
-MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg44pHtW6PqJH0JR34
-IGObzKbyH9ZdB0o5xKvFkdTqHqagCgYIKoZIzj0DAQehRANCAATt0V9IKQX3m+cM
-pwmEpFRVPW1GVQO5WzSTL/fMRqwUnya8WSXIqN/pJWUyGKIzliyAa0JyDNQ6jl71
-KDE7kbk7
------END PRIVATE KEY-----
+        api_key: -----BEGIN PRIVATE KEY-----MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg44pHtW6PqJH0JR34IGObzKbyH9ZdB0o5xKvFkdTqHqagCgYIKoZIzj0DAQehRANCAATt0V9IKQX3m+cMpwmEpFRVPW1GVQO5WzSTL/fMRqwUnya8WSXIqN/pJWUyGKIzliyAa0JyDNQ6jl71KDE7kbk7-----END PRIVATE KEY-----
         key_id: H2A8N999VT
         issuer_id: aa4427d3-0579-4261-b9c2-11666280caf3
         submit_to_testflight: true
