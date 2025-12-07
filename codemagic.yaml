@@ -4,7 +4,7 @@ workflows:
     instance_type: mac_mini_m2
     max_build_duration: 120
     integrations:
-      app_store_connect: Codemagic
+      app_store_connect: codemagic
     environment:
       ios_signing:
         distribution_type: app_store
@@ -12,7 +12,6 @@ workflows:
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-        APP_STORE_APPLE_ID: aa4427d3-0579-4261-b9c2-11666280caf3
       node: 18
       xcode: latest
       cocoapods: default
@@ -48,9 +47,7 @@ workflows:
           success: true
           failure: true
       app_store_connect:
-        api_key: -----BEGIN PRIVATE KEY-----MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgOOSNmgPWa1PSr3dalzSEB8ZE69LEtcu5Bf17pzT9XGWgCgYIKoZIzj0DAQehRANCAAQ29PqHCm9ZfphxhtgwtpBF+2/jLFq6a2tnm3uyY1B6zMxG/oZHTLGmuxD+qSEz5HSEKJoBDYC0ay+NvE8DGt+n-----END PRIVATE KEY----- 
-        key_id: 5SSB598ZDD
-        issuer_id: aa4427d3-0579-4261-b9c2-11666280caf3
+        auth: integration
         submit_to_testflight: true
         beta_groups:
           - Beta Testers
