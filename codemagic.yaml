@@ -48,8 +48,13 @@ workflows:
           success: true
           failure: true
       app_store_connect:
-        api_key: -----BEGIN PRIVATE KEY-----MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgVHMA0pQeO8d9iFqtsSmh/DQAFGc7IK9dF4GCnJltDkegCgYIKoZIzj0DAQehRANCAAT0NAbs+aq7Z5SH0fqZ+nL8ZnILRmauedqh3AfA/5F58h+Tuj8joOeeuD1HsFcHD1kewl8H0b9DCj+9YVISecQB-----END PRIVATE KEY-----
-        key_id: RS938XGLAM
+        api_key: -----BEGIN PRIVATE KEY-----
+MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg44pHtW6PqJH0JR34
+IGObzKbyH9ZdB0o5xKvFkdTqHqagCgYIKoZIzj0DAQehRANCAATt0V9IKQX3m+cM
+pwmEpFRVPW1GVQO5WzSTL/fMRqwUnya8WSXIqN/pJWUyGKIzliyAa0JyDNQ6jl71
+KDE7kbk7
+-----END PRIVATE KEY-----
+        key_id: H2A8N999VT
         issuer_id: aa4427d3-0579-4261-b9c2-11666280caf3
         submit_to_testflight: true
         beta_groups:
