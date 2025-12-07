@@ -26,35 +26,6 @@ workflows:
         script: |
           npx cap sync ios
           cd ios/App && pod install
-      - name: Add privacy manifest to Xcode project
-        script: |
-          cd ios/App
-          ruby -r xcodeproj -e '
-            project_path = "App.xcodeproj"
-            project = Xcodeproj::Project.open(project_path)
-
-            # Find the App target
-            target = project.targets.find { |t| t.name == "App" }
-
-            # Find or create App group
-            app_group = project.main_group.find_subpath("App", true)
-
-            # Check if PrivacyInfo.xcprivacy already exists
-            existing_file = app_group.files.find { |f| f.path == "PrivacyInfo.xcprivacy" }
-
-            unless existing_file
-              # Add PrivacyInfo.xcprivacy to the project
-              privacy_file = app_group.new_reference("PrivacyInfo.xcprivacy")
-
-              # Add to resources build phase
-              target.resources_build_phase.add_file_reference(privacy_file)
-
-              project.save
-              puts "✅ Added PrivacyInfo.xcprivacy to Xcode project"
-            else
-              puts "ℹ️  PrivacyInfo.xcprivacy already exists in project"
-            end
-          '
       - name: Increment build number
         script: |
           cd ios/App
