@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Sparkles, Camera, BarChart3, Target } from 'lucide-react'
 
 export default function Landing() {
@@ -170,11 +170,11 @@ export default function Landing() {
 
           <div className="mt-6 md:mt-8 text-center text-gray-800">
             <p className="text-xs md:text-sm font-medium">
-              <a href="/legal/privacy" className="hover:underline hover:text-green-700 transition-colors">Gizlilik Politikası</a>
+              <Link to="/legal/privacy" className="hover:underline hover:text-green-700 transition-colors">Gizlilik Politikası</Link>
               {' • '}
-              <a href="/legal/terms" className="hover:underline hover:text-green-700 transition-colors">Kullanım Koşulları</a>
+              <Link to="/legal/terms" className="hover:underline hover:text-green-700 transition-colors">Kullanım Koşulları</Link>
               {' • '}
-              <a href="/legal/contact" className="hover:underline hover:text-green-700 transition-colors">İletişim</a>
+              <Link to="/legal/contact" className="hover:underline hover:text-green-700 transition-colors">İletişim</Link>
             </p>
             <p className="text-xs mt-2 opacity-70">© 2025 KolayfitAi. Tüm hakları saklıdır.</p>
           </div>
