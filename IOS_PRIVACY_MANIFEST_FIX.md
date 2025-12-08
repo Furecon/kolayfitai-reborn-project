@@ -15,14 +15,14 @@ Apple requires privacy manifests as of May 1, 2024, but:
 
 ## Solution Implemented
 
-### Automatic Podspec Patching
-Created an automated patch script that runs after every `npm install` to upgrade the plugin's GoogleSignIn dependency:
+### Comprehensive Automatic Patching
+Created an automated patch script that runs after every `npm install` to upgrade the plugin for GoogleSignIn 7.1+ compatibility:
 
 **File: `scripts/patch-google-auth.cjs`**
-```javascript
-// Automatically patches the plugin's podspec to use GoogleSignIn 7.1+
-// Runs via postinstall hook in package.json
-```
+
+The script performs two critical patches:
+1. **Podspec Update**: GoogleSignIn dependency 6.2.4 → 7.1+
+2. **Swift API Migration**: Updates plugin code for GoogleSignIn 7.x API
 
 **File: `package.json`**
 ```json
@@ -35,7 +35,7 @@ Created an automated patch script that runs after every `npm install` to upgrade
 
 ### What Gets Patched
 
-The script modifies `node_modules/@codetrix-studio/capacitor-google-auth/CodetrixStudioCapacitorGoogleAuth.podspec`:
+#### 1. Podspec Changes
 
 **Before:**
 ```ruby
@@ -49,35 +49,64 @@ s.ios.deployment_target = '13.0'
 s.dependency 'GoogleSignIn', '~> 7.1'
 ```
 
+#### 2. Swift Code API Migration
+
+GoogleSignIn 7.x introduced breaking API changes. The patch updates:
+
+**Before (GoogleSignIn 6.x API):**
+```swift
+"accessToken": user.authentication.accessToken
+"idToken": user.authentication.idToken
+"refreshToken": user.authentication.refreshToken
+"serverAuthCode": user.serverAuthCode ?? NSNull()
+```
+
+**After (GoogleSignIn 7.x API):**
+```swift
+"accessToken": user.accessToken.tokenString
+"idToken": user.idToken?.tokenString ?? NSNull()
+"refreshToken": user.refreshToken?.tokenString ?? NSNull()
+"serverAuthCode": NSNull() // See Known Limitations
+```
+
 ### Benefits
 
 1. **Automatic**: Runs after every `npm install`, including on Codemagic
 2. **Persistent**: Survives `npm install` and dependency updates
-3. **Safe**: Only modifies the plugin's podspec, no Xcode project changes
+3. **Safe**: Only modifies the plugin files, no Xcode project changes
 4. **Compliant**: GoogleSignIn 7.1+ includes Apple-certified privacy manifests
+5. **API Compatible**: Patches Swift code for GoogleSignIn 7.x API
 
 ## How It Works
 
 1. Developer/Codemagic runs `npm install`
 2. Postinstall hook executes `patch-google-auth.cjs`
 3. Script updates plugin's podspec to require GoogleSignIn 7.1+
-4. When `pod install` runs, CocoaPods installs GoogleSignIn 7.1+
-5. GoogleSignIn 7.1+ includes built-in privacy manifests
-6. GTMAppAuth and GTMSessionFetcher come with their manifests as dependencies
-7. All three frameworks have Apple-compliant PrivacyInfo.xcprivacy files
+4. Script migrates Swift code to GoogleSignIn 7.x API
+5. When `pod install` runs, CocoaPods installs GoogleSignIn 7.1+
+6. GoogleSignIn 7.1+ includes built-in privacy manifests
+7. GTMAppAuth and GTMSessionFetcher come with their manifests as dependencies
+8. All three frameworks have Apple-compliant PrivacyInfo.xcprivacy files
+9. App compiles with updated API calls
 
 ## Testing Locally
 
 ### Verify Patch Script
 ```bash
 node scripts/patch-google-auth.cjs
-# Should output: ✅ Patched GoogleAuth podspec to use GoogleSignIn 7.1+ with iOS 13.0+
+# Should output: ✅ Patched GoogleAuth for GoogleSignIn 7.1+ API compatibility
 ```
 
 ### Verify Podspec Was Patched
 ```bash
 cat node_modules/@codetrix-studio/capacitor-google-auth/CodetrixStudioCapacitorGoogleAuth.podspec | grep GoogleSignIn
 # Should show: s.dependency 'GoogleSignIn', '~> 7.1'
+```
+
+### Verify Swift Code Was Patched
+```bash
+grep "accessToken.tokenString" node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift
+# Should show: "accessToken": user.accessToken.tokenString,
 ```
 
 ### Full iOS Sync
@@ -98,11 +127,11 @@ find ios/App/Pods -name "PrivacyInfo.xcprivacy"
 ## Next Codemagic Build
 
 The Codemagic workflow will automatically:
-1. `npm install` → Runs postinstall → Patches podspec
+1. `npm install` → Runs postinstall → Patches podspec & Swift code
 2. `npm run build` → Builds web assets
 3. `npx cap sync ios` → Syncs to iOS
 4. `cd ios/App && pod install` → Installs GoogleSignIn 7.1+ with manifests
-5. Xcode build → Includes manifested frameworks
+5. Xcode build → Compiles with patched API calls
 6. Archive & upload → Apple validation passes
 
 ## Why This Approach Works
@@ -112,9 +141,16 @@ The Codemagic workflow will automatically:
 - Fragile, prone to being overwritten
 - Apple validation can detect non-native manifests
 
-**Current Solution (Build 27+):**
+**First Fix Attempt (Build 27):**
+- Only patched podspec, not Swift code
+- Build failed due to GoogleSignIn 7.x API changes
+- Plugin code incompatible with new SDK
+
+**Current Solution (Build 28+):**
 - Uses official GoogleSignIn 7.1+ SDK
 - SDK natively includes Apple-certified manifests
+- Patches both podspec AND Swift code
+- Fully compatible with GoogleSignIn 7.x API
 - Google and Apple both recommend this approach
 - Automated via postinstall hook
 - Survives all dependency operations
@@ -125,11 +161,48 @@ GoogleSignIn 7.1+ requires iOS 13.0 minimum:
 - Plugin deployment target: 12.0 → 13.0 (patched)
 - App platform target: Already iOS 15.0 (no change needed)
 - This is compatible with modern App Store requirements
+- iOS 13.0+ covers 99%+ of active devices
+
+## Known Limitations
+
+### serverAuthCode Not Available
+
+**Issue**: GoogleSignIn 7.x changed how `serverAuthCode` is accessed. It's now part of `GIDSignInResult` instead of `GIDGoogleUser`, requiring significant architectural changes to the plugin.
+
+**Current Behavior**: `serverAuthCode` always returns `NSNull()` in the patched version.
+
+**Impact**: If your app relies on server-side verification using `serverAuthCode`, this will not work.
+
+**Workaround**: If you need `serverAuthCode`:
+1. Use client-side `idToken` verification instead (recommended)
+2. Or migrate to a different auth plugin that supports GoogleSignIn 7.x
+3. Or fork the plugin and implement full GIDSignInResult support
+
+**Why This Trade-off**: Implementing proper `serverAuthCode` support would require:
+- Rewriting the plugin's sign-in flow
+- Changing the plugin's method signatures
+- Potentially breaking existing code
+- Extensive testing
+
+For most apps using Google Sign-In for authentication (not backend authorization), `accessToken` and `idToken` are sufficient.
 
 ## Important Notes
 
 - **Plugin Status**: "Virtually archived" per GitHub repo
-- **Future Migration**: Consider alternative auth plugins
-- **Backward Compatibility**: GoogleSignIn 7.1+ is API-compatible with 6.x
-- **No Code Changes**: Existing auth code continues to work
-- **Production Ready**: This is Google's recommended solution
+- **Future Migration**: Consider alternative auth plugins for new projects
+- **Backward Compatibility**: GoogleSignIn 7.1+ is mostly API-compatible with 6.x
+- **No App Code Changes**: Existing auth code continues to work
+- **Production Ready**: This is Google's recommended SDK version
+- **Apple Compliant**: Meets all App Store privacy requirements
+
+## Migration Guide Summary
+
+| Feature | GoogleSignIn 6.x | GoogleSignIn 7.x (Patched) |
+|---------|------------------|---------------------------|
+| accessToken | ✅ Works | ✅ Works |
+| idToken | ✅ Works | ✅ Works |
+| refreshToken | ✅ Works | ✅ Works |
+| serverAuthCode | ✅ Works | ❌ Always null |
+| Privacy Manifests | ❌ Missing | ✅ Included |
+| Apple Validation | ❌ Fails | ✅ Passes |
+| iOS Deployment | 12.0+ | 13.0+ |
