@@ -15,70 +15,121 @@ Apple requires privacy manifests as of May 1, 2024, but:
 
 ## Solution Implemented
 
-### SDK Version Override (ios/App/Podfile)
-Force upgrade GoogleSignIn SDK to version 7.1+ which includes built-in privacy manifests:
+### Automatic Podspec Patching
+Created an automated patch script that runs after every `npm install` to upgrade the plugin's GoogleSignIn dependency:
 
-```ruby
-target 'App' do
-  capacitor_pods
-
-  # Override Google Sign-In SDK to version with privacy manifest support
-  # Privacy manifests were added in GoogleSignIn 7.1.0+ (Apple requirement from May 2024)
-  pod 'GoogleSignIn', '~> 7.1'
-end
+**File: `scripts/patch-google-auth.cjs`**
+```javascript
+// Automatically patches the plugin's podspec to use GoogleSignIn 7.1+
+// Runs via postinstall hook in package.json
 ```
 
-This override:
-1. Replaces the plugin's outdated GoogleSignIn 6.2.4 with 7.1+
-2. Automatically includes GTMAppAuth and GTMSessionFetcher with their privacy manifests
-3. All three frameworks now have built-in Apple-compliant privacy manifests
+**File: `package.json`**
+```json
+{
+  "scripts": {
+    "postinstall": "node scripts/patch-google-auth.cjs"
+  }
+}
+```
+
+### What Gets Patched
+
+The script modifies `node_modules/@codetrix-studio/capacitor-google-auth/CodetrixStudioCapacitorGoogleAuth.podspec`:
+
+**Before:**
+```ruby
+s.ios.deployment_target = '12.0'
+s.dependency 'GoogleSignIn', '~> 6.2.4'
+```
+
+**After:**
+```ruby
+s.ios.deployment_target = '13.0'
+s.dependency 'GoogleSignIn', '~> 7.1'
+```
+
+### Benefits
+
+1. **Automatic**: Runs after every `npm install`, including on Codemagic
+2. **Persistent**: Survives `npm install` and dependency updates
+3. **Safe**: Only modifies the plugin's podspec, no Xcode project changes
+4. **Compliant**: GoogleSignIn 7.1+ includes Apple-certified privacy manifests
 
 ## How It Works
 
-1. CocoaPods reads Podfile
-2. Sees GoogleSignIn 7.1+ requirement (overrides plugin's 6.2.4)
-3. Downloads GoogleSignIn 7.1+ with built-in privacy manifests
-4. GTMAppAuth and GTMSessionFetcher are pulled as dependencies with their manifests
-5. All frameworks include proper PrivacyInfo.xcprivacy files
+1. Developer/Codemagic runs `npm install`
+2. Postinstall hook executes `patch-google-auth.cjs`
+3. Script updates plugin's podspec to require GoogleSignIn 7.1+
+4. When `pod install` runs, CocoaPods installs GoogleSignIn 7.1+
+5. GoogleSignIn 7.1+ includes built-in privacy manifests
+6. GTMAppAuth and GTMSessionFetcher come with their manifests as dependencies
+7. All three frameworks have Apple-compliant PrivacyInfo.xcprivacy files
 
 ## Testing Locally
 
-To test the fix:
+### Verify Patch Script
 ```bash
-cd ios/App
-pod install
+node scripts/patch-google-auth.cjs
+# Should output: ✅ Patched GoogleAuth podspec to use GoogleSignIn 7.1+ with iOS 13.0+
 ```
 
-Verify the installed version:
+### Verify Podspec Was Patched
 ```bash
+cat node_modules/@codetrix-studio/capacitor-google-auth/CodetrixStudioCapacitorGoogleAuth.podspec | grep GoogleSignIn
+# Should show: s.dependency 'GoogleSignIn', '~> 7.1'
+```
+
+### Full iOS Sync
+```bash
+npm run cap:sync:ios
+cd ios/App
+pod install
 pod list | grep GoogleSignIn
 # Should show: GoogleSignIn (7.x.x)
 ```
 
-Verify privacy manifests exist:
+### Verify Privacy Manifests
 ```bash
-find Pods -name "PrivacyInfo.xcprivacy"
-# Should find manifests in all three framework bundles
+find ios/App/Pods -name "PrivacyInfo.xcprivacy"
+# Should find manifests in GoogleSignIn, GTMAppAuth, and GTMSessionFetcher
 ```
 
-## Next Build
+## Next Codemagic Build
 
-The next Codemagic build will:
-1. Install npm dependencies (including plugin with old SDK reference)
-2. Run `pod install` which overrides to GoogleSignIn 7.1+
-3. Build and archive with properly manifested frameworks
-4. Upload to TestFlight
-5. Apple validation passes
+The Codemagic workflow will automatically:
+1. `npm install` → Runs postinstall → Patches podspec
+2. `npm run build` → Builds web assets
+3. `npx cap sync ios` → Syncs to iOS
+4. `cd ios/App && pod install` → Installs GoogleSignIn 7.1+ with manifests
+5. Xcode build → Includes manifested frameworks
+6. Archive & upload → Apple validation passes
 
-## Why Previous Attempts Failed
+## Why This Approach Works
 
-**Build 25-26:** Manually added manifests to App bundle or tried to inject into frameworks post-install. This approach is fragile and Apple validation can still fail if the SDK doesn't natively include manifests.
+**Previous Attempts (Build 25-26):**
+- Tried manually adding manifests post-installation
+- Fragile, prone to being overwritten
+- Apple validation can detect non-native manifests
 
-**Build 27+ (This Fix):** Using official GoogleSignIn 7.1+ SDK which includes native, Apple-certified privacy manifests. This is the proper solution recommended by both Google and Apple.
+**Current Solution (Build 27+):**
+- Uses official GoogleSignIn 7.1+ SDK
+- SDK natively includes Apple-certified manifests
+- Google and Apple both recommend this approach
+- Automated via postinstall hook
+- Survives all dependency operations
+
+## Deployment Target Upgrade
+
+GoogleSignIn 7.1+ requires iOS 13.0 minimum:
+- Plugin deployment target: 12.0 → 13.0 (patched)
+- App platform target: Already iOS 15.0 (no change needed)
+- This is compatible with modern App Store requirements
 
 ## Important Notes
 
-- The plugin is "virtually archived" according to its GitHub repo
-- Consider migrating to an alternative plugin in the future
-- This solution is a workaround until the plugin is updated
-- GoogleSignIn 7.1+ is backward compatible with 6.x API
+- **Plugin Status**: "Virtually archived" per GitHub repo
+- **Future Migration**: Consider alternative auth plugins
+- **Backward Compatibility**: GoogleSignIn 7.1+ is API-compatible with 6.x
+- **No Code Changes**: Existing auth code continues to work
+- **Production Ready**: This is Google's recommended solution

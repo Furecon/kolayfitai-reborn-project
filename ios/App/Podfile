@@ -21,10 +21,7 @@ end
 target 'App' do
   capacitor_pods
   # Add your Pods here
-
-  # Override Google Sign-In SDK to version with privacy manifest support
-  # Privacy manifests were added in GoogleSignIn 7.1.0+ (Apple requirement from May 2024)
-  pod 'GoogleSignIn', '~> 7.1'
+  # Note: GoogleSignIn SDK is patched to 7.1+ via postinstall script
 end
 
 post_install do |installer|
