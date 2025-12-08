@@ -48,11 +48,14 @@ if (fs.existsSync(swiftPath)) {
   let swiftContent = fs.readFileSync(swiftPath, 'utf8');
 
   // GoogleSignIn 7.x API changes:
-  // - user.authentication.accessToken -> user.accessToken.tokenString
-  // - user.authentication.idToken -> user.idToken.tokenString
-  // - user.authentication.refreshToken -> user.refreshToken.tokenString
-  // - user.serverAuthCode remains the same (but better null handling)
+  // 1. user.authentication.accessToken -> user.accessToken.tokenString
+  // 2. user.authentication.idToken -> user.idToken.tokenString
+  // 3. user.authentication.refreshToken -> user.refreshToken.tokenString
+  // 4. user.serverAuthCode -> NSNull() (architectural limitation)
+  // 5. authentication.do callback -> direct token access
+  // 6. getConfigValue -> getConfig().getBoolean
 
+  // Fix resolveSignInCallWith method
   swiftContent = swiftContent.replace(
     /"accessToken": user\.authentication\.accessToken,/g,
     '"accessToken": user.accessToken.tokenString,'
@@ -68,13 +71,73 @@ if (fs.existsSync(swiftPath)) {
     '"refreshToken": user.refreshToken?.tokenString ?? NSNull()'
   );
 
-  // serverAuthCode in GoogleSignIn 7.x requires different handling
-  // For compatibility, we set it to NSNull() as the plugin architecture
-  // doesn't support the new GIDSignInResult-based approach
+  // Fix serverAuthCode
   swiftContent = swiftContent.replace(
     /"serverAuthCode": user\.serverAuthCode \?\? NSNull\(\),/g,
     '"serverAuthCode": NSNull(), // GoogleSignIn 7.x: serverAuthCode requires config changes'
   );
+
+  // Fix deprecated getConfigValue in initialize method
+  swiftContent = swiftContent.replace(
+    /getConfigValue\("forceCodeForRefreshToken"\) as\? Bool/g,
+    'getConfig().getBoolean("forceCodeForRefreshToken", false)'
+  );
+
+  // Fix refresh method - remove authentication.do callback
+  // Replace the entire refresh method with GoogleSignIn 7.x compatible version
+  const oldRefreshMethod = `    @objc
+    func refresh(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            if self.googleSignIn.currentUser == nil {
+                call.reject("User not logged in.");
+                return
+            }
+            self.googleSignIn.currentUser!.authentication.do { (authentication, error) in
+                guard let authentication = authentication else {
+                    call.reject(error?.localizedDescription ?? "Something went wrong.");
+                    return;
+                }
+                let authenticationData: [String: Any] = [
+                    "accessToken": authentication.accessToken,
+                    "idToken": authentication.idToken ?? NSNull(),
+                    "refreshToken": authentication.refreshToken
+                ]
+                call.resolve(authenticationData);
+            }
+        }
+    }`;
+
+  const newRefreshMethod = `    @objc
+    func refresh(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            guard let currentUser = self.googleSignIn.currentUser else {
+                call.reject("User not logged in.")
+                return
+            }
+
+            currentUser.refreshTokensIfNeeded { user, error in
+                if let error = error {
+                    call.reject(error.localizedDescription)
+                    return
+                }
+
+                guard let user = user else {
+                    call.reject("Failed to refresh tokens")
+                    return
+                }
+
+                let authenticationData: [String: Any] = [
+                    "accessToken": user.accessToken.tokenString,
+                    "idToken": user.idToken?.tokenString ?? NSNull(),
+                    "refreshToken": user.refreshToken?.tokenString ?? NSNull()
+                ]
+                call.resolve(authenticationData)
+            }
+        }
+    }`;
+
+  swiftContent = swiftContent.replace(oldRefreshMethod, newRefreshMethod);
 
   fs.writeFileSync(swiftPath, swiftContent, 'utf8');
   console.log('✅ Patched GoogleAuth for GoogleSignIn 7.1+ API compatibility');

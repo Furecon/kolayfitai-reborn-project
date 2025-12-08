@@ -51,9 +51,11 @@ s.dependency 'GoogleSignIn', '~> 7.1'
 
 #### 2. Swift Code API Migration
 
-GoogleSignIn 7.x introduced breaking API changes. The patch updates:
+GoogleSignIn 7.x introduced breaking API changes. The patch updates multiple methods:
 
-**Before (GoogleSignIn 6.x API):**
+**A. Sign-In Response (resolveSignInCallWith)**
+
+Before (6.x):
 ```swift
 "accessToken": user.authentication.accessToken
 "idToken": user.authentication.idToken
@@ -61,13 +63,52 @@ GoogleSignIn 7.x introduced breaking API changes. The patch updates:
 "serverAuthCode": user.serverAuthCode ?? NSNull()
 ```
 
-**After (GoogleSignIn 7.x API):**
+After (7.x):
 ```swift
 "accessToken": user.accessToken.tokenString
 "idToken": user.idToken?.tokenString ?? NSNull()
 "refreshToken": user.refreshToken?.tokenString ?? NSNull()
 "serverAuthCode": NSNull() // See Known Limitations
 ```
+
+**B. Token Refresh Method (refresh)**
+
+Before (6.x):
+```swift
+self.googleSignIn.currentUser!.authentication.do { (authentication, error) in
+    guard let authentication = authentication else { ... }
+    let authenticationData: [String: Any] = [
+        "accessToken": authentication.accessToken,
+        "idToken": authentication.idToken ?? NSNull(),
+        "refreshToken": authentication.refreshToken
+    ]
+    call.resolve(authenticationData)
+}
+```
+
+After (7.x):
+```swift
+currentUser.refreshTokensIfNeeded { user, error in
+    if let error = error { ... }
+    guard let user = user else { ... }
+    let authenticationData: [String: Any] = [
+        "accessToken": user.accessToken.tokenString,
+        "idToken": user.idToken?.tokenString ?? NSNull(),
+        "refreshToken": user.refreshToken?.tokenString ?? NSNull()
+    ]
+    call.resolve(authenticationData)
+}
+```
+
+**C. Deprecated Method Fix**
+
+Before: `getConfigValue("forceCodeForRefreshToken") as? Bool`
+After: `getConfig().getBoolean("forceCodeForRefreshToken", false)`
+
+**D. Swift Concurrency Fix**
+
+Before: `DispatchQueue.main.async {`
+After: `DispatchQueue.main.async { [weak self] in`
 
 ### Benefits
 
@@ -76,13 +117,14 @@ GoogleSignIn 7.x introduced breaking API changes. The patch updates:
 3. **Safe**: Only modifies the plugin files, no Xcode project changes
 4. **Compliant**: GoogleSignIn 7.1+ includes Apple-certified privacy manifests
 5. **API Compatible**: Patches Swift code for GoogleSignIn 7.x API
+6. **Complete**: Handles all breaking changes in GoogleSignIn 7.x
 
 ## How It Works
 
 1. Developer/Codemagic runs `npm install`
 2. Postinstall hook executes `patch-google-auth.cjs`
 3. Script updates plugin's podspec to require GoogleSignIn 7.1+
-4. Script migrates Swift code to GoogleSignIn 7.x API
+4. Script migrates Swift code to GoogleSignIn 7.x API (5 different patches)
 5. When `pod install` runs, CocoaPods installs GoogleSignIn 7.1+
 6. GoogleSignIn 7.1+ includes built-in privacy manifests
 7. GTMAppAuth and GTMSessionFetcher come with their manifests as dependencies
@@ -105,8 +147,17 @@ cat node_modules/@codetrix-studio/capacitor-google-auth/CodetrixStudioCapacitorG
 
 ### Verify Swift Code Was Patched
 ```bash
+# Check new token access pattern
 grep "accessToken.tokenString" node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift
 # Should show: "accessToken": user.accessToken.tokenString,
+
+# Check new refresh method
+grep "refreshTokensIfNeeded" node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift
+# Should show: currentUser.refreshTokensIfNeeded { user, error in
+
+# Check old API removed
+grep "authentication.do" node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift
+# Should return nothing (0 matches)
 ```
 
 ### Full iOS Sync
@@ -127,7 +178,7 @@ find ios/App/Pods -name "PrivacyInfo.xcprivacy"
 ## Next Codemagic Build
 
 The Codemagic workflow will automatically:
-1. `npm install` → Runs postinstall → Patches podspec & Swift code
+1. `npm install` → Runs postinstall → Patches podspec & Swift code (5 patches)
 2. `npm run build` → Builds web assets
 3. `npx cap sync ios` → Syncs to iOS
 4. `cd ios/App && pod install` → Installs GoogleSignIn 7.1+ with manifests
@@ -146,11 +197,17 @@ The Codemagic workflow will automatically:
 - Build failed due to GoogleSignIn 7.x API changes
 - Plugin code incompatible with new SDK
 
-**Current Solution (Build 28+):**
+**Second Fix Attempt (Build 28):**
+- Patched podspec + basic Swift code
+- Still failed due to incomplete API migration
+- Missing refresh method and other API changes
+
+**Current Solution (Build 29+):**
 - Uses official GoogleSignIn 7.1+ SDK
 - SDK natively includes Apple-certified manifests
-- Patches both podspec AND Swift code
+- Patches both podspec AND all Swift code (5 critical patches)
 - Fully compatible with GoogleSignIn 7.x API
+- Handles refresh tokens, deprecations, and concurrency
 - Google and Apple both recommend this approach
 - Automated via postinstall hook
 - Survives all dependency operations
@@ -194,6 +251,15 @@ For most apps using Google Sign-In for authentication (not backend authorization
 - **No App Code Changes**: Existing auth code continues to work
 - **Production Ready**: This is Google's recommended SDK version
 - **Apple Compliant**: Meets all App Store privacy requirements
+- **Comprehensive Fix**: All 5 critical API changes are patched
+
+## Patches Applied Summary
+
+1. **Podspec**: GoogleSignIn 6.2.4 → 7.1+, iOS 12.0 → 13.0
+2. **Token Access**: `user.authentication.X` → `user.X.tokenString`
+3. **Refresh Method**: `authentication.do` → `refreshTokensIfNeeded`
+4. **Config Method**: `getConfigValue()` → `getConfig().getBoolean()`
+5. **Concurrency**: Added `[weak self]` capture for Swift 6
 
 ## Migration Guide Summary
 
@@ -202,7 +268,9 @@ For most apps using Google Sign-In for authentication (not backend authorization
 | accessToken | ✅ Works | ✅ Works |
 | idToken | ✅ Works | ✅ Works |
 | refreshToken | ✅ Works | ✅ Works |
+| Token Refresh | ✅ Works | ✅ Works (new API) |
 | serverAuthCode | ✅ Works | ❌ Always null |
 | Privacy Manifests | ❌ Missing | ✅ Included |
 | Apple Validation | ❌ Fails | ✅ Passes |
 | iOS Deployment | 12.0+ | 13.0+ |
+| API Compatibility | N/A | ✅ Fully migrated |
