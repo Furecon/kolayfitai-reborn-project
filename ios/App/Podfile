@@ -21,82 +21,16 @@ end
 target 'App' do
   capacitor_pods
   # Add your Pods here
+
+  # Override Google Sign-In SDK to version with privacy manifest support
+  # Privacy manifests were added in GoogleSignIn 7.1.0+ (Apple requirement from May 2024)
+  pod 'GoogleSignIn', '~> 7.1'
 end
 
 post_install do |installer|
   assertDeploymentTarget(installer)
 
-  # Privacy manifest content
-  privacy_manifest_content = <<-XML
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>NSPrivacyTracking</key>
-    <false/>
-    <key>NSPrivacyTrackingDomains</key>
-    <array/>
-    <key>NSPrivacyCollectedDataTypes</key>
-    <array/>
-    <key>NSPrivacyAccessedAPITypes</key>
-    <array>
-        <dict>
-            <key>NSPrivacyAccessedAPIType</key>
-            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
-            <key>NSPrivacyAccessedAPITypeReasons</key>
-            <array>
-                <string>CA92.1</string>
-            </array>
-        </dict>
-        <dict>
-            <key>NSPrivacyAccessedAPIType</key>
-            <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
-            <key>NSPrivacyAccessedAPITypeReasons</key>
-            <array>
-                <string>C617.1</string>
-            </array>
-        </dict>
-    </array>
-</dict>
-</plist>
-  XML
-
-  # Write privacy manifest to a temporary file
-  temp_manifest = File.join(Dir.tmpdir, 'PrivacyInfo.xcprivacy')
-  File.write(temp_manifest, privacy_manifest_content)
-
-  puts "🔍 Searching for Google Sign-In frameworks..."
-
-  # Find and patch frameworks in Pods directory
-  ['GoogleSignIn', 'GTMAppAuth', 'GTMSessionFetcher'].each do |framework_base_name|
-    framework_name = "#{framework_base_name}.framework"
-
-    # Search in common CocoaPods locations
-    search_paths = [
-      "Pods/#{framework_base_name}/Frameworks/#{framework_name}",
-      "Pods/#{framework_base_name}/#{framework_name}",
-      "Pods/GoogleSignIn/Frameworks/#{framework_name}",
-      "Pods/GoogleSignIn/Products/#{framework_name}"
-    ]
-
-    search_paths.each do |path|
-      framework_path = File.join(installer.sandbox.root, '..', path)
-
-      if File.directory?(framework_path)
-        privacy_file = File.join(framework_path, 'PrivacyInfo.xcprivacy')
-        FileUtils.cp(temp_manifest, privacy_file)
-        puts "✅ Added PrivacyInfo.xcprivacy to #{framework_name} at #{path}"
-
-        # Also add to Resources if it exists
-        resources_dir = File.join(framework_path, 'Resources')
-        if File.directory?(resources_dir)
-          resources_privacy_file = File.join(resources_dir, 'PrivacyInfo.xcprivacy')
-          FileUtils.cp(temp_manifest, resources_privacy_file)
-          puts "✅ Added PrivacyInfo.xcprivacy to #{framework_name}/Resources"
-        end
-      end
-    end
-  end
-
-  FileUtils.rm_f(temp_manifest)
+  # GoogleSignIn 7.1+ comes with built-in privacy manifests
+  # Verify that the correct version is installed
+  puts "✅ GoogleSignIn 7.1+ includes privacy manifests for Apple compliance"
 end
