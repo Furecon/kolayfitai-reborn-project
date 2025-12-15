@@ -13,7 +13,7 @@ workflows:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
       node: 18
-      xcode: 15.0
+      xcode: 16.1
       cocoapods: default
     cache:
       cache_paths:
