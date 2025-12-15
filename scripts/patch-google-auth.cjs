@@ -179,6 +179,11 @@ if (fs.existsSync(swiftPath)) {
             self.googleSignIn.signOut();`
   );
 
+  // Fix line 46: Remove unnecessary 'as? String' cast (Xcode 26.1 compatibility)
+  swiftContent = swiftContent.replace(
+    /guard let clientId = call\.getString\("clientId"\) \?\? getClientIdValue\(\) as\? String else \{/g,
+    'guard let clientId = call.getString("clientId") ?? getClientIdValue() else {'
+  );
 
   fs.writeFileSync(swiftPath, swiftContent, 'utf8');
   console.log('   ✅ Updated Plugin.swift:');
