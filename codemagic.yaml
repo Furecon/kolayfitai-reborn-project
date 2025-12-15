@@ -13,45 +13,31 @@ workflows:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
       node: 18
-      xcode: latest
+      xcode: 15.4
       cocoapods: default
-    # Cache disabled to ensure fresh installs with Xcode 26.1
-    # cache:
-    #   cache_paths:
-    #     - $HOME/.cocoapods
-    #     - $HOME/Library/Caches/CocoaPods
-    #     - ios/App/Pods
+    cache:
+      cache_paths:
+        - $HOME/.cocoapods
+        - $HOME/Library/Caches/CocoaPods
+        - ios/App/Pods
     scripts:
-      - name: Clean all caches for Xcode 26.1 compatibility
+      - name: Clean build folders
         script: |
-          # Aggressive cache cleaning to ensure fresh install
-          rm -rf $HOME/.cocoapods
-          rm -rf $HOME/Library/Caches/CocoaPods
           rm -rf ios/App/Pods
           rm -rf ios/App/Podfile.lock
-          rm -rf node_modules
-          rm -rf package-lock.json
-          # Also clean derived data
           rm -rf $HOME/Library/Developer/Xcode/DerivedData
-          echo "✅ All caches cleaned - fresh install guaranteed"
+          echo "✅ Build folders cleaned"
       - name: Install dependencies
         script: |
           npm install
-      - name: Verify Google Auth patch (Xcode 26.1 compatibility)
+      - name: Verify Google Auth patch
         script: |
           echo "Verifying Google Auth patch..."
           if grep -q "guard let clientId = call.getString(\"clientId\") ?? getClientIdValue() else {" node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift; then
-            echo "✅ Patch applied successfully (line 46 fixed)"
+            echo "✅ Patch applied successfully"
           else
             echo "❌ Patch failed - re-running..."
             node scripts/patch-google-auth.cjs
-          fi
-
-          if grep -q "\[weak self\] in" node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift; then
-            echo "✅ [weak self] patch applied (line 73 fixed)"
-          else
-            echo "❌ Weak self patch missing"
-            exit 1
           fi
       - name: Build web assets
         script: |
