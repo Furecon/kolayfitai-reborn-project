@@ -21,14 +21,32 @@ workflows:
         - $HOME/Library/Caches/CocoaPods
         - ios/App/Pods
     scripts:
-      - name: Clean CocoaPods cache (if needed)
+      - name: Clean iOS caches for Xcode 26.1 compatibility
         script: |
-          # Uncomment the line below if you encounter pod-related errors
-          # rm -rf $HOME/.cocoapods $HOME/Library/Caches/CocoaPods ios/App/Pods ios/App/Podfile.lock
-          echo "CocoaPods cache preserved. Delete cache manually if encountering issues."
+          # Clean CocoaPods and node_modules to force patch script
+          rm -rf $HOME/.cocoapods $HOME/Library/Caches/CocoaPods
+          rm -rf ios/App/Pods ios/App/Podfile.lock
+          rm -rf node_modules
+          echo "Caches cleaned for fresh install"
       - name: Install dependencies
         script: |
           npm install
+      - name: Verify Google Auth patch (Xcode 26.1 compatibility)
+        script: |
+          echo "Verifying Google Auth patch..."
+          if grep -q "guard let clientId = call.getString(\"clientId\") ?? getClientIdValue() else {" node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift; then
+            echo "✅ Patch applied successfully (line 46 fixed)"
+          else
+            echo "❌ Patch failed - re-running..."
+            node scripts/patch-google-auth.cjs
+          fi
+
+          if grep -q "\[weak self\] in" node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift; then
+            echo "✅ [weak self] patch applied (line 73 fixed)"
+          else
+            echo "❌ Weak self patch missing"
+            exit 1
+          fi
       - name: Build web assets
         script: |
           npm run build
