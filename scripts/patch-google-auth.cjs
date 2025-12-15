@@ -81,7 +81,7 @@ if (fs.existsSync(swiftPath)) {
     'user.refreshToken.tokenString'
   );
 
-  // Fix refresh method - complete replacement with exact string match
+  // Fix refresh method - complete replacement with exact string match (matches original code)
   const oldRefreshFunc = `    func refresh(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
             if self.googleSignIn.currentUser == nil {
@@ -94,9 +94,9 @@ if (fs.existsSync(swiftPath)) {
                     return;
                 }
                 let authenticationData: [String: Any] = [
-                    "accessToken": user.accessToken.tokenString,
-                    "idToken": user.idToken?.tokenString ?? NSNull(),
-                    "refreshToken": user.refreshToken.tokenString
+                    "accessToken": authentication.accessToken,
+                    "idToken": authentication.idToken ?? NSNull(),
+                    "refreshToken": authentication.refreshToken
                 ]
                 call.resolve(authenticationData);
             }
@@ -146,85 +146,39 @@ if (fs.existsSync(swiftPath)) {
     'getConfig().getBoolean("forceCodeForRefreshToken", false)'
   );
 
+  // Fix deprecated getConfigValue for scopes
+  swiftContent = swiftContent.replace(
+    /getConfigValue\("scopes"\) as\? \[String\]/g,
+    'getConfig().getArray("scopes") as? [String]'
+  );
+
   // Remove any redundant ?? false after getConfig().getBoolean()
   swiftContent = swiftContent.replace(
     /getConfig\(\)\.getBoolean\("forceCodeForRefreshToken", false\)\s*\?\?\s*false/g,
     'getConfig().getBoolean("forceCodeForRefreshToken", false)'
   );
 
-  // Fix DispatchQueue.main.async without [weak self] in signIn method
+  // Swift 6 compatibility: Add missing [weak self] and guard statements
+  // Fix signIn method DispatchQueue
   swiftContent = swiftContent.replace(
-    /func signIn\(_ call: CAPPluginCall\) \{[\s\S]*?DispatchQueue\.main\.async \{/,
-    `func signIn(_ call: CAPPluginCall) {
+    /@objc\s+func signIn\(_ call: CAPPluginCall\) \{\s*signInCall = call;\s*DispatchQueue\.main\.async \{/,
+    `@objc
+    func signIn(_ call: CAPPluginCall) {
         signInCall = call;
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }`
   );
 
-  // Fix DispatchQueue.main.async without [weak self] in signOut method
+  // Fix signOut method DispatchQueue
   swiftContent = swiftContent.replace(
-    /func signOut\(_ call: CAPPluginCall\) \{[\s\S]*?DispatchQueue\.main\.async \{[\s\S]*?self\.googleSignIn\.signOut\(\);/,
-    `func signOut(_ call: CAPPluginCall) {
+    /@objc\s+func signOut\(_ call: CAPPluginCall\) \{\s*DispatchQueue\.main\.async \{\s*self\.googleSignIn\.signOut\(\);/,
+    `@objc
+    func signOut(_ call: CAPPluginCall) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.googleSignIn.signOut();`
   );
 
-  // Fix refresh method - remove authentication.do callback
-  // Replace the entire refresh method with GoogleSignIn 7.x compatible version
-  const oldRefreshMethod = `    @objc
-    func refresh(_ call: CAPPluginCall) {
-        DispatchQueue.main.async {
-            if self.googleSignIn.currentUser == nil {
-                call.reject("User not logged in.");
-                return
-            }
-            self.googleSignIn.currentUser!.authentication.do { (authentication, error) in
-                guard let authentication = authentication else {
-                    call.reject(error?.localizedDescription ?? "Something went wrong.");
-                    return;
-                }
-                let authenticationData: [String: Any] = [
-                    "accessToken": authentication.accessToken,
-                    "idToken": authentication.idToken ?? NSNull(),
-                    "refreshToken": authentication.refreshToken
-                ]
-                call.resolve(authenticationData);
-            }
-        }
-    }`;
-
-  const newRefreshMethod = `    @objc
-    func refresh(_ call: CAPPluginCall) {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            guard let currentUser = self.googleSignIn.currentUser else {
-                call.reject("User not logged in.")
-                return
-            }
-
-            currentUser.refreshTokensIfNeeded { user, error in
-                if let error = error {
-                    call.reject(error.localizedDescription)
-                    return
-                }
-
-                guard let user = user else {
-                    call.reject("Failed to refresh tokens")
-                    return
-                }
-
-                let authenticationData: [String: Any] = [
-                    "accessToken": user.accessToken.tokenString,
-                    "idToken": user.idToken?.tokenString ?? NSNull(),
-                    "refreshToken": user.refreshToken.tokenString
-                ]
-                call.resolve(authenticationData)
-            }
-        }
-    }`;
-
-  swiftContent = swiftContent.replace(oldRefreshMethod, newRefreshMethod);
 
   fs.writeFileSync(swiftPath, swiftContent, 'utf8');
   console.log('   ✅ Updated Plugin.swift:');

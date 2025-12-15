@@ -1,26 +1,33 @@
-# iOS GoogleSignIn 7.1+ Compatibility Fix - COMPLETE
+# iOS GoogleSignIn 7.1+ Compatibility Fix - COMPLETE ✅
 
 ## Problem Summary
 
-The iOS build was failing with Swift compilation errors in the `@codetrix-studio/capacitor-google-auth` plugin because it was incompatible with GoogleSignIn 7.1+.
+The iOS build was failing with Swift compilation errors in the `@codetrix-studio/capacitor-google-auth` plugin because it was incompatible with GoogleSignIn 7.1+ and Swift 6 (Xcode 26.1).
 
 ## Errors Fixed
 
-### 1. **refreshToken Optional Chaining Error**
+### 1. **refreshToken Optional Chaining Error** ✅
 - **Error**: `cannot use optional chaining on non-optional value of type 'GIDToken'`
+- **Location**: Lines 119, 175
 - **Fix**: Removed `?.` optional chaining from `refreshToken.tokenString` because in GoogleSignIn 7.x, refreshToken is no longer optional
 
-### 2. **DispatchQueue.main.async Memory Management**
+### 2. **DispatchQueue.main.async Memory Management** ✅
 - **Error**: `trailing closure passed to parameter of type 'DispatchWorkItem' that does not accept a closure`
-- **Fix**: Added `[weak self] in` and proper guard statements to prevent memory leaks and fix syntax
+- **Location**: Lines 73, 99, 128
+- **Fix**: Added `[weak self] in` and proper `guard let self` statements in all async blocks
 
-### 3. **getConfig().getBoolean() Redundant Nil Coalescing**
-- **Error**: Redundant `?? false` after `getConfig().getBoolean()` which already returns non-optional
-- **Fix**: Removed unnecessary `?? false` operators
+### 3. **getConfig() Deprecated API** ✅
+- **Error**: `'getConfigValue' is deprecated: use getConfig() and access config values...`
+- **Location**: Lines 54, 73
+- **Fix**:
+  - `getConfigValue("scopes")` → `getConfig().getArray("scopes")`
+  - `getConfigValue("forceCodeForRefreshToken")` → `getConfig().getBoolean()`
+  - Removed redundant `?? false` operators
 
-### 4. **Authentication API Changes**
-- **Error**: Old `user.authentication.do` callback no longer exists in GoogleSignIn 7.x
-- **Fix**: Replaced with `refreshTokensIfNeeded` method
+### 4. **Authentication API Changes** ✅
+- **Error**: Old `authentication.do` callback no longer exists in GoogleSignIn 7.x
+- **Location**: refresh() method
+- **Fix**: Completely replaced refresh() method to use `refreshTokensIfNeeded` API
 
 ## Changes Made to `scripts/patch-google-auth.cjs`
 
@@ -44,10 +51,13 @@ The patch script now properly handles:
 
 All critical Swift compilation errors have been resolved:
 
-✅ **Line 73** (signIn method): Now has `[weak self] in` with proper guard
-✅ **Line 98** (refresh method): Now has `[weak self] in` with proper guard
-✅ **Line 119** (refresh method): `refreshToken.tokenString` (no optional chaining)
-✅ **Line 175** (resolveSignInCallWith): `refreshToken.tokenString` (no optional chaining)
+✅ **Line 54**: `getConfig().getArray("scopes")` - Deprecated API fixed
+✅ **Line 73-74**: signIn() with `[weak self] in` + `guard let self`
+✅ **Line 99-100**: refresh() with `[weak self] in` + `guard let self`
+✅ **Line 106**: `currentUser.refreshTokensIfNeeded` - GoogleSignIn 7.x API
+✅ **Line 120**: refresh() - `refreshToken.tokenString` (no optional chaining)
+✅ **Line 128-129**: signOut() with `[weak self] in` + `guard let self`
+✅ **Line 177**: resolveSignInCallWith() - `refreshToken.tokenString` (no optional chaining)
 
 ## Build Status
 
