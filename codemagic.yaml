@@ -15,7 +15,17 @@ workflows:
       node: 18
       xcode: latest
       cocoapods: default
+    cache:
+      cache_paths:
+        - $HOME/.cocoapods
+        - $HOME/Library/Caches/CocoaPods
+        - ios/App/Pods
     scripts:
+      - name: Clean CocoaPods cache (if needed)
+        script: |
+          # Uncomment the line below if you encounter pod-related errors
+          # rm -rf $HOME/.cocoapods $HOME/Library/Caches/CocoaPods ios/App/Pods ios/App/Podfile.lock
+          echo "CocoaPods cache preserved. Delete cache manually if encountering issues."
       - name: Install dependencies
         script: |
           npm install
