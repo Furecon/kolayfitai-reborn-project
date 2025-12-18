@@ -204,29 +204,22 @@ if (fs.existsSync(swiftPath)) {
     'getConfig().getBoolean("forceCodeForRefreshToken", false)'
   );
 
-  // Swift 6 compatibility: Add missing [weak self] and guard statements
-  // Only apply if not already patched
-  if (!swiftContent.includes('[weak self] in')) {
-    // Fix signIn method DispatchQueue
-    swiftContent = swiftContent.replace(
-      /@objc\s+func signIn\(_ call: CAPPluginCall\) \{\s*signInCall = call;\s*DispatchQueue\.main\.async \{/,
-      `@objc
-    func signIn(_ call: CAPPluginCall) {
-        signInCall = call;
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }`
-    );
-
-    // Fix signOut method DispatchQueue
-    swiftContent = swiftContent.replace(
-      /@objc\s+func signOut\(_ call: CAPPluginCall\) \{\s*DispatchQueue\.main\.async \{\s*self\.googleSignIn\.signOut\(\);/,
-      `@objc
-    func signOut(_ call: CAPPluginCall) {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.googleSignIn.signOut();`
-    );
+  // Swift 6 compatibility: Add [weak self] to all DispatchQueue.main.async closures
+  // Find all DispatchQueue.main.async { that don't already have [weak self]
+  const lines = swiftContent.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    // Check if this line has DispatchQueue.main.async { without [weak self]
+    if (line.includes('DispatchQueue.main.async {') && !line.includes('[weak self]')) {
+      // Replace the line with [weak self] version
+      lines[i] = line.replace('DispatchQueue.main.async {', 'DispatchQueue.main.async { [weak self] in');
+      // Add guard let self on the next line with proper indentation
+      const indent = line.match(/^\s*/)[0]; // Get current indentation
+      lines.splice(i + 1, 0, `${indent}    guard let self = self else { return }`);
+      i++; // Skip the newly added line
+    }
   }
+  swiftContent = lines.join('\n');
 
   // Fix line 46: Remove unnecessary 'as? String' cast (Xcode 26.1 compatibility)
   swiftContent = swiftContent.replace(
