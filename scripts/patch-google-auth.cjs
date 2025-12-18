@@ -204,22 +204,52 @@ if (fs.existsSync(swiftPath)) {
     'getConfig().getBoolean("forceCodeForRefreshToken", false)'
   );
 
-  // Swift 6 compatibility: Add [weak self] to all DispatchQueue.main.async closures
-  // Find all DispatchQueue.main.async { that don't already have [weak self]
-  const lines = swiftContent.split('\n');
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    // Check if this line has DispatchQueue.main.async { without [weak self]
-    if (line.includes('DispatchQueue.main.async {') && !line.includes('[weak self]')) {
-      // Replace the line with [weak self] version
-      lines[i] = line.replace('DispatchQueue.main.async {', 'DispatchQueue.main.async { [weak self] in');
-      // Add guard let self on the next line with proper indentation
-      const indent = line.match(/^\s*/)[0]; // Get current indentation
-      lines.splice(i + 1, 0, `${indent}    guard let self = self else { return }`);
-      i++; // Skip the newly added line
-    }
+  // Swift 6 compatibility: MUST run BEFORE other patches that change method content
+  // Fix DispatchQueue.main.async syntax for Xcode 16.1
+  // Only apply if not already fully patched
+  const needsExecuteFix = !swiftContent.includes('DispatchQueue.main.async(execute:') ||
+                          swiftContent.includes('DispatchQueue.main.async { [weak self]');
+
+  if (needsExecuteFix) {
+    // Replace all: DispatchQueue.main.async {
+    // With: DispatchQueue.main.async(execute: {
+    swiftContent = swiftContent.replace(
+      /DispatchQueue\.main\.async \{/g,
+      'DispatchQueue.main.async(execute: {'
+    );
+
+    // Add [weak self] and guard to each async block
+    // Match: async(execute: { and add [weak self] in if not present
+    swiftContent = swiftContent.replace(
+      /DispatchQueue\.main\.async\(execute: \{(?!\s*\[weak self\])/g,
+      'DispatchQueue.main.async(execute: { [weak self] in\n            guard let self = self else { return }'
+    );
+
+    // Clean up any double [weak self] from previous patches
+    swiftContent = swiftContent.replace(
+      /\[weak self\] in\s+guard let self = self else \{ return \}\s+\[weak self\] in/g,
+      '[weak self] in\n            guard let self = self else { return }'
+    );
+
+    // Fix closing braces: add ) before the final } of each async block
+    // signIn method closing - find pattern with all 4 closing braces
+    swiftContent = swiftContent.replace(
+      /(self\.resolveSignInCallWith\(user: user!\);\s+\};\s+\}\s+)\}(\s+)\}(\s+)@objc\s+func refresh/,
+      '$1})$2}$3@objc\n    func refresh'
+    );
+
+    // refresh method closing - find the closing brace before next @objc
+    swiftContent = swiftContent.replace(
+      /(call\.resolve\(authenticationData\)\s+\}\s+)\}(\s+)\}(\s+)@objc\s+func signOut/,
+      '$1})$2}$3@objc\n    func signOut'
+    );
+
+    // signOut method closing - special case, call.resolve is outside the closure
+    swiftContent = swiftContent.replace(
+      /(self\.googleSignIn\.signOut\(\);)\s+\}\s+(call\.resolve)/,
+      '$1\n        })\n        $2'
+    );
   }
-  swiftContent = lines.join('\n');
 
   // Fix line 46: Remove unnecessary 'as? String' cast (Xcode 26.1 compatibility)
   swiftContent = swiftContent.replace(
