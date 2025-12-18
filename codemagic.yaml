@@ -30,30 +30,52 @@ workflows:
       - name: Install dependencies
         script: |
           npm install
-      - name: Verify Google Auth patch
+      - name: Patch Google Auth in node_modules
         script: |
-          echo "Verifying Google Auth patch..."
-          if grep -q "guard let clientId = call.getString(\"clientId\") ?? getClientIdValue() else {" node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift; then
-            echo "✅ Patch applied successfully"
+          echo "📦 Patching GoogleAuth in node_modules..."
+          node scripts/patch-google-auth.cjs
+
+          if grep -q "\[weak self\] in" node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift; then
+            echo "✅ node_modules patched successfully"
           else
-            echo "❌ Patch failed - re-running..."
-            node scripts/patch-google-auth.cjs
+            echo "❌ node_modules patch failed!"
+            exit 1
           fi
       - name: Build web assets
         script: |
           npm run build
-      - name: Sync Capacitor and install CocoaPods
+      - name: Sync to iOS
         script: |
+          echo "📱 Syncing patched code to iOS..."
           npx cap sync ios
-          cd ios/App && pod install
-      - name: Apply Google Auth patch to Pods
+      - name: Install CocoaPods
         script: |
-          echo "📦 Patching GoogleAuth in Pods..."
-          node scripts/patch-google-auth.cjs
-          if grep -q "\[weak self\] in" ios/App/Pods/CodetrixStudioCapacitorGoogleAuth/ios/Plugin/Plugin.swift; then
-            echo "✅ Patch applied successfully"
+          cd ios/App
+          pod install
+      - name: Verify patch in Pods
+        script: |
+          echo "🔍 Verifying patch in Pods..."
+
+          PODS_SWIFT="ios/App/Pods/CodetrixStudioCapacitorGoogleAuth/ios/Plugin/Plugin.swift"
+
+          if [ -f "$PODS_SWIFT" ]; then
+            if grep -q "\[weak self\] in" "$PODS_SWIFT" && \
+               grep -q "user.accessToken.tokenString" "$PODS_SWIFT"; then
+              echo "✅ Patch successfully applied in Pods"
+            else
+              echo "⚠️ Patch NOT found in Pods - re-patching..."
+              node scripts/patch-google-auth.cjs
+
+              if grep -q "\[weak self\] in" "$PODS_SWIFT"; then
+                echo "✅ Re-patch successful"
+              else
+                echo "❌ Re-patch failed!"
+                exit 1
+              fi
+            fi
           else
-            echo "❌ Patch failed!"
+            echo "❌ Pods Swift file not found at: $PODS_SWIFT"
+            ls -la ios/App/Pods/ || true
             exit 1
           fi
       - name: Increment build number

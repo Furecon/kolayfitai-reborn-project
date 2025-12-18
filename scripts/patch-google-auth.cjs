@@ -208,6 +208,13 @@ if (fs.existsSync(swiftPath)) {
   console.log('      - Fixed getConfig().getBoolean() calls');
   console.log('      - Updated refresh() method for 7.x API');
   console.log('✅ GoogleAuth patched successfully for GoogleSignIn 7.1+');
+
+  // Debug summary
+  console.log('\n📊 Patch Summary:');
+  console.log('   Patched:', swiftPath);
+  console.log('   File exists:', fs.existsSync(swiftPath));
+  console.log('   Contains [weak self]:', swiftContent.includes('[weak self] in'));
+  console.log('   Contains tokenString:', swiftContent.includes('user.accessToken.tokenString'));
 } else {
   console.log('⚠️  Plugin.swift not found, skipping Swift patch');
   console.log('   Looking in:', swiftPath);
