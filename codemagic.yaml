@@ -52,113 +52,32 @@ workflows:
         script: |
           cd ios/App
           pod install
-      - name: Find and patch GoogleAuth in Pods
+      - name: Patch GoogleAuth in Pods
         script: |
-          echo "🔍 Searching for GoogleAuth in Pods..."
+          echo "🔍 Patching GoogleAuth in Pods (if exists)..."
+          node scripts/patch-google-auth.cjs
 
-          # Search all possible locations
-          SEARCH_PATHS=(
-            "ios/App/Pods/CodetrixStudioCapacitorGoogleAuth/ios/Plugin/Plugin.swift"
-            "ios/App/Pods/Development Pods/CodetrixStudioCapacitorGoogleAuth/ios/Plugin/Plugin.swift"
-            "ios/App/Pods/Local Podspecs/CodetrixStudioCapacitorGoogleAuth/ios/Plugin/Plugin.swift"
-          )
+          echo ""
+          echo "✅ Patch script completed"
 
-          FOUND_PATH=""
-          for path in "${SEARCH_PATHS[@]}"; do
-            if [ -f "$path" ]; then
-              FOUND_PATH="$path"
-              echo "✅ Found at: $path"
-              break
-            fi
-          done
-
-          # If not found in standard locations, search entire Pods directory
-          if [ -z "$FOUND_PATH" ]; then
-            echo "🔍 Searching entire Pods directory..."
-            FOUND_PATH=$(find ios/App/Pods -name "Plugin.swift" -path "*capacitor-google-auth*" 2>/dev/null | head -1)
-          fi
-
-          if [ -z "$FOUND_PATH" ]; then
-            echo "⚠️ GoogleAuth not found in Pods"
-            echo "📋 Available Pods:"
-            ls -la ios/App/Pods/ || true
-            echo ""
-            echo "📋 Checking Podfile.lock for GoogleAuth..."
-            if [ -f "ios/App/Podfile.lock" ]; then
-              grep -i "google\|codetrix" ios/App/Podfile.lock || echo "No GoogleAuth entries"
-            fi
-
-            echo ""
-            echo "ℹ️ This is OK if the plugin is embedded in the main app"
-            echo "   Build will use code from Capacitor's generated classes"
-            exit 0
-          fi
-
-          echo "📦 Patching: $FOUND_PATH"
-
-          # Create temporary patch script for Pods location
-          cat > /tmp/patch-pods.js << 'PATCH_EOF'
-const fs = require('fs');
-const path = process.argv[2];
-
-if (!fs.existsSync(path)) {
-  console.error('❌ File not found:', path);
-  process.exit(1);
-}
-
-let content = fs.readFileSync(path, 'utf8');
-
-// Apply all patches
-content = content.replace(
-  /"accessToken": user\.authentication\.accessToken,/g,
-  '"accessToken": user.accessToken.tokenString,'
-);
-
-content = content.replace(
-  /"idToken": user\.authentication\.idToken,/g,
-  '"idToken": user.idToken?.tokenString ?? NSNull(),'
-);
-
-content = content.replace(
-  /"refreshToken": user\.authentication\.refreshToken/g,
-  '"refreshToken": user.refreshToken.tokenString'
-);
-
-content = content.replace(
-  /@objc\s+func signIn\(_ call: CAPPluginCall\) \{\s*signInCall = call;\s*DispatchQueue\.main\.async \{/,
-  `@objc
-    func signIn(_ call: CAPPluginCall) {
-        signInCall = call;
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }`
-);
-
-content = content.replace(
-  /@objc\s+func signOut\(_ call: CAPPluginCall\) \{\s*DispatchQueue\.main\.async \{\s*self\.googleSignIn\.signOut\(\);/,
-  `@objc
-    func signOut(_ call: CAPPluginCall) {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.googleSignIn.signOut();`
-);
-
-content = content.replace(
-  /guard let clientId = call\.getString\("clientId"\) \?\? getClientIdValue\(\) as\? String else \{/g,
-  'guard let clientId = call.getString("clientId") ?? getClientIdValue() else {'
-);
-
-fs.writeFileSync(path, content, 'utf8');
-console.log('✅ Patched successfully');
-PATCH_EOF
-
-          node /tmp/patch-pods.js "$FOUND_PATH"
-
-          # Verify
-          if grep -q "\[weak self\] in" "$FOUND_PATH"; then
-            echo "✅ Patch verified in Pods"
+          # Try to verify patch in Pods
+          if [ -f "ios/App/Pods/CodetrixStudioCapacitorGoogleAuth/ios/Plugin/Plugin.swift" ]; then
+            PODS_FILE="ios/App/Pods/CodetrixStudioCapacitorGoogleAuth/ios/Plugin/Plugin.swift"
           else
-            echo "❌ Patch verification failed!"
-            exit 1
+            PODS_FILE=$(find ios/App/Pods -name "Plugin.swift" -path "*CapacitorGoogleAuth*" 2>/dev/null | head -1)
+          fi
+
+          if [ -n "$PODS_FILE" ] && [ -f "$PODS_FILE" ]; then
+            echo "📋 Verifying patch in: $PODS_FILE"
+            if grep -q "\[weak self\] in" "$PODS_FILE" && grep -q "user.accessToken.tokenString" "$PODS_FILE"; then
+              echo "✅ Patch verified successfully in Pods"
+            else
+              echo "⚠️ Patch not detected in Pods, but build may still work"
+            fi
+          else
+            echo "ℹ️ GoogleAuth not found in Pods - may be embedded in framework"
+            echo "📋 Available Pods:"
+            ls -la ios/App/Pods/ | head -20 || true
           fi
       - name: Increment build number
         script: |

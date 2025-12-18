@@ -21,17 +21,40 @@ const nodeModulesDir = path.join(
   'capacitor-google-auth'
 );
 
-const podsDir = path.join(
-  __dirname,
-  '..',
-  'ios',
-  'App',
-  'Pods',
-  'CodetrixStudioCapacitorGoogleAuth'
-);
+// Try multiple Pods locations
+const podsDirs = [
+  path.join(__dirname, '..', 'ios', 'App', 'Pods', 'CodetrixStudioCapacitorGoogleAuth'),
+  path.join(__dirname, '..', 'ios', 'App', 'Pods', 'Development Pods', 'CodetrixStudioCapacitorGoogleAuth'),
+  path.join(__dirname, '..', 'ios', 'App', 'Pods', 'Local Podspecs', 'CodetrixStudioCapacitorGoogleAuth'),
+];
+
+// Find existing Pods directory
+let podsDir = null;
+for (const dir of podsDirs) {
+  if (fs.existsSync(dir)) {
+    podsDir = dir;
+    break;
+  }
+}
+
+// If not found in standard locations, search entire Pods directory
+if (!podsDir) {
+  const { execSync } = require('child_process');
+  try {
+    const searchResult = execSync(
+      'find ios/App/Pods -type d -name "CodetrixStudioCapacitorGoogleAuth" 2>/dev/null',
+      { cwd: path.join(__dirname, '..'), encoding: 'utf8' }
+    ).trim();
+    if (searchResult) {
+      podsDir = path.join(__dirname, '..', searchResult.split('\n')[0]);
+    }
+  } catch (e) {
+    // Pods directory not found, will use node_modules
+  }
+}
 
 // Determine which directory to patch
-const pluginDir = fs.existsSync(podsDir) ? podsDir : nodeModulesDir;
+const pluginDir = podsDir && fs.existsSync(podsDir) ? podsDir : nodeModulesDir;
 const isPods = pluginDir === podsDir;
 
 const podspecPath = path.join(pluginDir, 'CodetrixStudioCapacitorGoogleAuth.podspec');
