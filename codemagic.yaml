@@ -46,6 +46,16 @@ workflows:
         script: |
           npx cap sync ios
           cd ios/App && pod install
+      - name: Apply Google Auth patch to Pods
+        script: |
+          echo "📦 Patching GoogleAuth in Pods..."
+          node scripts/patch-google-auth.cjs
+          if grep -q "\[weak self\] in" ios/App/Pods/CodetrixStudioCapacitorGoogleAuth/ios/Plugin/Plugin.swift; then
+            echo "✅ Patch applied successfully"
+          else
+            echo "❌ Patch failed!"
+            exit 1
+          fi
       - name: Increment build number
         script: |
           cd ios/App

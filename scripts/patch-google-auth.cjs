@@ -12,7 +12,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const pluginDir = path.join(
+// Support patching both node_modules and Pods
+const nodeModulesDir = path.join(
   __dirname,
   '..',
   'node_modules',
@@ -20,8 +21,23 @@ const pluginDir = path.join(
   'capacitor-google-auth'
 );
 
+const podsDir = path.join(
+  __dirname,
+  '..',
+  'ios',
+  'App',
+  'Pods',
+  'CodetrixStudioCapacitorGoogleAuth'
+);
+
+// Determine which directory to patch
+const pluginDir = fs.existsSync(podsDir) ? podsDir : nodeModulesDir;
+const isPods = pluginDir === podsDir;
+
 const podspecPath = path.join(pluginDir, 'CodetrixStudioCapacitorGoogleAuth.podspec');
-const swiftPath = path.join(pluginDir, 'ios', 'Plugin', 'Plugin.swift');
+const swiftPath = isPods
+  ? path.join(pluginDir, 'ios', 'Plugin', 'Plugin.swift')
+  : path.join(pluginDir, 'ios', 'Plugin', 'Plugin.swift');
 
 if (!fs.existsSync(podspecPath)) {
   console.log('⚠️  GoogleAuth podspec not found, skipping patch');
@@ -29,7 +45,8 @@ if (!fs.existsSync(podspecPath)) {
   process.exit(0);
 }
 
-console.log('🔧 Patching @codetrix-studio/capacitor-google-auth for GoogleSignIn 7.1+');
+console.log(`🔧 Patching @codetrix-studio/capacitor-google-auth for GoogleSignIn 7.1+`);
+console.log(`   Location: ${isPods ? 'ios/App/Pods' : 'node_modules'} (${isPods ? 'CocoaPods' : 'npm'})`);
 
 // Patch 1: Update Podspec
 let podspecContent = fs.readFileSync(podspecPath, 'utf8');
