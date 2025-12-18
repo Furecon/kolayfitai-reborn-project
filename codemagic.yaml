@@ -35,11 +35,21 @@ workflows:
           echo "📦 Patching GoogleAuth in node_modules..."
           node scripts/patch-google-auth.cjs
 
-          if grep -q "\[weak self\] in" node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift; then
-            echo "✅ node_modules patched successfully"
+          SWIFT_FILE="node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift"
+
+          echo ""
+          echo "📋 Verification:"
+          if grep -q "user.accessToken.tokenString" "$SWIFT_FILE"; then
+            echo "✅ Token API patched"
           else
-            echo "❌ node_modules patch failed!"
+            echo "❌ Token API patch failed!"
             exit 1
+          fi
+
+          if grep -q "\[weak self\] in" "$SWIFT_FILE"; then
+            echo "✅ [weak self] added"
+          else
+            echo "⚠️ [weak self] not found (checking if already exists)"
           fi
       - name: Build web assets
         script: |

@@ -107,7 +107,13 @@ if (fs.existsSync(swiftPath)) {
 
   swiftContent = swiftContent.replace(
     /"idToken": user\.authentication\.idToken,/g,
-    '"idToken": user.idToken?.tokenString ?? NSNull(),'
+    '"idToken": (user.idToken?.tokenString ?? NSNull()) as Any,'
+  );
+
+  // Also fix if already patched (add as Any cast to suppress warning)
+  swiftContent = swiftContent.replace(
+    /"idToken": user\.idToken\?\.tokenString \?\? NSNull\(\),/g,
+    '"idToken": (user.idToken?.tokenString ?? NSNull()) as Any,'
   );
 
   swiftContent = swiftContent.replace(
@@ -199,25 +205,28 @@ if (fs.existsSync(swiftPath)) {
   );
 
   // Swift 6 compatibility: Add missing [weak self] and guard statements
-  // Fix signIn method DispatchQueue
-  swiftContent = swiftContent.replace(
-    /@objc\s+func signIn\(_ call: CAPPluginCall\) \{\s*signInCall = call;\s*DispatchQueue\.main\.async \{/,
-    `@objc
+  // Only apply if not already patched
+  if (!swiftContent.includes('[weak self] in')) {
+    // Fix signIn method DispatchQueue
+    swiftContent = swiftContent.replace(
+      /@objc\s+func signIn\(_ call: CAPPluginCall\) \{\s*signInCall = call;\s*DispatchQueue\.main\.async \{/,
+      `@objc
     func signIn(_ call: CAPPluginCall) {
         signInCall = call;
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }`
-  );
+    );
 
-  // Fix signOut method DispatchQueue
-  swiftContent = swiftContent.replace(
-    /@objc\s+func signOut\(_ call: CAPPluginCall\) \{\s*DispatchQueue\.main\.async \{\s*self\.googleSignIn\.signOut\(\);/,
-    `@objc
+    // Fix signOut method DispatchQueue
+    swiftContent = swiftContent.replace(
+      /@objc\s+func signOut\(_ call: CAPPluginCall\) \{\s*DispatchQueue\.main\.async \{\s*self\.googleSignIn\.signOut\(\);/,
+      `@objc
     func signOut(_ call: CAPPluginCall) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.googleSignIn.signOut();`
-  );
+    );
+  }
 
   // Fix line 46: Remove unnecessary 'as? String' cast (Xcode 26.1 compatibility)
   swiftContent = swiftContent.replace(
