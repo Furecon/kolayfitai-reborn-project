@@ -42,46 +42,55 @@ export function TutorialTooltip({
 }: TooltipProps) {
   const getTooltipPosition = (): React.CSSProperties => {
     const offset = 20
-    const tooltipWidth = 320
+    const sideMargin = 16
+    const maxTooltipWidth = 320
+    const availableWidth = window.innerWidth - (sideMargin * 2)
+    const tooltipWidth = Math.min(maxTooltipWidth, availableWidth)
     const bottomNavHeight = 64
     const minTopMargin = 16
     const minBottomMargin = bottomNavHeight + 16
 
-    let position: React.CSSProperties = {}
+    let position: React.CSSProperties = {
+      maxWidth: tooltipWidth,
+      width: tooltipWidth
+    }
 
     switch (placement) {
       case 'top':
-        position = {
-          bottom: window.innerHeight - targetRect.top + offset,
-          left: targetRect.left + targetRect.width / 2,
-          transform: 'translateX(-50%)',
-          maxWidth: tooltipWidth
-        }
+        position.bottom = window.innerHeight - targetRect.top + offset
+        position.left = targetRect.left + targetRect.width / 2
+        position.transform = 'translateX(-50%)'
         break
       case 'bottom':
-        position = {
-          top: targetRect.bottom + offset,
-          left: targetRect.left + targetRect.width / 2,
-          transform: 'translateX(-50%)',
-          maxWidth: tooltipWidth
-        }
+        position.top = targetRect.bottom + offset
+        position.left = targetRect.left + targetRect.width / 2
+        position.transform = 'translateX(-50%)'
         break
       case 'left':
-        position = {
-          top: targetRect.top + targetRect.height / 2,
-          right: window.innerWidth - targetRect.left + offset,
-          transform: 'translateY(-50%)',
-          maxWidth: tooltipWidth
-        }
+        position.top = targetRect.top + targetRect.height / 2
+        position.right = window.innerWidth - targetRect.left + offset
+        position.transform = 'translateY(-50%)'
         break
       case 'right':
-        position = {
-          top: targetRect.top + targetRect.height / 2,
-          left: targetRect.right + offset,
-          transform: 'translateY(-50%)',
-          maxWidth: tooltipWidth
-        }
+        position.top = targetRect.top + targetRect.height / 2
+        position.left = targetRect.right + offset
+        position.transform = 'translateY(-50%)'
         break
+    }
+
+    if (position.left !== undefined && typeof position.left === 'number') {
+      const halfWidth = tooltipWidth / 2
+      if (position.left - halfWidth < sideMargin) {
+        position.left = halfWidth + sideMargin
+      } else if (position.left + halfWidth > window.innerWidth - sideMargin) {
+        position.left = window.innerWidth - halfWidth - sideMargin
+      }
+    }
+
+    if (position.right !== undefined && typeof position.right === 'number') {
+      if (position.right < sideMargin) {
+        position.right = sideMargin
+      }
     }
 
     if (position.top !== undefined) {
@@ -103,22 +112,22 @@ export function TutorialTooltip({
 
   return (
     <Card
-      className="fixed z-[10000] p-4 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-300"
+      className="fixed z-[10000] p-3 sm:p-4 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-300"
       style={getTooltipPosition()}
     >
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold text-base">{title}</h3>
-            <span className="text-xs text-muted-foreground">
+          <div className="flex items-center justify-between mb-1.5 sm:mb-2 gap-2">
+            <h3 className="font-semibold text-sm sm:text-base line-clamp-2 flex-1">{title}</h3>
+            <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
               {currentStep + 1}/{totalSteps}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{body}</p>
         </div>
 
         {showDontShowAgain && (
-          <div className="flex items-center space-x-2 py-2">
+          <div className="flex items-center space-x-2 py-1.5 sm:py-2">
             <Checkbox
               id="dont-show-again"
               checked={dontShowAgain}
@@ -126,20 +135,20 @@ export function TutorialTooltip({
             />
             <label
               htmlFor="dont-show-again"
-              className="text-xs text-muted-foreground cursor-pointer"
+              className="text-xs text-muted-foreground cursor-pointer select-none"
             >
               Bir daha gösterme
             </label>
           </div>
         )}
 
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 pt-1">
           {showSkip && (
             <Button
               variant="ghost"
               size="sm"
               onClick={onSkip}
-              className="text-xs"
+              className="text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4 flex-shrink-0"
             >
               {skipText}
             </Button>
@@ -147,7 +156,7 @@ export function TutorialTooltip({
           <Button
             onClick={onNext}
             size="sm"
-            className="ml-auto"
+            className="ml-auto text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4 flex-shrink-0"
           >
             {isLastStep ? primaryDoneText : primaryNextText}
           </Button>
