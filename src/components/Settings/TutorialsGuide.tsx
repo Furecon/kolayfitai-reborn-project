@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { useTutorial } from '@/components/Tutorial/TutorialProvider'
 import { tutorialStorage } from '@/lib/tutorialStorage'
-import { getAllTutorials } from '@/lib/tutorialConfig'
+import { getAllTutorials, getTutorialByFeatureId } from '@/lib/tutorialConfig'
 import { Play, RotateCcw, BookOpen, CheckCircle2, XCircle, Clock, Ban } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
@@ -18,11 +18,29 @@ export function TutorialsGuide() {
   const tutorials = getAllTutorials()
 
   const handleStartTutorial = (featureId: string) => {
-    startTutorial(featureId)
-    toast({
-      title: 'Rehber başlatıldı',
-      description: 'Adımları takip ederek özelliği keşfedin.'
-    })
+    const tutorial = getTutorialByFeatureId(featureId)
+
+    if (tutorial?.route && tutorial?.tabId) {
+      localStorage.setItem('tutorial_pending_start', JSON.stringify({
+        featureId,
+        tabId: tutorial.tabId
+      }))
+
+      window.dispatchEvent(new CustomEvent('tutorial-navigate', {
+        detail: { featureId, tabId: tutorial.tabId }
+      }))
+
+      toast({
+        title: 'Rehber başlatılıyor',
+        description: 'İlgili sayfaya yönlendiriliyorsunuz...'
+      })
+    } else {
+      startTutorial(featureId)
+      toast({
+        title: 'Rehber başlatıldı',
+        description: 'Adımları takip ederek özelliği keşfedin.'
+      })
+    }
   }
 
   const handleResetTutorial = (featureId: string, title: string) => {
@@ -188,8 +206,9 @@ export function TutorialsGuide() {
             <h4 className="font-medium text-sm">İpuçları</h4>
             <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
               <li>Her rehber ilgili özelliğe ilk girişte otomatik başlar</li>
-              <li>ESC tuşu ile rehberi atlayabilirsiniz</li>
-              <li>Enter tuşu ile bir sonraki adıma geçebilirsiniz</li>
+              <li>"Başlat" butonuna bastığınızda ilgili sayfaya yönlendirilirsiniz</li>
+              <li>"Atla" butonuna dokunarak rehberi atlayabilirsiniz</li>
+              <li>"Devam" butonuna dokunarak sonraki adıma geçersiniz</li>
               <li>"Bir daha gösterme" seçeneği ile rehberi kalıcı kapatabilirsiniz</li>
             </ul>
           </div>

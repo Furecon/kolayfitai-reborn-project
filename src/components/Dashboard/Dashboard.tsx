@@ -17,12 +17,14 @@ import { SettingsTab } from './Tabs/SettingsTab'
 import { paywallService } from '@/services/PaywallService'
 import { useToast } from '@/hooks/use-toast'
 import { notificationManager } from '@/lib/notificationManager'
+import { useTutorial } from '@/components/Tutorial/TutorialProvider'
 
 type View = 'dashboard' | 'meal-selection' | 'camera' | 'manual-entry' | 'file-image' | 'crop-image'
 
 export function Dashboard() {
   const { user } = useAuth()
   const { toast } = useToast()
+  const { startTutorial } = useTutorial()
   const [currentView, setCurrentView] = useState<View>('dashboard')
   const [activeTab, setActiveTab] = useState<TabType>('home')
   const [selectedImageForAnalysis, setSelectedImageForAnalysis] = useState<string | null>(null)
@@ -67,6 +69,44 @@ export function Dashboard() {
       })
     }
   }, [user, refreshTrigger])
+
+  useEffect(() => {
+    const checkPendingTutorial = () => {
+      const pending = localStorage.getItem('tutorial_pending_start')
+      if (pending) {
+        try {
+          const { featureId, tabId } = JSON.parse(pending)
+          localStorage.removeItem('tutorial_pending_start')
+
+          setActiveTab(tabId)
+          setCurrentView('dashboard')
+
+          setTimeout(() => {
+            startTutorial(featureId)
+          }, 800)
+        } catch (error) {
+          console.error('Failed to start pending tutorial:', error)
+        }
+      }
+    }
+
+    checkPendingTutorial()
+
+    const handleTutorialNavigate = (event: CustomEvent) => {
+      const { featureId, tabId } = event.detail
+      setActiveTab(tabId)
+      setCurrentView('dashboard')
+
+      setTimeout(() => {
+        startTutorial(featureId)
+      }, 800)
+    }
+
+    window.addEventListener('tutorial-navigate', handleTutorialNavigate as EventListener)
+    return () => {
+      window.removeEventListener('tutorial-navigate', handleTutorialNavigate as EventListener)
+    }
+  }, [startTutorial])
 
   const fetchProfile = async () => {
     if (!user) return

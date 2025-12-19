@@ -18,6 +18,8 @@ export interface Tutorial {
   title: string
   trigger: TutorialTrigger
   steps: TutorialStep[]
+  route?: string
+  tabId?: 'home' | 'ai' | 'meals' | 'progress' | 'settings'
 }
 
 export interface TutorialSettings {
@@ -64,6 +66,8 @@ export const tutorialConfig: TutorialConfig = {
       featureId: 'first_login_walkthrough',
       title: 'Hoş geldin',
       trigger: 'first_login',
+      route: '/app',
+      tabId: 'home',
       steps: [
         {
           stepId: 's1',
@@ -116,6 +120,8 @@ export const tutorialConfig: TutorialConfig = {
       featureId: 'add_meal',
       title: 'Yemek Ekleme',
       trigger: 'first_time_feature',
+      route: '/app',
+      tabId: 'home',
       steps: [
         {
           stepId: 's1',
@@ -141,6 +147,8 @@ export const tutorialConfig: TutorialConfig = {
       featureId: 'analysis_choice',
       title: 'Analiz Seçimi',
       trigger: 'first_time_feature',
+      route: '/app',
+      tabId: 'home',
       steps: [
         {
           stepId: 's1',
@@ -166,6 +174,8 @@ export const tutorialConfig: TutorialConfig = {
       featureId: 'macro_screen',
       title: 'Makro Ekranı',
       trigger: 'first_time_feature',
+      route: '/app',
+      tabId: 'home',
       steps: [
         {
           stepId: 's1',
@@ -191,6 +201,8 @@ export const tutorialConfig: TutorialConfig = {
       featureId: 'meal_history',
       title: 'Geçmiş Öğünler',
       trigger: 'first_time_feature',
+      route: '/app',
+      tabId: 'meals',
       steps: [
         {
           stepId: 's1',
@@ -225,6 +237,8 @@ export const tutorialConfig: TutorialConfig = {
       featureId: 'settings_profile',
       title: 'Ayarlar',
       trigger: 'first_time_feature',
+      route: '/app',
+      tabId: 'settings',
       steps: [
         {
           stepId: 's1',
@@ -250,6 +264,8 @@ export const tutorialConfig: TutorialConfig = {
       featureId: 'subscription',
       title: 'Abonelik',
       trigger: 'first_time_feature',
+      route: '/app',
+      tabId: 'settings',
       steps: [
         {
           stepId: 's1',
@@ -284,6 +300,8 @@ export const tutorialConfig: TutorialConfig = {
       featureId: 'diet_plan',
       title: 'Diyet Planı',
       trigger: 'first_time_feature',
+      route: '/app',
+      tabId: 'ai',
       steps: [
         {
           stepId: 's1',
@@ -318,6 +336,8 @@ export const tutorialConfig: TutorialConfig = {
       featureId: 'water_tracking',
       title: 'Su Takibi',
       trigger: 'first_time_feature',
+      route: '/app',
+      tabId: 'home',
       steps: [
         {
           stepId: 's1',
@@ -352,6 +372,8 @@ export const tutorialConfig: TutorialConfig = {
       featureId: 'notifications',
       title: 'Bildirimler',
       trigger: 'first_time_feature',
+      route: '/app',
+      tabId: 'settings',
       steps: [
         {
           stepId: 's1',
