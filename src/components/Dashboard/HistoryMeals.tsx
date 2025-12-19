@@ -9,6 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { History, Calendar, Search, Clock, Utensils, ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/components/Auth/AuthProvider'
+import { useTutorialTarget } from '@/hooks/useTutorialTarget'
 
 interface FoodItem {
   id?: string
@@ -43,6 +44,9 @@ export function HistoryMeals() {
   const [currentPage, setCurrentPage] = useState(1)
   const [expandedMeals, setExpandedMeals] = useState<Set<string>>(new Set())
   const mealsPerPage = 10
+
+  const historyFilterRef = useTutorialTarget('HistoryFilter')
+  const historyMealItemRef = useTutorialTarget('HistoryMealItem')
 
   useEffect(() => {
     if (user) {
@@ -246,7 +250,7 @@ export function HistoryMeals() {
           </CardTitle>
           
           {/* Filters - Responsive Layout */}
-          <div className="flex flex-col gap-3 mt-3 sm:mt-4">
+          <div ref={historyFilterRef as any} className="flex flex-col gap-3 mt-3 sm:mt-4">
             <div className="flex flex-col sm:flex-row gap-2">
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
                 <SelectTrigger className="w-full sm:flex-1 h-9 sm:h-10 text-sm">
@@ -323,14 +327,17 @@ export function HistoryMeals() {
                       </Badge>
                     </div>
                     
-                    {dayMeals.map((meal) => (
+                    {dayMeals.map((meal, mealIndex) => (
                       <Collapsible
                         key={meal.id}
                         open={expandedMeals.has(meal.id)}
                         onOpenChange={() => toggleMealExpansion(meal.id)}
                       >
                         <CollapsibleTrigger asChild>
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors gap-3 cursor-pointer">
+                          <div
+                            ref={mealIndex === 0 && Object.keys(groupedMeals)[0] === date ? historyMealItemRef as any : null}
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors gap-3 cursor-pointer"
+                          >
                             <div className="flex items-start sm:items-center gap-2 sm:gap-3 min-w-0 flex-1">
                               <div className="text-lg sm:text-xl flex-shrink-0 mt-0.5 sm:mt-0">
                                 {getMealIcon(meal.meal_type)}

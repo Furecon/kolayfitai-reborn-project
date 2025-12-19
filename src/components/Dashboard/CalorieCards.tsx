@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CircularMacroChart } from './CircularMacroChart'
 import { Flame, Beef, Wheat, Droplets, Camera } from 'lucide-react'
+import { useTutorialTarget } from '@/hooks/useTutorialTarget'
 
 interface CalorieCardsProps {
   totalCalories: number
@@ -33,6 +34,8 @@ export function CalorieCards({
   fatGoal = 67,
   onCameraClick
 }: CalorieCardsProps) {
+  const macroRingsRef = useTutorialTarget('MacroRings')
+  const remainingCaloriesRef = useTutorialTarget('RemainingCalories')
 
   return (
     <div className="w-full px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4">
@@ -43,7 +46,7 @@ export function CalorieCards({
             <h2 className="text-lg sm:text-xl font-bold text-center text-black mb-4 sm:mb-6">Günlük İlerleme</h2>
 
           {/* Kalori - Büyük ve üstte ortada tek başına */}
-          <div className="flex justify-center mb-4 sm:mb-6">
+          <div ref={remainingCaloriesRef as any} className="flex justify-center mb-4 sm:mb-6">
             <CircularMacroChart
               current={totalCalories}
               goal={goalCalories}
@@ -56,7 +59,7 @@ export function CalorieCards({
           </div>
 
           {/* Makrolar - Üçgen formasyonunda yan yana */}
-          <div className="flex justify-center items-center gap-2 sm:gap-4 md:gap-6 lg:gap-8 flex-wrap">
+          <div ref={macroRingsRef as any} className="flex justify-center items-center gap-2 sm:gap-4 md:gap-6 lg:gap-8 flex-wrap">
             {/* Protein */}
             <div className="flex justify-center">
               <CircularMacroChart

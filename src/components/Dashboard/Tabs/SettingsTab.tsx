@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import { useTutorialTarget } from '@/hooks/useTutorialTarget'
 import ProfileSetup from '../../Profile/ProfileSetup'
 import { DailyGoalsSettings } from '../../Profile/DailyGoalsSettings'
 import { SubscriptionManager } from '../../Subscription/SubscriptionManager'
@@ -38,6 +39,7 @@ interface SettingsTabProps {
 export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
   const { toast } = useToast()
   const [currentView, setCurrentView] = useState<SettingsView>('main')
+  const bodyInfoSectionRef = useTutorialTarget('BodyInfoSection')
 
   const handleLogout = async () => {
     try {
@@ -248,7 +250,7 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
 
       <div className="w-full px-4 sm:px-6 space-y-4">
         <div className="max-w-screen-2xl mx-auto space-y-4">
-        <Card>
+        <Card ref={bodyInfoSectionRef as any}>
           <CardContent className="p-0">
             <button
               onClick={() => setCurrentView('profile')}

@@ -1,4 +1,5 @@
 import { Home, Brain, TrendingUp, UtensilsCrossed, Settings } from 'lucide-react'
+import { useTutorialTarget } from '@/hooks/useTutorialTarget'
 
 export type TabType = 'home' | 'ai-insights' | 'progress' | 'meals' | 'settings'
 
@@ -8,12 +9,15 @@ interface BottomTabNavProps {
 }
 
 export function BottomTabNav({ activeTab, onTabChange }: BottomTabNavProps) {
+  const historyTabRef = useTutorialTarget('HistoryTab')
+  const settingsButtonRef = useTutorialTarget('SettingsButton')
+
   const tabs = [
-    { id: 'home' as TabType, icon: Home, label: 'Ana Sayfa' },
-    { id: 'ai-insights' as TabType, icon: Brain, label: 'AI Analiz' },
-    { id: 'progress' as TabType, icon: TrendingUp, label: 'Gelişim' },
-    { id: 'meals' as TabType, icon: UtensilsCrossed, label: 'Öğünler' },
-    { id: 'settings' as TabType, icon: Settings, label: 'Ayarlar' }
+    { id: 'home' as TabType, icon: Home, label: 'Ana Sayfa', ref: null },
+    { id: 'ai-insights' as TabType, icon: Brain, label: 'AI Analiz', ref: null },
+    { id: 'progress' as TabType, icon: TrendingUp, label: 'Gelişim', ref: null },
+    { id: 'meals' as TabType, icon: UtensilsCrossed, label: 'Öğünler', ref: historyTabRef },
+    { id: 'settings' as TabType, icon: Settings, label: 'Ayarlar', ref: settingsButtonRef }
   ]
 
   return (
@@ -26,6 +30,7 @@ export function BottomTabNav({ activeTab, onTabChange }: BottomTabNavProps) {
           return (
             <button
               key={tab.id}
+              ref={tab.ref as any}
               onClick={() => onTabChange(tab.id)}
               className={`flex flex-col items-center justify-center gap-1 transition-all ${
                 isActive

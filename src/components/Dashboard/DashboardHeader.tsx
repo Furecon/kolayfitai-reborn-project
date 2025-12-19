@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Camera, Plus } from 'lucide-react'
+import { useTutorialTarget } from '@/hooks/useTutorialTarget'
 
 interface DashboardHeaderProps {
   onCameraClick: () => void
@@ -8,6 +9,8 @@ interface DashboardHeaderProps {
 export function DashboardHeader({
   onCameraClick
 }: DashboardHeaderProps) {
+  const addMealButtonRef = useTutorialTarget('AddMealButton')
+
   return (
     <div className="bg-white border-b border-gray-200 w-full">
       <div className="px-4 sm:px-6 py-3 sm:py-4">
@@ -26,6 +29,7 @@ export function DashboardHeader({
 
           <div className="flex items-center space-x-2 flex-shrink-0">
             <Button
+              ref={addMealButtonRef as any}
               onClick={onCameraClick}
               className="bg-green-600 hover:bg-green-700 text-white h-9 sm:h-11 px-3 sm:px-5 shadow-md"
             >

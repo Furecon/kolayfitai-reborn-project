@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Droplet, Plus, Minus } from 'lucide-react';
+import { useTutorialTarget } from '@/hooks/useTutorialTarget';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,8 @@ export function WaterTracker({ userWeight = 70 }: WaterTrackerProps) {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const waterWidgetRef = useTutorialTarget('WaterWidget');
+  const addWaterButtonRef = useTutorialTarget('AddWaterButton');
 
   // Calculate daily water goal based on weight (27.5 ml/kg average)
   const dailyGoalMl = Math.round((userWeight * 27.5) / 250) * 250; // Round to nearest 250ml
@@ -144,7 +147,7 @@ export function WaterTracker({ userWeight = 70 }: WaterTrackerProps) {
   }
 
   return (
-    <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-gray-800 dark:to-gray-900">
+    <Card ref={waterWidgetRef as any} className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-gray-800 dark:to-gray-900">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Droplet className="h-5 w-5 text-blue-500" />
@@ -219,7 +222,7 @@ export function WaterTracker({ userWeight = 70 }: WaterTrackerProps) {
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="bg-blue-500 hover:bg-blue-600">
+              <Button ref={addWaterButtonRef as any} size="sm" className="bg-blue-500 hover:bg-blue-600">
                 <Plus className="h-4 w-4 mr-1" />
                 Su Ekle
               </Button>
