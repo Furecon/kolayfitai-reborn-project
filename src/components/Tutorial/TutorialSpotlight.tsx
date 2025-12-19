@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react'
 interface SpotlightProps {
   targetElement: HTMLElement | null
   opacity: number
+  onClickOutside?: () => void
 }
 
-export function TutorialSpotlight({ targetElement, opacity }: SpotlightProps) {
+export function TutorialSpotlight({ targetElement, opacity, onClickOutside }: SpotlightProps) {
   const [rect, setRect] = useState<DOMRect | null>(null)
 
   useEffect(() => {
@@ -29,9 +30,27 @@ export function TutorialSpotlight({ targetElement, opacity }: SpotlightProps) {
 
   const padding = 8
 
+  const handleClick = (e: React.MouseEvent) => {
+    const clickX = e.clientX
+    const clickY = e.clientY
+
+    const isInsideTarget =
+      clickX >= rect.left - padding &&
+      clickX <= rect.right + padding &&
+      clickY >= rect.top - padding &&
+      clickY <= rect.bottom + padding
+
+    if (!isInsideTarget && onClickOutside) {
+      onClickOutside()
+    }
+  }
+
   return (
-    <div className="fixed inset-0 pointer-events-none z-[9998]">
-      <svg width="100%" height="100%" className="absolute inset-0">
+    <div
+      className="fixed inset-0 z-[9998] cursor-pointer"
+      onClick={handleClick}
+    >
+      <svg width="100%" height="100%" className="absolute inset-0 pointer-events-none">
         <defs>
           <mask id="spotlight-mask">
             <rect x="0" y="0" width="100%" height="100%" fill="white" />
@@ -57,7 +76,7 @@ export function TutorialSpotlight({ targetElement, opacity }: SpotlightProps) {
       </svg>
 
       <div
-        className="absolute border-2 border-primary rounded-xl transition-all duration-300 animate-pulse"
+        className="absolute border-2 border-primary rounded-xl transition-all duration-300 animate-pulse pointer-events-none"
         style={{
           left: rect.left - padding,
           top: rect.top - padding,

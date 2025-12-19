@@ -94,6 +94,7 @@ export function TutorialEngine({
       <TutorialSpotlight
         targetElement={targetElement}
         opacity={tutorialConfig.settings.overlayOpacity}
+        onClickOutside={handleSkip}
       />
 
       <TutorialPointer

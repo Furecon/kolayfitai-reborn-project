@@ -43,37 +43,62 @@ export function TutorialTooltip({
   const getTooltipPosition = (): React.CSSProperties => {
     const offset = 20
     const tooltipWidth = 320
+    const bottomNavHeight = 64
+    const minTopMargin = 16
+    const minBottomMargin = bottomNavHeight + 16
+
+    let position: React.CSSProperties = {}
 
     switch (placement) {
       case 'top':
-        return {
+        position = {
           bottom: window.innerHeight - targetRect.top + offset,
           left: targetRect.left + targetRect.width / 2,
           transform: 'translateX(-50%)',
           maxWidth: tooltipWidth
         }
+        break
       case 'bottom':
-        return {
+        position = {
           top: targetRect.bottom + offset,
           left: targetRect.left + targetRect.width / 2,
           transform: 'translateX(-50%)',
           maxWidth: tooltipWidth
         }
+        break
       case 'left':
-        return {
+        position = {
           top: targetRect.top + targetRect.height / 2,
           right: window.innerWidth - targetRect.left + offset,
           transform: 'translateY(-50%)',
           maxWidth: tooltipWidth
         }
+        break
       case 'right':
-        return {
+        position = {
           top: targetRect.top + targetRect.height / 2,
           left: targetRect.right + offset,
           transform: 'translateY(-50%)',
           maxWidth: tooltipWidth
         }
+        break
     }
+
+    if (position.top !== undefined) {
+      const estimatedTooltipHeight = 200
+      const wouldOverlapBottomNav = (position.top as number) + estimatedTooltipHeight > window.innerHeight - bottomNavHeight
+
+      if (wouldOverlapBottomNav) {
+        delete position.top
+        position.bottom = minBottomMargin
+      }
+    }
+
+    if (position.bottom !== undefined && (position.bottom as number) > window.innerHeight - minTopMargin) {
+      position.bottom = window.innerHeight - minTopMargin
+    }
+
+    return position
   }
 
   return (
