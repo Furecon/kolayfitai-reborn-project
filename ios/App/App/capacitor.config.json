@@ -31,7 +31,6 @@
 	"packageClassList": [
 		"AppPlugin",
 		"LocalNotificationsPlugin",
-		"GoogleAuth",
 		"PurchasesPlugin",
 		"RevenueCatUIPlugin"
 	]

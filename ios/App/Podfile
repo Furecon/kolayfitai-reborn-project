@@ -13,7 +13,6 @@ def capacitor_pods
   pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
   pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
   pod 'CapacitorLocalNotifications', :path => '../../node_modules/@capacitor/local-notifications'
-  pod 'CodetrixStudioCapacitorGoogleAuth', :path => '../../node_modules/@codetrix-studio/capacitor-google-auth'
   pod 'RevenuecatPurchasesCapacitor', :path => '../../node_modules/@revenuecat/purchases-capacitor'
   pod 'RevenuecatPurchasesCapacitorUi', :path => '../../node_modules/@revenuecat/purchases-capacitor-ui'
 end
@@ -21,25 +20,8 @@ end
 target 'App' do
   capacitor_pods
   # Add your Pods here
-
-  # Force GoogleSignIn 7.1+ for Apple privacy manifest compliance
-  pod 'GoogleSignIn', '~> 7.1'
 end
 
 post_install do |installer|
   assertDeploymentTarget(installer)
-
-  # GoogleSignIn 7.1+ comes with built-in privacy manifests
-  # Verify that the correct version is installed
-  puts "✅ GoogleSignIn 7.1+ includes privacy manifests for Apple compliance"
-
-  # Force iOS 13.0+ deployment target for all pods (required by GoogleSignIn 7.x)
-  installer.pods_project.targets.each do |target|
-    target.build_configurations.each do |config|
-      deployment_target = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
-      if deployment_target.nil? || Gem::Version.new(deployment_target) < Gem::Version.new('13.0')
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
-      end
-    end
-  end
 end

@@ -3,7 +3,6 @@ import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { usePlatform } from '@/hooks/usePlatform'
-import GoogleAuth from '@/plugins/GoogleAuthPlugin'
 import { purchaseService } from '@/services/PurchaseService'
 import { paywallService } from '@/services/PaywallService'
 
@@ -69,87 +68,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log(`[OAuth] Starting OAuth flow for ${provider}`)
       console.log(`[OAuth] Platform: ${platform}, isNative: ${isNative}`)
-      console.log(`[OAuth] GoogleAuth available:`, typeof GoogleAuth !== 'undefined')
 
-      // TEMPORARY: Force web OAuth until google-services.json is added
-      const forceWebOAuth = true
-
-      // For native mobile, use native Google Auth plugin
-      if (isNative && provider === 'google' && !forceWebOAuth) {
-        console.log('[OAuth] Using native Google Auth for mobile')
-
-        if (!GoogleAuth || typeof GoogleAuth.signIn !== 'function') {
-          console.error('[OAuth] GoogleAuth plugin not available!')
-          throw new Error('Google Auth plugin yüklenmedi. Uygulamayı yeniden başlatın.')
-        }
-
-        try {
-          console.log('[OAuth] Calling GoogleAuth.signIn()...')
-          const result = await GoogleAuth.signIn()
-          console.log('[OAuth] Native Google sign in result:', result)
-
-          if (!result?.authentication?.idToken) {
-            throw new Error('ID token bulunamadı. Google Auth yapılandırmanızı kontrol edin.')
-          }
-
-          // Sign in to Supabase with the ID token
-          const { data, error } = await supabase.auth.signInWithIdToken({
-            provider: 'google',
-            token: result.authentication.idToken,
-            nonce: result.authentication.nonce,
-          })
-
-          if (error) {
-            console.error('Supabase sign in error:', error)
-            console.error('Error details:', {
-              message: error.message,
-              status: error.status,
-              name: error.name
-            })
-
-            let errorMessage = error.message
-            if (error.message.includes('invalid') || error.message.includes('path')) {
-              errorMessage = 'OAuth yapılandırması hatalı. Lütfen Supabase\'de Google OAuth provider\'ı kontrol edin ve redirect URL\'leri ekleyin.'
-            }
-
-            toast({
-              title: "Giriş Hatası",
-              description: errorMessage,
-              variant: "destructive"
-            })
-            throw error
-          }
-
-          console.log('Successfully signed in with Google (native)', data)
-          toast({
-            title: "Başarılı",
-            description: "Google ile giriş yapıldı",
-          })
-          return
-        } catch (error: any) {
-          console.error('Native Google Auth error:', error)
-          console.error('Full error object:', JSON.stringify(error, null, 2))
-
-          let errorMessage = error.message || "Google girişi başarısız oldu"
-          if (error.error === 12501) {
-            errorMessage = "Google girişi iptal edildi"
-          } else if (error.error === 10) {
-            errorMessage = "Google Play Services hatası. Cihazınızı kontrol edin."
-          }
-
-          toast({
-            title: "Giriş Hatası",
-            description: errorMessage,
-            variant: "destructive"
-          })
-          throw error
-        }
-      }
-
-      // For web or other providers, use standard OAuth flow
-      console.log('[OAuth] Using web OAuth flow')
-      console.log('[OAuth] isNative:', isNative, 'provider:', provider)
-
+      // Use Supabase OAuth for all platforms (web and native)
       const redirectTo = isNative
         ? 'com.kolayfit.app://oauth-callback'
         : `${window.location.origin}/`
