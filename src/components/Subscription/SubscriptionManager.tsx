@@ -10,6 +10,7 @@ import { purchaseService } from '@/services/PurchaseService'
 import { customerCenterService } from '@/services/CustomerCenterService'
 import { PaywallButton } from './PaywallButton'
 import { Capacitor } from '@capacitor/core'
+import { useTutorialTarget } from '@/hooks/useTutorialTarget'
 
 interface SubscriptionData {
   subscriptionValid: boolean
@@ -25,6 +26,9 @@ export function SubscriptionManager() {
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [restoring, setRestoring] = useState(false)
+  const premiumBenefitsListRef = useTutorialTarget('PremiumBenefitsList')
+  const subscribeButtonRef = useTutorialTarget('SubscribeButton')
+  const restorePurchasesRef = useTutorialTarget('RestorePurchases')
 
   useEffect(() => {
     if (user) {
@@ -262,7 +266,7 @@ export function SubscriptionManager() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3">
+            <div ref={premiumBenefitsListRef} className="grid gap-3">
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                 <div>
@@ -355,6 +359,7 @@ export function SubscriptionManager() {
                 )}
 
                 <PaywallButton
+                  ref={subscribeButtonRef}
                   size="lg"
                   className="w-full"
                   onSuccess={checkSubscriptionStatus}
@@ -437,6 +442,7 @@ export function SubscriptionManager() {
             {isNative && (
               <div className="pt-3 border-t">
                 <Button
+                  ref={restorePurchasesRef}
                   variant="outline"
                   size="sm"
                   onClick={restorePurchases}

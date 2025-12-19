@@ -34,6 +34,7 @@ export function WaterTracker({ userWeight = 70 }: WaterTrackerProps) {
   const { toast } = useToast();
   const waterWidgetRef = useTutorialTarget('WaterWidget');
   const addWaterButtonRef = useTutorialTarget('AddWaterButton');
+  const waterGoalSettingsRef = useTutorialTarget('WaterGoalSettings');
 
   // Calculate daily water goal based on weight (27.5 ml/kg average)
   const dailyGoalMl = Math.round((userWeight * 27.5) / 250) * 250; // Round to nearest 250ml
@@ -156,7 +157,7 @@ export function WaterTracker({ userWeight = 70 }: WaterTrackerProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Water Goal and Current Intake */}
-        <div className="text-center space-y-1">
+        <div ref={waterGoalSettingsRef as any} className="text-center space-y-1">
           <div className="text-sm text-gray-600 dark:text-gray-400">
             Hedef: {goalLiters} Litre
           </div>

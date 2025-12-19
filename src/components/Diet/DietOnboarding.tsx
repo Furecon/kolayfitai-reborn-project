@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { X, ChevronRight, ChevronLeft } from 'lucide-react';
+import { useTutorialTarget } from '@/hooks/useTutorialTarget';
 import {
   DietProfile,
   Gender,
@@ -30,6 +31,7 @@ interface DietOnboardingProps {
 export function DietOnboarding({ onComplete, onSkip, initialData }: DietOnboardingProps) {
   const [step, setStep] = useState(1);
   const totalSteps = 3;
+  const goalSelectorRef = useTutorialTarget('GoalSelector');
 
   const [profile, setProfile] = useState<DietProfile>(initialData || {
     age: undefined,
@@ -171,6 +173,7 @@ export function DietOnboarding({ onComplete, onSkip, initialData }: DietOnboardi
                 <div className="space-y-2">
                   <Label>Hedefin</Label>
                   <RadioGroup
+                    ref={goalSelectorRef}
                     value={profile.goal}
                     onValueChange={(value) => updateProfile({ goal: value as WeightGoal })}
                   >

@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { Bell, Clock, Calendar, Plus, Trash2, Droplet } from 'lucide-react'
 import { notificationManager } from '@/lib/notificationManager'
+import { useTutorialTarget } from '@/hooks/useTutorialTarget'
 
 interface MealReminders {
   breakfast: boolean
@@ -54,6 +55,9 @@ export function NotificationSettings() {
     value: string
   } | null>(null)
   const { toast } = useToast()
+  const enableNotificationsCTARef = useTutorialTarget('EnableNotificationsCTA')
+  const notificationScheduleRef = useTutorialTarget('NotificationSchedule')
+  const notificationTypesRef = useTutorialTarget('NotificationTypes')
 
   useEffect(() => {
     loadPreferences()
@@ -370,7 +374,7 @@ export function NotificationSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div ref={enableNotificationsCTARef} className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="meal-reminders">Öğün Hatırlatmalarını Aç/Kapat</Label>
               <p className="text-sm text-muted-foreground">
@@ -385,7 +389,7 @@ export function NotificationSettings() {
           </div>
 
           {preferences.notification_settings.meal_reminders && (
-            <div className="space-y-4 ml-6 border-l-2 pl-4">
+            <div ref={notificationScheduleRef} className="space-y-4 ml-6 border-l-2 pl-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Label>Kahvaltı</Label>
@@ -540,7 +544,7 @@ export function NotificationSettings() {
             <CardTitle>Diğer Bildirimler</CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent ref={notificationTypesRef} className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="goal-notifications">Hedef Bildirimleri</Label>

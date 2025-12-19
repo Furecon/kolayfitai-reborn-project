@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Utensils, Sparkles } from 'lucide-react';
+import { useTutorialTarget } from '@/hooks/useTutorialTarget';
 
 interface EmptyDietStateProps {
   hasProfile: boolean;
@@ -9,6 +10,9 @@ interface EmptyDietStateProps {
 }
 
 export function EmptyDietState({ hasProfile, onCreateProfile, onGeneratePlan }: EmptyDietStateProps) {
+  const createPlanButtonRef = useTutorialTarget('CreatePlanButton');
+  const generatePlanCTARef = useTutorialTarget('GeneratePlanCTA');
+
   return (
     <div className="flex items-center justify-center p-6 pb-24 h-full overflow-y-auto">
       <Card className="max-w-md w-full">
@@ -25,6 +29,7 @@ export function EmptyDietState({ hasProfile, onCreateProfile, onGeneratePlan }: 
           {!hasProfile ? (
             <>
               <Button
+                ref={createPlanButtonRef}
                 onClick={onCreateProfile}
                 className="w-full"
                 size="lg"
@@ -39,6 +44,7 @@ export function EmptyDietState({ hasProfile, onCreateProfile, onGeneratePlan }: 
           ) : (
             <>
               <Button
+                ref={generatePlanCTARef}
                 onClick={onGeneratePlan}
                 className="w-full"
                 size="lg"
