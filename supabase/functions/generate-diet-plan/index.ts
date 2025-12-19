@@ -61,6 +61,24 @@ Deno.serve(async (req: Request) => {
 
     console.log('📋 Received diet profile:', dietProfile);
 
+    // Fetch user's calorie goal from profiles
+    const { data: userProfile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fat_goal')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('⚠️ Error fetching user profile:', profileError);
+    }
+
+    const targetCalories = userProfile?.daily_calorie_goal || null;
+    const targetProtein = userProfile?.daily_protein_goal || null;
+    const targetCarbs = userProfile?.daily_carbs_goal || null;
+    const targetFat = userProfile?.daily_fat_goal || null;
+
+    console.log('🎯 User macro goals:', { targetCalories, targetProtein, targetCarbs, targetFat });
+
     const systemPrompt = `Sen Türk kullanıcılar için çalışan profesyonel bir beslenme uzmanısın. Görevin kullanıcının diyet profiline göre 7 günlük dengeli ve sağlıklı bir beslenme planı oluşturmak.
 
 ÖNEMLİ KURALLAR:
@@ -68,11 +86,12 @@ Deno.serve(async (req: Request) => {
 2. Kullanıcının seçtiği diyet türüne %100 uyum sağla.
 3. Aynı yemeği çok sık tekrar etme. 7 gün içinde mümkün olduğunca çeşitlilik sağla.
 4. Türk mutfağına ve Türkiye'de bulunabilir malzemelere öncelik ver.
-5. Kullanıcının hedefi ve aktivite seviyesine göre günlük kalori aralığını belirle.
-6. Her öğün için net, anlaşılır Türkçe tarifler ver.
-7. Makro besin değerlerini (protein, karbonhidrat, yağ) dengeli dağıt.
-8. Sevilmeyen yiyecekleri kullanma.
-9. Tercih edilen mutfaklardan ilham al ama Türkiye'de uygulanabilir ol.
+5. KRİTİK: Kullanıcının hedef günlük kalorisi belirtilmişse, MUTLAKA bu kalori hedefine uygun plan oluştur. Günlük toplam kalori hedefin +/- 50 kalori içinde olmalı.
+6. Hedef kaloriye ulaşmak için gerekirse birden fazla ara öğün (snack) ekle. Ara öğünler sağlıklı atıştırmalıklar olmalı (meyve, kuruyemiş, yoğurt vb).
+7. Her öğün için net, anlaşılır Türkçe tarifler ver.
+8. Makro besin değerlerini (protein, karbonhidrat, yağ) dengeli dağıt ve hedef makrolara uygun ol.
+9. Sevilmeyen yiyecekleri kullanma.
+10. Tercih edilen mutfaklardan ilham al ama Türkiye'de uygulanabilir ol.
 
 CEVAP FORMATI:
 Sadece JSON formatında yanıt ver. Markdown veya açıklama ekleme. JSON şu yapıda olmalı:
@@ -132,6 +151,19 @@ Sadece JSON formatında yanıt ver. Markdown veya açıklama ekleme. JSON şu ya
 
 7 gün için bu yapıyı tekrarla (dayIndex: 1-7, dayName: Pazartesi-Pazar).`;
 
+    let calorieInstruction = '';
+    let macroInstruction = '';
+
+    if (targetCalories) {
+      calorieInstruction = `\n\n⚠️ KRİTİK HEDEF: Kullanıcının günlük kalori hedefi ${targetCalories} kcal. Her günün toplam kalorisi MUTLAKA ${targetCalories - 50} ile ${targetCalories + 50} kcal arasında olmalı.`;
+
+      if (targetProtein && targetCarbs && targetFat) {
+        macroInstruction = `\nMakro hedefleri: Protein ${targetProtein}g, Karbonhidrat ${targetCarbs}g, Yağ ${targetFat}g. Bu hedeflere yakın kalınmalı (±10g tolerans).`;
+      }
+
+      calorieInstruction += `\n\nGerekirse 1-3 adet sağlıklı ara öğün (snack) ekleyerek kalori hedefine ulaş. Örnek ara öğünler: meyve, kuruyemiş, yoğurt, tam tahıllı bisküvi, protein bar, smoothie vb.`;
+    }
+
     const userPrompt = `Aşağıdaki kullanıcı profili için 7 günlük kişisel diyet planı oluştur:
 
 Yaş: ${dietProfile.age || 'Belirtilmedi'}
@@ -143,9 +175,9 @@ Aktivite Seviyesi: ${dietProfile.activity_level || 'Belirtilmedi'}
 Diyet Türü: ${dietProfile.diet_type || 'normal'}
 Alerjenler: ${dietProfile.allergens && dietProfile.allergens.length > 0 ? dietProfile.allergens.join(', ') : 'Yok'}
 Sevilmeyen Yiyecekler: ${dietProfile.disliked_foods || 'Belirtilmedi'}
-Tercih Edilen Mutfaklar: ${dietProfile.preferred_cuisines || 'Belirtilmedi'}
+Tercih Edilen Mutfaklar: ${dietProfile.preferred_cuisines || 'Belirtilmedi'}${calorieInstruction}${macroInstruction}
 
-Lütfen bu bilgilere göre 7 günlük dengeli ve çeşitli bir diyet planı oluştur.`;
+Lütfen bu bilgilere göre 7 günlük dengeli ve çeşitli bir diyet planı oluştur. Özellikle kalori hedefine dikkat et!`;
 
     console.log('🤖 Calling OpenAI GPT-4o...');
 
