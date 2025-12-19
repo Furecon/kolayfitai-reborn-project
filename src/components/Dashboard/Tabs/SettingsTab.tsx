@@ -12,7 +12,8 @@ import {
   LogOut,
   ChevronRight,
   Mail,
-  Utensils
+  Utensils,
+  BookOpen
 } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
@@ -26,8 +27,9 @@ import { FAQPage } from '../../Support/FAQPage'
 import { NotificationSettings } from '../../Profile/NotificationSettings'
 import { DietOnboarding } from '../../Diet/DietOnboarding'
 import { DietProfile } from '@/types/diet'
+import { TutorialsGuide } from '../../Settings/TutorialsGuide'
 
-type SettingsView = 'main' | 'profile' | 'goals' | 'subscription' | 'notifications' | 'contact' | 'resources' | 'policies' | 'faq' | 'diet'
+type SettingsView = 'main' | 'profile' | 'goals' | 'subscription' | 'notifications' | 'contact' | 'resources' | 'policies' | 'faq' | 'diet' | 'tutorials'
 
 interface SettingsTabProps {
   onRefreshNeeded?: () => void
@@ -210,6 +212,31 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
     )
   }
 
+  if (currentView === 'tutorials') {
+    return (
+      <div className="pb-20 pt-4 w-full">
+        <div className="border-b border-gray-200 bg-white px-4 sm:px-6 py-3 sm:py-4 mb-4 w-full">
+          <div className="max-w-screen-2xl mx-auto">
+            <Button
+              variant="ghost"
+              onClick={() => setCurrentView('main')}
+              className="text-gray-600 h-10"
+            >
+              <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
+              Geri
+            </Button>
+            <h1 className="text-xl font-semibold mt-2">Rehberler & İpuçları</h1>
+          </div>
+        </div>
+        <div className="w-full px-4 sm:px-6">
+          <div className="max-w-screen-2xl mx-auto">
+            <TutorialsGuide />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="pb-20 pt-4 w-full">
       <div className="w-full px-4 sm:px-6 mb-4">
@@ -311,6 +338,22 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
 
         <Card>
           <CardContent className="p-0">
+            <button
+              onClick={() => setCurrentView('tutorials')}
+              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <BookOpen className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div className="text-left">
+                  <div className="font-medium text-gray-900">Rehberler & İpuçları</div>
+                  <div className="text-xs text-gray-500">Uygulama rehberleri</div>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </button>
+
             <button
               onClick={() => setCurrentView('faq')}
               className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"

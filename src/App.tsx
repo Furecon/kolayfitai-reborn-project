@@ -11,6 +11,7 @@ import { TermsOfService } from '@/components/Legal/TermsOfService'
 import { ContactUs } from '@/components/Legal/ContactUs'
 import { useOAuthRedirect } from '@/hooks/useOAuthRedirect'
 import { usePlatform } from '@/hooks/usePlatform'
+import { TutorialProvider } from '@/components/Tutorial/TutorialProvider'
 import './App.css'
 
 const queryClient = new QueryClient({
@@ -96,8 +97,10 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <Router>
           <TooltipProvider>
-            <AppRoutes />
-            <Toaster />
+            <TutorialProvider>
+              <AppRoutes />
+              <Toaster />
+            </TutorialProvider>
           </TooltipProvider>
         </Router>
       </QueryClientProvider>
