@@ -93,15 +93,6 @@ export const tutorialConfig: TutorialConfig = {
         },
         {
           stepId: 's3',
-          targetKey: 'WaterWidget',
-          pointer: 'arrow',
-          placement: 'top',
-          title: 'Su hedefini unutma',
-          bodyTr: 'Günlük su takibini buradan yap.',
-          bodyEn: 'Track your daily water intake here.'
-        },
-        {
-          stepId: 's4',
           targetKey: 'HistoryTab',
           pointer: 'finger',
           placement: 'top',
@@ -110,7 +101,7 @@ export const tutorialConfig: TutorialConfig = {
           bodyEn: 'Quickly access your past records.'
         },
         {
-          stepId: 's5',
+          stepId: 's4',
           targetKey: 'SettingsButton',
           pointer: 'finger',
           placement: 'left',
@@ -305,118 +296,6 @@ export const tutorialConfig: TutorialConfig = {
           title: 'Satın almayı geri yükle',
           bodyTr: 'Cihaz değiştiyse buradan geri al.',
           bodyEn: 'Restore from here if you changed device.'
-        }
-      ]
-    },
-    {
-      featureId: 'diet_plan',
-      title: 'Diyet Planı',
-      trigger: 'first_time_feature',
-      route: '/app',
-      tabId: 'ai',
-      targetView: 'diet_plan',
-      navigationDelay: 1500,
-      steps: [
-        {
-          stepId: 's1',
-          targetKey: 'CreatePlanButton',
-          pointer: 'finger',
-          placement: 'bottom',
-          title: 'Plan oluştur',
-          bodyTr: 'Hedefine göre kişisel plan başlat.',
-          bodyEn: 'Start a personalized plan based on your goal.'
-        },
-        {
-          stepId: 's2',
-          targetKey: 'GoalSelector',
-          pointer: 'arrow',
-          placement: 'top',
-          title: 'Hedef seç',
-          bodyTr: 'Kilo verme, koruma veya alma hedefini belirle.',
-          bodyEn: 'Set your weight loss, maintenance or gain goal.'
-        },
-        {
-          stepId: 's3',
-          targetKey: 'GeneratePlanCTA',
-          pointer: 'finger',
-          placement: 'bottom',
-          title: 'Planı üret',
-          bodyTr: 'Seçimlerine göre planın hazırlansın.',
-          bodyEn: 'Generate your plan based on selections.'
-        }
-      ]
-    },
-    {
-      featureId: 'water_tracking',
-      title: 'Su Takibi',
-      trigger: 'first_time_feature',
-      route: '/app',
-      tabId: 'home',
-      steps: [
-        {
-          stepId: 's1',
-          targetKey: 'WaterWidget',
-          pointer: 'arrow',
-          placement: 'top',
-          title: 'Su takibi',
-          bodyTr: 'Günlük su hedefini burada gör.',
-          bodyEn: 'See your daily water goal here.'
-        },
-        {
-          stepId: 's2',
-          targetKey: 'AddWaterButton',
-          pointer: 'finger',
-          placement: 'bottom',
-          title: 'Su ekle',
-          bodyTr: 'Bir bardak eklemek için dokun.',
-          bodyEn: 'Tap to add a glass.'
-        },
-        {
-          stepId: 's3',
-          targetKey: 'WaterGoalSettings',
-          pointer: 'arrow',
-          placement: 'top',
-          title: 'Hedefini ayarla',
-          bodyTr: 'Günlük su hedefini kişiselleştir.',
-          bodyEn: 'Customize your daily water goal.'
-        }
-      ]
-    },
-    {
-      featureId: 'notifications',
-      title: 'Bildirimler',
-      trigger: 'first_time_feature',
-      route: '/app',
-      tabId: 'settings',
-      targetView: 'notifications',
-      navigationDelay: 1200,
-      steps: [
-        {
-          stepId: 's1',
-          targetKey: 'EnableNotificationsCTA',
-          pointer: 'finger',
-          placement: 'bottom',
-          title: 'Bildirimleri aç',
-          bodyTr: 'Su ve öğün hatırlatmalarını kaçırma.',
-          bodyEn: 'Don\'t miss water and meal reminders.'
-        },
-        {
-          stepId: 's2',
-          targetKey: 'NotificationSchedule',
-          pointer: 'arrow',
-          placement: 'top',
-          title: 'Saatleri seç',
-          bodyTr: 'Hatırlatma saatlerini kendine göre ayarla.',
-          bodyEn: 'Set reminder times for yourself.'
-        },
-        {
-          stepId: 's3',
-          targetKey: 'NotificationTypes',
-          pointer: 'arrow',
-          placement: 'top',
-          title: 'Ne için bildirim?',
-          bodyTr: 'Su, öğün ve hedef bildirimlerini seç.',
-          bodyEn: 'Choose water, meal and goal notifications.'
         }
       ]
     }
