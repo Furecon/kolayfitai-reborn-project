@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -40,15 +41,18 @@ export function TutorialTooltip({
   primaryDoneText,
   skipText
 }: TooltipProps) {
+  const tooltipRef = useRef<HTMLDivElement>(null)
+
   const getTooltipPosition = (): React.CSSProperties => {
     const offset = 20
     const sideMargin = 16
     const maxTooltipWidth = 320
     const availableWidth = window.innerWidth - (sideMargin * 2)
     const tooltipWidth = Math.min(maxTooltipWidth, availableWidth)
-    const bottomNavHeight = 64
+    const bottomNavHeight = 80
     const minTopMargin = 16
     const minBottomMargin = bottomNavHeight + 16
+    const estimatedTooltipHeight = 200
 
     let position: React.CSSProperties = {
       maxWidth: tooltipWidth,
@@ -88,14 +92,22 @@ export function TutorialTooltip({
     }
 
     if (position.right !== undefined && typeof position.right === 'number') {
-      if (position.right < sideMargin) {
-        position.right = sideMargin
+      const minRight = sideMargin
+      const maxRight = window.innerWidth - tooltipWidth - sideMargin
+
+      if (position.right < minRight) {
+        position.right = minRight
+      } else if (position.right > maxRight) {
+        position.right = maxRight
       }
     }
 
-    if (position.top !== undefined) {
-      const estimatedTooltipHeight = 200
-      const wouldOverlapBottomNav = (position.top as number) + estimatedTooltipHeight > window.innerHeight - bottomNavHeight
+    if (position.top !== undefined && typeof position.top === 'number') {
+      if (position.top < minTopMargin) {
+        position.top = minTopMargin
+      }
+
+      const wouldOverlapBottomNav = position.top + estimatedTooltipHeight > window.innerHeight - minBottomMargin
 
       if (wouldOverlapBottomNav) {
         delete position.top
@@ -103,8 +115,14 @@ export function TutorialTooltip({
       }
     }
 
-    if (position.bottom !== undefined && (position.bottom as number) > window.innerHeight - minTopMargin) {
-      position.bottom = window.innerHeight - minTopMargin
+    if (position.bottom !== undefined && typeof position.bottom === 'number') {
+      if (position.bottom < minBottomMargin) {
+        position.bottom = minBottomMargin
+      }
+
+      if (position.bottom > window.innerHeight - minTopMargin - estimatedTooltipHeight) {
+        position.bottom = window.innerHeight - minTopMargin - estimatedTooltipHeight
+      }
     }
 
     return position

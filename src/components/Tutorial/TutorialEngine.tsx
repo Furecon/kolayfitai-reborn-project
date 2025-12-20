@@ -24,6 +24,7 @@ export function TutorialEngine({
 }: TutorialEngineProps) {
   const [currentStep, setCurrentStep] = useState<TutorialStep | null>(null)
   const [targetElement, setTargetElement] = useState<HTMLElement | null>(null)
+  const [targetRect, setTargetRect] = useState<DOMRect | null>(null)
   const [dontShowAgain, setDontShowAgain] = useState(false)
 
   useEffect(() => {
@@ -38,7 +39,13 @@ export function TutorialEngine({
     const element = targetRegistry.get(step.targetKey)
     if (element) {
       setTargetElement(element)
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+      const rect = element.getBoundingClientRect()
+      const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight
+
+      if (!isInView) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+      }
     } else {
       console.warn(`[Tutorial] Target element not found: ${step.targetKey}, skipping step`)
       setTimeout(() => {
@@ -83,11 +90,27 @@ export function TutorialEngine({
     }
   }, [])
 
-  if (!currentStep || !targetElement) {
+  useEffect(() => {
+    if (!targetElement) return
+
+    const updateRect = () => {
+      setTargetRect(targetElement.getBoundingClientRect())
+    }
+
+    updateRect()
+
+    window.addEventListener('scroll', updateRect, true)
+    window.addEventListener('resize', updateRect)
+
+    return () => {
+      window.removeEventListener('scroll', updateRect, true)
+      window.removeEventListener('resize', updateRect)
+    }
+  }, [targetElement])
+
+  if (!currentStep || !targetElement || !targetRect) {
     return null
   }
-
-  const targetRect = targetElement.getBoundingClientRect()
 
   return (
     <>
