@@ -110,7 +110,35 @@ export function HistoryMeals() {
           : []
       })) || []
 
-      setMeals(transformedMeals)
+      // If no meals found and tutorial might be active, add demo meal
+      if (transformedMeals.length === 0) {
+        const today = new Date().toISOString().split('T')[0]
+        const demoMeal: MealHistory = {
+          id: 'demo-meal-tutorial',
+          date: today,
+          meal_type: 'breakfast',
+          total_calories: 350,
+          total_protein: 15,
+          total_carbs: 45,
+          total_fat: 12,
+          created_at: new Date().toISOString(),
+          food_items: [
+            {
+              id: 'demo-food-1',
+              name: 'Örnek Kahvaltı (Tutorial)',
+              amount: 1,
+              unit: 'porsiyon',
+              calories: 350,
+              protein: 15,
+              carbs: 45,
+              fat: 12
+            }
+          ]
+        }
+        setMeals([demoMeal])
+      } else {
+        setMeals(transformedMeals)
+      }
     } catch (error) {
       console.error('Error fetching history meals:', error)
     } finally {

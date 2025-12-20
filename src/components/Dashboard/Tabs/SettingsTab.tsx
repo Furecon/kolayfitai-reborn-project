@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,6 +29,8 @@ import { NotificationSettings } from '../../Profile/NotificationSettings'
 import { DietOnboarding } from '../../Diet/DietOnboarding'
 import { DietProfile } from '@/types/diet'
 import { TutorialsGuide } from '../../Settings/TutorialsGuide'
+import { getTutorialByFeatureId } from '@/lib/tutorialConfig'
+import { useTutorial } from '../../Tutorial/TutorialProvider'
 
 type SettingsView = 'main' | 'profile' | 'goals' | 'subscription' | 'notifications' | 'contact' | 'resources' | 'policies' | 'faq' | 'diet' | 'tutorials'
 
@@ -40,6 +42,39 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
   const { toast } = useToast()
   const [currentView, setCurrentView] = useState<SettingsView>('main')
   const bodyInfoSectionRef = useTutorialTarget('BodyInfoSection')
+  const { startTutorial } = useTutorial()
+
+  useEffect(() => {
+    const handleTutorialNavigate = (event: CustomEvent) => {
+      const { featureId } = event.detail
+      const tutorial = getTutorialByFeatureId(featureId)
+
+      if (!tutorial) return
+
+      // Handle settings-related tutorials
+      if (tutorial.targetView === 'profile') {
+        setCurrentView('profile')
+        setTimeout(() => {
+          startTutorial(featureId)
+        }, tutorial.navigationDelay || 1200)
+      } else if (tutorial.targetView === 'subscription') {
+        setCurrentView('subscription')
+        setTimeout(() => {
+          startTutorial(featureId)
+        }, tutorial.navigationDelay || 1200)
+      } else if (tutorial.targetView === 'notifications') {
+        setCurrentView('notifications')
+        setTimeout(() => {
+          startTutorial(featureId)
+        }, tutorial.navigationDelay || 1200)
+      }
+    }
+
+    window.addEventListener('tutorial-navigate' as any, handleTutorialNavigate)
+    return () => {
+      window.removeEventListener('tutorial-navigate' as any, handleTutorialNavigate)
+    }
+  }, [startTutorial])
 
   const handleLogout = async () => {
     try {

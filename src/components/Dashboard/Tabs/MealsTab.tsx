@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MealsList } from '../MealsList'
 import { HistoryMeals } from '../HistoryMeals'
 import { Button } from '@/components/ui/button'
 import { Sparkles, Heart, Camera } from 'lucide-react'
 import { DietPlanScreen } from '../../Diet/DietPlanScreen'
 import { FavoriteMeals } from '../../MealSuggestions/FavoriteMeals'
+import { getTutorialByFeatureId } from '@/lib/tutorialConfig'
+import { useTutorial } from '../../Tutorial/TutorialProvider'
 
 interface MealsTabProps {
   onAddMeal: () => void
@@ -25,6 +27,29 @@ type MealsView = 'today' | 'diet_plan' | 'favorites'
 
 export function MealsTab({ onAddMeal, refreshTrigger, dailyStats }: MealsTabProps) {
   const [currentView, setCurrentView] = useState<MealsView>('today')
+  const { startTutorial } = useTutorial()
+
+  useEffect(() => {
+    const handleTutorialNavigate = (event: CustomEvent) => {
+      const { featureId } = event.detail
+      const tutorial = getTutorialByFeatureId(featureId)
+
+      if (!tutorial) return
+
+      // Handle diet plan tutorial
+      if (tutorial.targetView === 'diet_plan') {
+        setCurrentView('diet_plan')
+        setTimeout(() => {
+          startTutorial(featureId)
+        }, tutorial.navigationDelay || 1500)
+      }
+    }
+
+    window.addEventListener('tutorial-navigate' as any, handleTutorialNavigate)
+    return () => {
+      window.removeEventListener('tutorial-navigate' as any, handleTutorialNavigate)
+    }
+  }, [startTutorial])
 
   const handleMealAdded = () => {
     setCurrentView('today')

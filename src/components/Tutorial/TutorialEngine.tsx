@@ -26,6 +26,7 @@ export function TutorialEngine({
   const [targetElement, setTargetElement] = useState<HTMLElement | null>(null)
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null)
   const [dontShowAgain, setDontShowAgain] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
     const step = tutorial.steps[currentStepIndex]
@@ -35,23 +36,34 @@ export function TutorialEngine({
     }
 
     setCurrentStep(step)
+    setRetryCount(0)
 
-    const element = targetRegistry.get(step.targetKey)
-    if (element) {
-      setTargetElement(element)
+    const attemptToFindElement = (attempt: number) => {
+      const element = targetRegistry.get(step.targetKey)
+      if (element) {
+        setTargetElement(element)
 
-      const rect = element.getBoundingClientRect()
-      const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight
+        const rect = element.getBoundingClientRect()
+        const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight
 
-      if (!isInView) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+        if (!isInView) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+        }
+      } else if (attempt < 5) {
+        console.warn(`[Tutorial] Target element not found: ${step.targetKey}, retry ${attempt + 1}/5`)
+        setRetryCount(attempt + 1)
+        setTimeout(() => {
+          attemptToFindElement(attempt + 1)
+        }, 300)
+      } else {
+        console.warn(`[Tutorial] Target element not found after 5 retries: ${step.targetKey}, skipping step`)
+        setTimeout(() => {
+          handleNext()
+        }, 100)
       }
-    } else {
-      console.warn(`[Tutorial] Target element not found: ${step.targetKey}, skipping step`)
-      setTimeout(() => {
-        handleNext()
-      }, 100)
     }
+
+    attemptToFindElement(0)
   }, [currentStepIndex, tutorial.steps, targetRegistry])
 
   const handleNext = useCallback(() => {

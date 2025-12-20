@@ -8,6 +8,7 @@ import { useAuth } from '@/components/Auth/AuthProvider'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { ArrowLeft } from 'lucide-react'
+import { useTutorialTarget } from '@/hooks/useTutorialTarget'
 
 interface ProfileData {
   name: string
@@ -30,6 +31,7 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
   const { user } = useAuth()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
+  const bodyInfoSectionRef = useTutorialTarget('BodyInfoSection')
   const [profile, setProfile] = useState<ProfileData>({
     name: '',
     age: null,
@@ -323,7 +325,7 @@ export default function ProfileSetup({ onBack }: ProfileSetupProps) {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div ref={bodyInfoSectionRef as any} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Ad Soyad</Label>
                 <Input

@@ -31,15 +31,10 @@ export function TutorialsGuide() {
       }))
 
       toast({
-        title: 'Rehber başlatılıyor',
-        description: 'İlgili sayfaya yönlendiriliyorsunuz...'
+        description: 'Başlatılıyor...'
       })
     } else {
       startTutorial(featureId)
-      toast({
-        title: 'Rehber başlatıldı',
-        description: 'Adımları takip ederek özelliği keşfedin.'
-      })
     }
   }
 

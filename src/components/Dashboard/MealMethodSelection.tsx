@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ArrowLeft, Camera, Edit3, Zap, Clock, AlertCircle, Sparkles, Upload } from 'lucide-react'
+import { useTutorialTarget } from '@/hooks/useTutorialTarget'
 
 interface MealMethodSelectionProps {
   onBack: () => void
@@ -28,6 +29,7 @@ export function MealMethodSelection({
 
   const [selectedMethod, setSelectedMethod] = useState<'photo' | 'manual'>(getInitialMethod())
   const [cameraPermissionDenied, setCameraPermissionDenied] = useState(false)
+  const manualEntryLinkRef = useTutorialTarget('ManualEntryLink')
 
   // Save user preference when method changes
   const handleMethodSelect = (method: 'photo' | 'manual') => {
@@ -171,10 +173,11 @@ export function MealMethodSelection({
             </CardContent>
           </Card>
 
-          <Card 
+          <Card
+            ref={manualEntryLinkRef as any}
             className={`cursor-pointer transition-all duration-200 border-2 ${
-              selectedMethod === 'manual' 
-                ? 'border-success bg-success-muted' 
+              selectedMethod === 'manual'
+                ? 'border-success bg-success-muted'
                 : 'border-border hover:border-success/50'
             }`}
             onClick={() => handleMethodSelect('manual')}

@@ -20,6 +20,10 @@ export interface Tutorial {
   steps: TutorialStep[]
   route?: string
   tabId?: 'home' | 'ai' | 'meals' | 'progress' | 'settings'
+  targetView?: string
+  requiresDemo?: boolean
+  demoData?: any
+  navigationDelay?: number
 }
 
 export interface TutorialSettings {
@@ -149,6 +153,8 @@ export const tutorialConfig: TutorialConfig = {
       trigger: 'first_time_feature',
       route: '/app',
       tabId: 'home',
+      requiresDemo: true,
+      navigationDelay: 1500,
       steps: [
         {
           stepId: 's1',
@@ -203,6 +209,8 @@ export const tutorialConfig: TutorialConfig = {
       trigger: 'first_time_feature',
       route: '/app',
       tabId: 'meals',
+      requiresDemo: true,
+      navigationDelay: 800,
       steps: [
         {
           stepId: 's1',
@@ -239,6 +247,8 @@ export const tutorialConfig: TutorialConfig = {
       trigger: 'first_time_feature',
       route: '/app',
       tabId: 'settings',
+      targetView: 'profile',
+      navigationDelay: 1200,
       steps: [
         {
           stepId: 's1',
@@ -266,6 +276,8 @@ export const tutorialConfig: TutorialConfig = {
       trigger: 'first_time_feature',
       route: '/app',
       tabId: 'settings',
+      targetView: 'subscription',
+      navigationDelay: 1200,
       steps: [
         {
           stepId: 's1',
@@ -302,6 +314,8 @@ export const tutorialConfig: TutorialConfig = {
       trigger: 'first_time_feature',
       route: '/app',
       tabId: 'ai',
+      targetView: 'diet_plan',
+      navigationDelay: 1500,
       steps: [
         {
           stepId: 's1',
@@ -374,6 +388,8 @@ export const tutorialConfig: TutorialConfig = {
       trigger: 'first_time_feature',
       route: '/app',
       tabId: 'settings',
+      targetView: 'notifications',
+      navigationDelay: 1200,
       steps: [
         {
           stepId: 's1',
