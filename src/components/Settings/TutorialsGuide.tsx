@@ -8,11 +8,9 @@ import { useTutorial } from '@/components/Tutorial/TutorialProvider'
 import { tutorialStorage } from '@/lib/tutorialStorage'
 import { getAllTutorials, getTutorialByFeatureId } from '@/lib/tutorialConfig'
 import { Play, RotateCcw, BookOpen, CheckCircle2, XCircle, Clock, Ban } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
 
 export function TutorialsGuide() {
   const { startTutorial } = useTutorial()
-  const { toast } = useToast()
   const [, setRefreshKey] = useState(0)
 
   const tutorials = getAllTutorials()
@@ -29,10 +27,6 @@ export function TutorialsGuide() {
       window.dispatchEvent(new CustomEvent('tutorial-navigate', {
         detail: { featureId, tabId: tutorial.tabId }
       }))
-
-      toast({
-        description: 'Başlatılıyor...'
-      })
     } else {
       startTutorial(featureId)
     }
@@ -41,19 +35,11 @@ export function TutorialsGuide() {
   const handleResetTutorial = (featureId: string, title: string) => {
     tutorialStorage.resetTutorial(featureId)
     setRefreshKey(prev => prev + 1)
-    toast({
-      title: 'Rehber sıfırlandı',
-      description: `"${title}" rehberi tekrar gösterilecek.`
-    })
   }
 
   const handleResetAll = () => {
     tutorialStorage.resetAllTutorials()
     setRefreshKey(prev => prev + 1)
-    toast({
-      title: 'Tüm rehberler sıfırlandı',
-      description: 'Tüm rehberler tekrar gösterilecek.'
-    })
   }
 
   const getStatusBadge = (featureId: string) => {
