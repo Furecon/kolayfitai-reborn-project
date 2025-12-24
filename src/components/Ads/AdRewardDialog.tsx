@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Loader2, Play, Award, Sparkles, X } from 'lucide-react';
 import { AdRewardService, FeatureType } from '@/services/AdRewardService';
+import { AdMobService } from '@/services/AdMobService';
 import { useToast } from '@/hooks/use-toast';
 
 interface AdRewardDialogProps {
@@ -30,18 +31,45 @@ export const AdRewardDialog = ({
   onCancel,
 }: AdRewardDialogProps) => {
   const [isShowingAd, setIsShowingAd] = useState(false);
+  const [isAdReady, setIsAdReady] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (open && AdMobService.isInitialized()) {
+      setIsAdReady(AdMobService.isAdReady());
+
+      if (!AdMobService.isAdReady()) {
+        AdMobService.preloadRewardedAd().catch((error) => {
+          console.error('Failed to preload ad:', error);
+        });
+      }
+    }
+  }, [open]);
 
   const handleWatchAd = async () => {
     setIsShowingAd(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const startTime = Date.now();
+      let adWatched = false;
+      let adNetwork = 'admob';
 
-      const adResult = await AdRewardService.recordAdWatch(featureType, true, {
-        adNetwork: 'test',
+      if (AdMobService.isNativePlatform() && AdMobService.isInitialized()) {
+        console.log('[AdRewardDialog] Showing real AdMob ad');
+        adWatched = await AdMobService.showRewardedAd();
+      } else {
+        console.log('[AdRewardDialog] Using test mode (non-native or not initialized)');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        adWatched = true;
+        adNetwork = 'test';
+      }
+
+      const adDuration = Math.floor((Date.now() - startTime) / 1000);
+
+      const adResult = await AdRewardService.recordAdWatch(featureType, adWatched, {
+        adNetwork,
         adPlacementId: `${featureType}_placement`,
-        adDurationSeconds: 30,
+        adDurationSeconds: adDuration,
       });
 
       if (adResult.rewardGranted) {
@@ -60,7 +88,7 @@ export const AdRewardDialog = ({
       console.error('Ad watch error:', error);
 
       await AdRewardService.recordAdWatch(featureType, false, {
-        adNetwork: 'test',
+        adNetwork: AdMobService.isNativePlatform() ? 'admob' : 'test',
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
       });
 

@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react'
+import React, { Component, ErrorInfo, ReactNode, useEffect } from 'react'
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
@@ -12,6 +12,7 @@ import { ContactUs } from '@/components/Legal/ContactUs'
 import { useOAuthRedirect } from '@/hooks/useOAuthRedirect'
 import { usePlatform } from '@/hooks/usePlatform'
 import { TutorialProvider } from '@/components/Tutorial/TutorialProvider'
+import { AdMobService } from '@/services/AdMobService'
 import './App.css'
 
 const queryClient = new QueryClient({
@@ -91,6 +92,21 @@ function AppRoutes() {
 
 function App() {
   console.log('[KolayFit] App component rendering...')
+
+  useEffect(() => {
+    const initializeAdMob = async () => {
+      try {
+        console.log('[KolayFit] Initializing AdMob...')
+        await AdMobService.initialize()
+        await AdMobService.preloadRewardedAd()
+        console.log('[KolayFit] AdMob initialized successfully')
+      } catch (error) {
+        console.error('[KolayFit] Failed to initialize AdMob:', error)
+      }
+    }
+
+    initializeAdMob()
+  }, [])
 
   return (
     <ErrorBoundary>
