@@ -11,6 +11,9 @@ import ManualFoodEntry from './ManualFoodEntry'
 import { EnhancedAIVerification } from './EnhancedAIVerification'
 import MealSelectionAfterAnalysis from './MealSelectionAfterAnalysis'
 import NativeCameraCapture from './NativeCameraCapture'
+import { AdRewardDialog } from '@/components/Ads/AdRewardDialog'
+import { AdRewardService, FeatureType } from '@/services/AdRewardService'
+import { useToast } from '@/hooks/use-toast'
 
 type AnalysisStep = 'camera' | 'analysis-type' | 'quick-result' | 'detailed-form' | 'manual-entry' | 'meal-selection' | 'ai-verification'
 
@@ -33,6 +36,10 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
   const [detectedFoods, setDetectedFoods] = useState<any[]>([])
   const [finalMealType, setFinalMealType] = useState<string>('')
   const [detailedFormData, setDetailedFormData] = useState<any>(null)
+
+  const [showAdDialog, setShowAdDialog] = useState(false)
+  const [pendingAnalysisType, setPendingAnalysisType] = useState<'quick' | 'detailed' | null>(null)
+  const { toast } = useToast()
 
   // Enhanced navigation with hardware back button support
   const { goBack } = useNavigation({
@@ -63,18 +70,77 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
     setCurrentStep('analysis-type')
   }
 
-  const handleAnalysisTypeSelected = (type: 'quick' | 'detailed' | 'manual') => {
+  const handleAnalysisTypeSelected = async (type: 'quick' | 'detailed' | 'manual') => {
     console.log('Analysis type selected:', type)
+
     if (type === 'manual') {
       setCurrentStep('manual-entry')
-    } else {
+      return
+    }
+
+    try {
+      const featureType: FeatureType = type === 'quick' ? 'photo_analysis' : 'detailed_analysis'
+      const limitCheck = await AdRewardService.checkAdLimit(featureType)
+
+      if (limitCheck.isPremium) {
+        setAnalysisType(type)
+        if (type === 'quick') {
+          setCurrentStep('quick-result')
+        } else {
+          setCurrentStep('detailed-form')
+        }
+        return
+      }
+
+      if (limitCheck.limitReached) {
+        toast({
+          title: 'Limit Doldu',
+          description: limitCheck.message,
+          variant: 'destructive',
+          duration: 5000,
+        })
+        if (onUpgradeClick) {
+          onUpgradeClick()
+        }
+        return
+      }
+
+      if (limitCheck.requiresAd) {
+        setPendingAnalysisType(type)
+        setShowAdDialog(true)
+        return
+      }
+
       setAnalysisType(type)
       if (type === 'quick') {
         setCurrentStep('quick-result')
       } else {
         setCurrentStep('detailed-form')
       }
+    } catch (error) {
+      console.error('Error checking ad limit:', error)
+      toast({
+        title: 'Hata',
+        description: 'Bir hata oluştu. Lütfen tekrar deneyin.',
+        variant: 'destructive',
+      })
     }
+  }
+
+  const handleAdCompleted = () => {
+    if (pendingAnalysisType) {
+      setAnalysisType(pendingAnalysisType)
+      if (pendingAnalysisType === 'quick') {
+        setCurrentStep('quick-result')
+      } else {
+        setCurrentStep('detailed-form')
+      }
+      setPendingAnalysisType(null)
+    }
+  }
+
+  const handleAdCancelled = () => {
+    setPendingAnalysisType(null)
   }
 
   // Remove this function as we no longer select meal type before analysis
@@ -353,6 +419,15 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
           />
         )}
       </div>
+
+      <AdRewardDialog
+        open={showAdDialog}
+        onOpenChange={setShowAdDialog}
+        featureType={pendingAnalysisType === 'quick' ? 'photo_analysis' : 'detailed_analysis'}
+        featureName={pendingAnalysisType === 'quick' ? 'Hızlı Analiz' : 'Detaylı Analiz'}
+        onAdCompleted={handleAdCompleted}
+        onCancel={handleAdCancelled}
+      />
     </div>
   )
 }

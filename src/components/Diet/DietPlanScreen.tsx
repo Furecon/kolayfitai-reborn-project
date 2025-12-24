@@ -6,6 +6,8 @@ import { DietPlanView } from './DietPlanView';
 import { EmptyDietState } from './EmptyDietState';
 import { DietProfile, DietPlan } from '@/types/diet';
 import { Loader2 } from 'lucide-react';
+import { AdRewardDialog } from '@/components/Ads/AdRewardDialog';
+import { AdRewardService } from '@/services/AdRewardService';
 
 export function DietPlanScreen() {
   const [loading, setLoading] = useState(true);
@@ -13,6 +15,8 @@ export function DietPlanScreen() {
   const [dietProfile, setDietProfile] = useState<DietProfile | null>(null);
   const [activePlan, setActivePlan] = useState<DietPlan | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [showAdDialog, setShowAdDialog] = useState(false);
+  const [pendingProfile, setPendingProfile] = useState<DietProfile | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -142,10 +146,48 @@ export function DietPlanScreen() {
         throw new Error('Diet profile required');
       }
 
+      const limitCheck = await AdRewardService.checkAdLimit('diet_plan');
+
+      if (limitCheck.isPremium) {
+        await executeDietPlanGeneration(profileToUse);
+        return;
+      }
+
+      if (limitCheck.limitReached) {
+        toast({
+          title: 'Haftalık Limit Doldu',
+          description: limitCheck.message,
+          variant: 'destructive',
+          duration: 5000,
+        });
+        setGenerating(false);
+        return;
+      }
+
+      if (limitCheck.requiresAd) {
+        setPendingProfile(profileToUse);
+        setShowAdDialog(true);
+        setGenerating(false);
+        return;
+      }
+
+      await executeDietPlanGeneration(profileToUse);
+    } catch (error: any) {
+      console.error('Error generating diet plan:', error);
+      toast({
+        title: 'Hata',
+        description: error.message || 'Plan oluşturulurken hata oluştu',
+        variant: 'destructive',
+      });
+      setGenerating(false);
+    }
+  };
+
+  const executeDietPlanGeneration = async (profileToUse: DietProfile) => {
+    try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      // Use hardcoded values as fallback for mobile builds
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://acsqneuzkukmvtfmbphb.supabase.co';
       const apiUrl = `${supabaseUrl}/functions/v1/generate-diet-plan`;
 
@@ -185,6 +227,18 @@ export function DietPlanScreen() {
     } finally {
       setGenerating(false);
     }
+  };
+
+  const handleAdCompleted = async () => {
+    if (pendingProfile) {
+      setGenerating(true);
+      await executeDietPlanGeneration(pendingProfile);
+      setPendingProfile(null);
+    }
+  };
+
+  const handleAdCancelled = () => {
+    setPendingProfile(null);
   };
 
   const handleCreateProfile = () => {
@@ -234,12 +288,23 @@ export function DietPlanScreen() {
   }
 
   return (
-    <DietPlanView
-      plan={activePlan}
-      dietProfile={dietProfile}
-      onRegeneratePlan={() => generateDietPlan()}
-      onEditProfile={handleCreateProfile}
-      onPlanUpdated={setActivePlan}
-    />
+    <>
+      <DietPlanView
+        plan={activePlan}
+        dietProfile={dietProfile}
+        onRegeneratePlan={() => generateDietPlan()}
+        onEditProfile={handleCreateProfile}
+        onPlanUpdated={setActivePlan}
+      />
+
+      <AdRewardDialog
+        open={showAdDialog}
+        onOpenChange={setShowAdDialog}
+        featureType="diet_plan"
+        featureName="Haftalık Diyet Planı"
+        onAdCompleted={handleAdCompleted}
+        onCancel={handleAdCancelled}
+      />
+    </>
   );
 }

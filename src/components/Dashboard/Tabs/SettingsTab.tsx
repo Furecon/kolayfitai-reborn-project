@@ -13,7 +13,8 @@ import {
   ChevronRight,
   Mail,
   Utensils,
-  BookOpen
+  BookOpen,
+  History
 } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
@@ -31,8 +32,9 @@ import { DietProfile } from '@/types/diet'
 import { TutorialsGuide } from '../../Settings/TutorialsGuide'
 import { getTutorialByFeatureId } from '@/lib/tutorialConfig'
 import { useTutorial } from '../../Tutorial/TutorialProvider'
+import { AdHistoryView } from '@/components/Ads/AdHistoryView'
 
-type SettingsView = 'main' | 'profile' | 'goals' | 'subscription' | 'notifications' | 'contact' | 'resources' | 'policies' | 'faq' | 'diet' | 'tutorials'
+type SettingsView = 'main' | 'profile' | 'goals' | 'subscription' | 'notifications' | 'contact' | 'resources' | 'policies' | 'faq' | 'diet' | 'tutorials' | 'ad_history'
 
 interface SettingsTabProps {
   onRefreshNeeded?: () => void
@@ -274,6 +276,31 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
     )
   }
 
+  if (currentView === 'ad_history') {
+    return (
+      <div className="pb-20 pt-4 w-full">
+        <div className="border-b border-gray-200 bg-white px-4 sm:px-6 py-3 sm:py-4 mb-4 w-full">
+          <div className="max-w-screen-2xl mx-auto">
+            <Button
+              variant="ghost"
+              onClick={() => setCurrentView('main')}
+              className="text-gray-600 h-10"
+            >
+              <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
+              Geri
+            </Button>
+            <h1 className="text-xl font-semibold mt-2">Reklam Geçmişi</h1>
+          </div>
+        </div>
+        <div className="w-full px-4 sm:px-6">
+          <div className="max-w-screen-2xl mx-auto">
+            <AdHistoryView />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="pb-20 pt-4 w-full">
       <div className="w-full px-4 sm:px-6 mb-4">
@@ -357,7 +384,7 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
 
             <button
               onClick={() => setCurrentView('subscription')}
-              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
             >
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
@@ -366,6 +393,22 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
                 <div className="text-left">
                   <div className="font-medium text-gray-900">Abonelik Yönetimi</div>
                   <div className="text-xs text-gray-500">Premium üyelik ve ödemeler</div>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </button>
+
+            <button
+              onClick={() => setCurrentView('ad_history')}
+              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <History className="h-5 w-5 text-blue-600" />
+                </div>
+                <div className="text-left">
+                  <div className="font-medium text-gray-900">Reklam Geçmişi</div>
+                  <div className="text-xs text-gray-500">İzlediğiniz reklamlar ve ödüller</div>
                 </div>
               </div>
               <ChevronRight className="h-5 w-5 text-gray-400" />

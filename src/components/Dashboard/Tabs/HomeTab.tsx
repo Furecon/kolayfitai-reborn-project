@@ -1,5 +1,5 @@
 import { CalorieCards } from '../CalorieCards'
-import { TrialUsageCard } from '../TrialUsageCard'
+import { AdUsageCard } from '@/components/Ads/AdUsageCard'
 import { WaterTracker } from '../WaterTracker'
 
 interface HomeTabProps {
@@ -34,7 +34,7 @@ export function HomeTab({ dailyStats, userWeight, onCameraClick, onUpgradeClick 
       <div className="w-full px-4 sm:px-6 pb-3 sm:pb-4">
         <div className="max-w-screen-2xl mx-auto space-y-4">
           <WaterTracker userWeight={userWeight} />
-          <TrialUsageCard onUpgradeClick={onUpgradeClick} />
+          <AdUsageCard />
         </div>
       </div>
     </div>
