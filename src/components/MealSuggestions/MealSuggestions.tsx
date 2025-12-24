@@ -54,16 +54,6 @@ export function MealSuggestions({ onBack, onMealAdded, dailyStats }: MealSuggest
     { key: 'snack', label: 'Atıştırmalık', icon: '🍎' }
   ]
 
-  const mapMealTypeToTurkish = (englishMealType: string): string => {
-    const mapping: { [key: string]: string } = {
-      'breakfast': 'kahvaltı',
-      'lunch': 'öğle',
-      'dinner': 'akşam',
-      'snack': 'atıştırmalık'
-    }
-    return mapping[englishMealType] || englishMealType
-  }
-
   const getSuggestions = async (mealType: string) => {
     if (!user) return
 
@@ -106,13 +96,11 @@ export function MealSuggestions({ onBack, onMealAdded, dailyStats }: MealSuggest
     if (!user) return
 
     try {
-      const turkishMealType = mapMealTypeToTurkish(selectedMealType)
-      
       const { error } = await supabase
         .from('meal_logs')
         .insert({
           user_id: user.id,
-          meal_type: turkishMealType,
+          meal_type: selectedMealType,
           food_items: [
             {
               name: suggestion.name,

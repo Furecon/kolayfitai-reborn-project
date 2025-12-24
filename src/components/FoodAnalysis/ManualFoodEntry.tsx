@@ -71,10 +71,10 @@ interface QuickSuggestion {
 }
 
 const MEAL_TYPE_OPTIONS = [
-  { value: 'kahvaltı', label: 'Kahvaltı' },
-  { value: 'öğle', label: 'Öğle Yemeği' },
-  { value: 'akşam', label: 'Akşam Yemeği' },
-  { value: 'atıştırmalık', label: 'Atıştırmalık' }
+  { value: 'breakfast', label: 'Kahvaltı' },
+  { value: 'lunch', label: 'Öğle Yemeği' },
+  { value: 'dinner', label: 'Akşam Yemeği' },
+  { value: 'snack', label: 'Atıştırmalık' }
 ]
 
 const COOKING_METHODS = [

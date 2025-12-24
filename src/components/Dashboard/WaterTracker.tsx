@@ -62,15 +62,17 @@ export function WaterTracker({ userWeight = 70 }: WaterTrackerProps) {
       if (data) {
         setWaterData(data);
       } else {
-        // Create today's entry
+        // Create today's entry using upsert to prevent duplicate key errors
         const { data: newData, error: insertError } = await supabase
           .from('water_intake')
-          .insert({
+          .upsert({
             user_id: user.id,
             date: today,
             manual_intake_ml: 0,
             food_intake_ml: 0,
             daily_goal_ml: dailyGoalMl,
+          }, {
+            onConflict: 'user_id,date'
           })
           .select()
           .single();

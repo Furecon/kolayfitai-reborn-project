@@ -123,21 +123,23 @@ export async function updateWaterFromFood(
         })
         .eq('id', existing.id);
     } else {
-      // Create new record
+      // Create new record using upsert to prevent race condition
       const { data: profile } = await supabase
         .from('profiles')
         .select('weight')
-        .eq('id', userId)
-        .single();
+        .eq('user_id', userId)
+        .maybeSingle();
 
       const dailyGoal = calculateDailyWaterGoal(profile?.weight || 70);
 
-      await supabase.from('water_intake').insert({
+      await supabase.from('water_intake').upsert({
         user_id: userId,
         date: today,
         manual_intake_ml: 0,
         food_intake_ml: waterContentMl,
         daily_goal_ml: dailyGoal,
+      }, {
+        onConflict: 'user_id,date'
       });
     }
   } catch (error) {

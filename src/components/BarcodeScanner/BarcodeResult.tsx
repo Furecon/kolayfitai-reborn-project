@@ -52,10 +52,10 @@ const PORTION_OPTIONS = [
 ]
 
 const MEAL_TYPES = [
-  { value: 'kahvaltı', label: 'Kahvaltı' },
-  { value: 'öğle', label: 'Öğle Yemeği' },
-  { value: 'akşam', label: 'Akşam Yemeği' },
-  { value: 'atıştırmalık', label: 'Atıştırmalık' }
+  { value: 'breakfast', label: 'Kahvaltı' },
+  { value: 'lunch', label: 'Öğle Yemeği' },
+  { value: 'dinner', label: 'Akşam Yemeği' },
+  { value: 'snack', label: 'Atıştırmalık' }
 ]
 
 export function BarcodeResult({ barcode, onBack, onMealSaved, onManualEntry }: BarcodeResultProps) {
@@ -71,7 +71,7 @@ export function BarcodeResult({ barcode, onBack, onMealSaved, onManualEntry }: B
   const [selectedPortion, setSelectedPortion] = useState(100)
   const [portionUnit, setPortionUnit] = useState('g')
   const [customPortion, setCustomPortion] = useState('')
-  const [mealType, setMealType] = useState('öğle')
+  const [mealType, setMealType] = useState('lunch')
   const [addToFavorites, setAddToFavorites] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
