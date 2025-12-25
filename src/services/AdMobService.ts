@@ -11,7 +11,7 @@ interface AdMobConfig {
 const AD_CONFIGS: { ios: AdMobConfig; android: AdMobConfig } = {
   ios: {
     appId: 'ca-app-pub-8309637989312333~7793227431',
-    rewardedAdUnitId: 'ca-app-pub-8309637989312333/5214810332',
+    rewardedAdUnitId: 'ca-app-pub-8309637989312333/6264168129',
     testMode: false,
   },
   android: {
