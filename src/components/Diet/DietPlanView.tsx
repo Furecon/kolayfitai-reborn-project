@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { DietPlan, DietProfile, DietDay, DietMeal, MEAL_TYPE_LABELS, DAY_NAMES } from '@/types/diet';
-import { ChevronDown, RefreshCw, Settings, Flame, Beef, Wheat, Droplet, Calendar, X } from 'lucide-react';
+import { ChevronDown, RefreshCw, Settings, Flame, Beef, Wheat, Droplet, Calendar, X, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MealCard } from './MealCard';
@@ -190,6 +190,23 @@ export function DietPlanView({
               </CardContent>
             </Card>
           )}
+
+          <Card className="mb-3 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+            <CardContent className="p-3">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                    Sağlık Uyarısı:
+                  </p>
+                  <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                    Uygulama tarafından oluşturulan diyet planları kişisel sağlık değerlendirmesi yerine geçmez.
+                    Özel beslenme ihtiyaçlarınız, alerjileriniz veya kronik rahatsızlıklarınız varsa, bir sağlık uzmanına danışmanız önerilir.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <Tabs value={selectedDay.toString()} onValueChange={(v) => setSelectedDay(parseInt(v))}>
             <TabsList className="grid grid-cols-7 w-full h-auto p-1">

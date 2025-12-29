@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DietOnboarding } from './DietOnboarding';
 import { DietPlanView } from './DietPlanView';
 import { EmptyDietState } from './EmptyDietState';
+import { HealthDisclaimerDialog } from './HealthDisclaimerDialog';
 import { DietProfile, DietPlan } from '@/types/diet';
 import { Loader2 } from 'lucide-react';
 import { AdRewardDialog } from '@/components/Ads/AdRewardDialog';
@@ -16,6 +17,7 @@ export function DietPlanScreen() {
   const [activePlan, setActivePlan] = useState<DietPlan | null>(null);
   const [generating, setGenerating] = useState(false);
   const [showAdDialog, setShowAdDialog] = useState(false);
+  const [showHealthDisclaimer, setShowHealthDisclaimer] = useState(false);
   const [pendingProfile, setPendingProfile] = useState<DietProfile | null>(null);
   const { toast } = useToast();
 
@@ -146,6 +148,13 @@ export function DietPlanScreen() {
         throw new Error('Diet profile required');
       }
 
+      if (!profileToUse.accepted_health_disclaimer) {
+        setPendingProfile(profileToUse);
+        setShowHealthDisclaimer(true);
+        setGenerating(false);
+        return;
+      }
+
       const limitCheck = await AdRewardService.checkAdLimit('diet_plan');
 
       if (limitCheck.isPremium) {
@@ -241,6 +250,70 @@ export function DietPlanScreen() {
     setPendingProfile(null);
   };
 
+  const handleHealthDisclaimerAccept = async () => {
+    try {
+      if (!pendingProfile) return;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      await supabase
+        .from('diet_profiles')
+        .update({ accepted_health_disclaimer: true })
+        .eq('user_id', user.id);
+
+      const updatedProfile = { ...pendingProfile, accepted_health_disclaimer: true };
+      setDietProfile(updatedProfile);
+
+      const limitCheck = await AdRewardService.checkAdLimit('diet_plan');
+
+      if (limitCheck.isPremium) {
+        setGenerating(true);
+        await executeDietPlanGeneration(updatedProfile);
+        setPendingProfile(null);
+        return;
+      }
+
+      if (limitCheck.limitReached) {
+        toast({
+          title: 'Haftalık Limit Doldu',
+          description: limitCheck.message,
+          variant: 'destructive',
+          duration: 5000,
+        });
+        setPendingProfile(null);
+        return;
+      }
+
+      if (limitCheck.requiresAd) {
+        setShowAdDialog(true);
+        return;
+      }
+
+      setGenerating(true);
+      await executeDietPlanGeneration(updatedProfile);
+      setPendingProfile(null);
+    } catch (error: any) {
+      console.error('Error accepting health disclaimer:', error);
+      toast({
+        title: 'Hata',
+        description: error.message || 'Bir hata oluştu',
+        variant: 'destructive',
+      });
+      setPendingProfile(null);
+    }
+  };
+
+  const handleHealthDisclaimerDecline = () => {
+    setPendingProfile(null);
+    toast({
+      title: 'İşlem İptal Edildi',
+      description: 'Diyet planı oluşturmak için sağlık uyarısını kabul etmeniz gerekiyor.',
+      variant: 'destructive',
+      duration: 4000,
+    });
+  };
+
   const handleCreateProfile = () => {
     setShowOnboarding(true);
   };
@@ -294,6 +367,13 @@ export function DietPlanScreen() {
           onPlanUpdated={setActivePlan}
         />
       )}
+
+      <HealthDisclaimerDialog
+        open={showHealthDisclaimer}
+        onOpenChange={setShowHealthDisclaimer}
+        onAccept={handleHealthDisclaimerAccept}
+        onDecline={handleHealthDisclaimerDecline}
+      />
 
       <AdRewardDialog
         open={showAdDialog}

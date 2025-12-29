@@ -41,6 +41,7 @@ export interface DietProfile {
   preferred_cuisines?: string;
   has_seen_onboarding?: boolean;
   hide_diet_tips?: boolean;
+  accepted_health_disclaimer?: boolean;
   created_at?: string;
   updated_at?: string;
 }
