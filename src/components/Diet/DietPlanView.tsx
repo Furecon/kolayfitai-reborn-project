@@ -24,6 +24,9 @@ import { ChevronDown, RefreshCw, Settings, Flame, Beef, Wheat, Droplet, Calendar
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MealCard } from './MealCard';
+import { entitlementService } from '@/services/EntitlementService';
+import { AdMobService } from '@/services/AdMobService';
+import { MealReplacementService } from '@/services/MealReplacementService';
 
 interface DietPlanViewProps {
   plan: DietPlan;
@@ -74,10 +77,42 @@ export function DietPlanView({
       setReplacingMealIndex(mealIndex);
 
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+      if (!session || !session.user) throw new Error('Not authenticated');
 
       if (!dietProfile) {
         throw new Error('Diet profile required');
+      }
+
+      const isPremium = await entitlementService.hasPremiumAccess();
+
+      if (!isPremium) {
+        const needsAd = await MealReplacementService.checkNeedsAd(session.user.id);
+
+        if (needsAd) {
+          toast({
+            title: 'Reklam Gerekli',
+            description: 'Yemek değiştirmek için lütfen reklamı izleyin...',
+          });
+
+          const adWatched = await AdMobService.showRewardedAd();
+
+          if (!adWatched) {
+            toast({
+              title: 'Reklam İzlenmedi',
+              description: 'Yemek değiştirmek için reklam izlemeniz gerekiyor.',
+              variant: 'destructive',
+            });
+            setReplacingMealIndex(null);
+            return;
+          }
+
+          await MealReplacementService.resetCounter(session.user.id);
+
+          toast({
+            title: 'Teşekkürler!',
+            description: 'Reklam izlendi, şimdi yemek değiştirilebilir.',
+          });
+        }
       }
 
       toast({
@@ -85,7 +120,6 @@ export function DietPlanView({
         description: 'Sana uygun yeni bir öğün hazırlanıyor...',
       });
 
-      // Use hardcoded values as fallback for mobile builds
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://acsqneuzkukmvtfmbphb.supabase.co';
       const apiUrl = `${supabaseUrl}/functions/v1/replace-meal`;
 
@@ -121,6 +155,10 @@ export function DietPlanView({
         ...plan,
         plan_data: updatedPlanData,
       });
+
+      if (!isPremium) {
+        await MealReplacementService.incrementCounter(session.user.id);
+      }
 
       toast({
         title: 'Başarılı!',
