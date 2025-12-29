@@ -11,13 +11,13 @@ interface AdMobConfig {
 const AD_CONFIGS: { ios: AdMobConfig; android: AdMobConfig } = {
   ios: {
     appId: 'ca-app-pub-8309637989312333~7793227431',
-    rewardedAdUnitId: 'ca-app-pub-3940256099942544/1712485313',
-    testMode: true,
+    rewardedAdUnitId: 'ca-app-pub-8309637989312333/6264168129',
+    testMode: false,
   },
   android: {
     appId: 'ca-app-pub-8309637989312333~7793227431',
-    rewardedAdUnitId: 'ca-app-pub-3940256099942544/5224354917',
-    testMode: true,
+    rewardedAdUnitId: 'ca-app-pub-8309637989312333/5214810332',
+    testMode: false,
   },
 };
 
@@ -50,8 +50,8 @@ class AdMobServiceClass {
 
       await AdMob.initialize({
         requestTrackingAuthorization: true,
-        testingDevices: config.testMode ? ['YOUR_TEST_DEVICE_ID'] : [],
-        initializeForTesting: config.testMode,
+        testingDevices: [],
+        initializeForTesting: false,
       });
 
       this.initialized = true;
@@ -141,7 +141,7 @@ class AdMobServiceClass {
 
       const options: RewardAdOptions = {
         adId: config.rewardedAdUnitId,
-        isTesting: config.testMode,
+        isTesting: false,
       };
 
       console.log('[AdMob] Preloading rewarded ad...');
