@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { AuthProvider } from '@/components/Auth/AuthProvider'
 import { AuthScreen } from '@/components/Auth/AuthScreen'
 import { Dashboard } from '@/components/Dashboard/Dashboard'
@@ -8,14 +7,9 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useOAuthRedirect } from '@/hooks/useOAuthRedirect'
 import { RatingDialog } from '@/components/StoreRating/RatingDialog'
-import { TrialExpiredDialog } from '@/components/Subscription/TrialExpiredDialog'
-import { SubscriptionManager } from '@/components/Subscription/SubscriptionManager'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
 
 function AppContent() {
   const { user, loading } = useAuth()
-  const [openSubscriptionSettings, setOpenSubscriptionSettings] = useState(false)
 
   // Initialize OAuth redirect handler for mobile deep links
   useOAuthRedirect()
@@ -69,33 +63,7 @@ function AppContent() {
     return <OnboardingFlow />
   }
 
-  // Show subscription manager if opened
-  if (openSubscriptionSettings) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
-        <div className="container mx-auto px-4 py-6">
-          <Button
-            onClick={() => setOpenSubscriptionSettings(false)}
-            variant="ghost"
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Geri
-          </Button>
-          <SubscriptionManager />
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <>
-      <Dashboard />
-      <TrialExpiredDialog
-        onManageSubscription={() => setOpenSubscriptionSettings(true)}
-      />
-    </>
-  )
+  return <Dashboard />
 }
 
 export default function Index() {
