@@ -170,11 +170,18 @@ class AdMobServiceClass {
       try {
         if (!this.isAdLoaded) {
           console.log('[AdMob] Ad not loaded, attempting to load...');
+          console.log('[AdMob] Current state - isAdLoading:', this.isAdLoading, 'isAdLoaded:', this.isAdLoaded);
+
           await this.preloadRewardedAd();
 
           await new Promise((waitResolve) => {
+            let attempts = 0;
             const checkInterval = setInterval(() => {
+              attempts++;
+              console.log(`[AdMob] Waiting for ad (attempt ${attempts}/30)`);
+
               if (this.isAdLoaded || !this.isAdLoading) {
+                console.log('[AdMob] Ad ready or loading stopped');
                 clearInterval(checkInterval);
                 waitResolve(null);
               }
@@ -182,12 +189,14 @@ class AdMobServiceClass {
 
             setTimeout(() => {
               clearInterval(checkInterval);
+              console.log('[AdMob] Wait timeout reached');
               waitResolve(null);
-            }, 10000);
+            }, 15000);
           });
 
           if (!this.isAdLoaded) {
             console.error('[AdMob] Ad failed to load within timeout');
+            console.error('[AdMob] Final state - isAdLoading:', this.isAdLoading, 'isAdLoaded:', this.isAdLoaded);
             resolve(false);
             return;
           }

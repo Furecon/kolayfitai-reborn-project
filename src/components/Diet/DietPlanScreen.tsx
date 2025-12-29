@@ -277,25 +277,23 @@ export function DietPlanScreen() {
     );
   }
 
-  if (!activePlan) {
-    return (
-      <EmptyDietState
-        hasProfile={!!dietProfile && !!dietProfile.age}
-        onCreateProfile={handleCreateProfile}
-        onGeneratePlan={() => generateDietPlan()}
-      />
-    );
-  }
-
   return (
     <>
-      <DietPlanView
-        plan={activePlan}
-        dietProfile={dietProfile}
-        onRegeneratePlan={() => generateDietPlan()}
-        onEditProfile={handleCreateProfile}
-        onPlanUpdated={setActivePlan}
-      />
+      {!activePlan ? (
+        <EmptyDietState
+          hasProfile={!!dietProfile && !!dietProfile.age}
+          onCreateProfile={handleCreateProfile}
+          onGeneratePlan={() => generateDietPlan()}
+        />
+      ) : (
+        <DietPlanView
+          plan={activePlan}
+          dietProfile={dietProfile}
+          onRegeneratePlan={() => generateDietPlan()}
+          onEditProfile={handleCreateProfile}
+          onPlanUpdated={setActivePlan}
+        />
+      )}
 
       <AdRewardDialog
         open={showAdDialog}

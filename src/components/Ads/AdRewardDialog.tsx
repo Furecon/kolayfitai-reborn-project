@@ -35,15 +35,32 @@ export const AdRewardDialog = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    if (open && AdMobService.isInitialized()) {
-      setIsAdReady(AdMobService.isAdReady());
+    const initializeAndPreload = async () => {
+      if (!open) return;
 
-      if (!AdMobService.isAdReady()) {
-        AdMobService.preloadRewardedAd().catch((error) => {
-          console.error('Failed to preload ad:', error);
-        });
+      try {
+        if (!AdMobService.isInitialized() && AdMobService.isNativePlatform()) {
+          console.log('[AdRewardDialog] AdMob not initialized, initializing now...');
+          await AdMobService.initialize();
+        }
+
+        if (AdMobService.isInitialized()) {
+          setIsAdReady(AdMobService.isAdReady());
+
+          if (!AdMobService.isAdReady()) {
+            console.log('[AdRewardDialog] Preloading ad...');
+            await AdMobService.preloadRewardedAd();
+            setIsAdReady(true);
+          }
+        } else {
+          console.log('[AdRewardDialog] AdMob not available, will use test mode');
+        }
+      } catch (error) {
+        console.error('[AdRewardDialog] Failed to initialize or preload ad:', error);
       }
-    }
+    };
+
+    initializeAndPreload();
   }, [open]);
 
   const handleWatchAd = async () => {
