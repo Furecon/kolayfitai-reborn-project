@@ -355,8 +355,8 @@ export function SettingsTab({ onRefreshNeeded }: SettingsTabProps) {
                   <Utensils className="h-5 w-5 text-purple-600" />
                 </div>
                 <div className="text-left">
-                  <div className="font-medium text-gray-900">Diyet Profilim</div>
-                  <div className="text-xs text-gray-500">Diyet tercihleri ve AI plan ayarları</div>
+                  <div className="font-medium text-gray-900">Diyet Profili Düzenle</div>
+                  <div className="text-xs text-gray-500">Diyet tercihleri ve kişisel bilgiler</div>
                 </div>
               </div>
               <ChevronRight className="h-5 w-5 text-gray-400" />

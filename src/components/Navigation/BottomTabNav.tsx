@@ -1,7 +1,7 @@
-import { Home, Brain, TrendingUp, UtensilsCrossed, Settings } from 'lucide-react'
+import { Home, Brain, TrendingUp, UtensilsCrossed, Settings, Utensils } from 'lucide-react'
 import { useTutorialTarget } from '@/hooks/useTutorialTarget'
 
-export type TabType = 'home' | 'ai-insights' | 'progress' | 'meals' | 'settings'
+export type TabType = 'home' | 'ai-insights' | 'progress' | 'meals' | 'diet' | 'settings'
 
 interface BottomTabNavProps {
   activeTab: TabType
@@ -17,12 +17,13 @@ export function BottomTabNav({ activeTab, onTabChange }: BottomTabNavProps) {
     { id: 'ai-insights' as TabType, icon: Brain, label: 'AI Analiz', ref: null },
     { id: 'progress' as TabType, icon: TrendingUp, label: 'Gelişim', ref: null },
     { id: 'meals' as TabType, icon: UtensilsCrossed, label: 'Öğünler', ref: historyTabRef },
+    { id: 'diet' as TabType, icon: Utensils, label: 'Diyet Planı', ref: null },
     { id: 'settings' as TabType, icon: Settings, label: 'Ayarlar', ref: settingsButtonRef }
   ]
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-      <div className="grid grid-cols-5 h-16">
+      <div className="grid grid-cols-6 h-16">
         {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id

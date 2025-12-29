@@ -13,6 +13,7 @@ import { HomeTab } from './Tabs/HomeTab'
 import { AIInsightsTab } from './Tabs/AIInsightsTab'
 import { ProgressTab } from './Tabs/ProgressTab'
 import { MealsTab } from './Tabs/MealsTab'
+import { DietTab } from './Tabs/DietTab'
 import { SettingsTab } from './Tabs/SettingsTab'
 import { paywallService } from '@/services/PaywallService'
 import { useToast } from '@/hooks/use-toast'
@@ -346,6 +347,8 @@ export function Dashboard() {
             dailyStats={dailyStats}
           />
         )
+      case 'diet':
+        return <DietTab />
       case 'settings':
         return (
           <SettingsTab
