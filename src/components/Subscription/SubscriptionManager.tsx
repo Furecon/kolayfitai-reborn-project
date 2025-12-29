@@ -14,7 +14,7 @@ import { useTutorialTarget } from '@/hooks/useTutorialTarget'
 
 interface SubscriptionData {
   subscriptionValid: boolean
-  subscriptionStatus: 'trial' | 'premium' | 'expired'
+  subscriptionStatus: 'free' | 'premium' | 'expired'
   remainingDays: number
   currentPlan?: 'monthly_premium' | 'yearly_premium' | null
   subscription?: any
@@ -157,7 +157,6 @@ export function SubscriptionManager() {
     )
   }
 
-  const isTrialActive = subscriptionData.subscriptionStatus === 'trial' && subscriptionData.subscriptionValid
   const isPremiumActive = subscriptionData.subscriptionStatus === 'premium' && subscriptionData.subscriptionValid
   const isMonthlyPlan = subscriptionData.currentPlan === 'monthly_premium'
   const isYearlyPlan = subscriptionData.currentPlan === 'yearly_premium'
@@ -174,7 +173,7 @@ export function SubscriptionManager() {
               <CardTitle>Abonelik Durumu</CardTitle>
             </div>
             <Badge variant={subscriptionData.subscriptionValid ? "default" : "destructive"}>
-              {isTrialActive ? "Ücretsiz Deneme" : isPremiumActive ? "Premium" : "Süresi Dolmuş"}
+              {isPremiumActive ? "Premium" : "Ücretsiz"}
             </Badge>
           </div>
           <CardDescription>
@@ -349,15 +348,6 @@ export function SubscriptionManager() {
                   </div>
                 </div>
 
-                {isTrialActive && (
-                  <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <Info className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-green-700">
-                      İlk 3 gün ücretsiz! Deneme süresi içinde iptal ederseniz ücret alınmaz.
-                    </p>
-                  </div>
-                )}
-
                 <PaywallButton
                   ref={subscribeButtonRef}
                   size="lg"
@@ -432,9 +422,6 @@ export function SubscriptionManager() {
                   <li>Abonelik süresi sonunda otomatik olarak yenilenir</li>
                   <li>İptal için Play Store → Abonelikler bölümünü kullanın</li>
                   <li>İptal durumunda mevcut dönem sonuna kadar Premium erişim devam eder</li>
-                  {isTrialActive && (
-                    <li className="text-green-600">Ücretsiz deneme süresi içinde iptal ederseniz ücret alınmaz</li>
-                  )}
                 </ul>
               </div>
             </div>

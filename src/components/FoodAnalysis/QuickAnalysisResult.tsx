@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { Loader as Loader2, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Expand, Zap, Droplets, Info } from 'lucide-react'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
-import { TrialLimitModal } from './TrialLimitModal'
 import { useAuth } from '@/components/Auth/AuthProvider'
 import { updateWaterFromFood } from '@/lib/waterCalculation'
 
@@ -62,7 +61,6 @@ export default function QuickAnalysisResult({
   const [error, setError] = useState<string | null>(null)
   const [confidence, setConfidence] = useState<number>(0)
   const [suggestions, setSuggestions] = useState<string>('')
-  const [showTrialLimitModal, setShowTrialLimitModal] = useState(false)
   const [selectedMealType, setSelectedMealType] = useState<string>('snack')
   const [isSaving, setIsSaving] = useState(false)
   const [showHelp, setShowHelp] = useState<boolean | null>(null)
@@ -228,12 +226,6 @@ export default function QuickAnalysisResult({
       }
 
       console.log('Analysis result:', data)
-
-      if (data.error === 'trial_limit_reached') {
-        setHasAnalyzed(true)
-        setShowTrialLimitModal(true)
-        return
-      }
 
       if (data.error) {
         // Show user-friendly error messages from backend
@@ -737,15 +729,6 @@ export default function QuickAnalysisResult({
           📷 Yeni Fotoğraf
         </Button>
       </div>
-
-      <TrialLimitModal
-        isOpen={showTrialLimitModal}
-        onUpgrade={() => {
-          setShowTrialLimitModal(false)
-          onUpgradeClick?.()
-        }}
-        limitType="photo"
-      />
     </div>
   )
 }

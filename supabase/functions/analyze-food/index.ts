@@ -30,24 +30,6 @@ Deno.serve(async (req) => {
     const requestData = await req.json();
     const { imageUrl, mealType, analysisType, detailsData } = requestData;
 
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('subscription_status, trial_photo_analysis_count, trial_photo_analysis_limit')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError) throw new Error('Failed to fetch user profile');
-
-    if (profile.subscription_status === 'trial' && profile.trial_photo_analysis_count >= profile.trial_photo_analysis_limit) {
-      return new Response(JSON.stringify({
-        error: 'trial_limit_reached',
-        message: 'Ücretsiz fotoğraf analizi hakkınız doldu.',
-        detectedFoods: [],
-        confidence: 0,
-        suggestions: 'Premium üyeliğe geçerek sınırsız analiz yapabilirsiniz.'
-      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
     if (!imageUrl || typeof imageUrl !== 'string') throw new Error('Valid image URL required');
     if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('data:')) {
       throw new Error('Invalid image URL format');
@@ -224,13 +206,6 @@ Deno.serve(async (req) => {
       detectedFoodsCount: analysisResult.detectedFoods.length,
       confidence: analysisResult.confidence
     });
-
-    if (profile.subscription_status === 'trial') {
-      await supabaseClient.from('profiles').update({
-        trial_photo_analysis_count: profile.trial_photo_analysis_count + 1,
-        updated_at: new Date().toISOString()
-      }).eq('user_id', user.id);
-    }
 
     return new Response(JSON.stringify(analysisResult), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

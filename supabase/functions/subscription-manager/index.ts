@@ -412,7 +412,7 @@ serve(async (req) => {
         
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subscription_status, trial_end_date')
+          .select('subscription_status')
           .eq('user_id', userId)
           .single()
 
@@ -432,14 +432,11 @@ serve(async (req) => {
         if (subscription && new Date(subscription.end_date) > now) {
           subscriptionValid = true
           remainingDays = Math.ceil((new Date(subscription.end_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-        } else if (profile?.subscription_status === 'trial' && profile?.trial_end_date && new Date(profile.trial_end_date) > now) {
-          subscriptionValid = true
-          remainingDays = Math.ceil((new Date(profile.trial_end_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
         }
 
         return new Response(JSON.stringify({
           subscriptionValid,
-          subscriptionStatus: profile?.subscription_status || 'trial',
+          subscriptionStatus: profile?.subscription_status || 'free',
           remainingDays,
           currentPlan: subscription?.plan_type ? `${subscription.plan_type === 'monthly' ? 'monthly_premium' : 'yearly_premium'}` : null,
           subscription

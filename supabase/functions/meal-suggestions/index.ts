@@ -75,32 +75,6 @@ serve(async (req) => {
       throw new Error('Invalid user token');
     }
 
-    // Check trial limits before processing
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('subscription_status, trial_meal_suggestion_count, trial_meal_suggestion_limit')
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError) {
-      console.error('Profile fetch error:', profileError)
-      throw new Error('Failed to fetch user profile')
-    }
-
-    // Check if user has reached trial limit
-    if (profile.subscription_status === 'trial') {
-      if (profile.trial_meal_suggestion_count >= profile.trial_meal_suggestion_limit) {
-        return new Response(
-          JSON.stringify({
-            error: 'trial_limit_reached',
-            message: 'Ücretsiz yemek önerisi hakkınız doldu. Premium üyeliğe geçerek sınırsız öneri alabilirsiniz.',
-            suggestions: []
-          }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-    }
-
     const mealTypeInTurkish = {
       'breakfast': 'Kahvaltı',
       'lunch': 'Öğle Yemeği', 
@@ -194,23 +168,6 @@ Türk mutfağından seçenekler öner. Kalan besin değerlerini tamamlayacak şe
 
     if (insertError) {
       console.error('Database insert error:', insertError);
-    }
-
-    // Increment meal suggestion count for trial users
-    if (profile.subscription_status === 'trial') {
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          trial_meal_suggestion_count: profile.trial_meal_suggestion_count + 1,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id)
-
-      if (updateError) {
-        console.error('Failed to update trial count:', updateError)
-      } else {
-        console.log('Trial meal suggestion count incremented:', profile.trial_meal_suggestion_count + 1)
-      }
     }
 
     return new Response(JSON.stringify(suggestions), {
