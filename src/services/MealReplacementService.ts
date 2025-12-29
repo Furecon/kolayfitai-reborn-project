@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 class MealReplacementServiceClass {
-  private readonly REPLACEMENTS_BEFORE_AD = 2;
+  private readonly REPLACEMENTS_BEFORE_AD = 1;
 
   async checkNeedsAd(userId: string): Promise<boolean> {
     try {
