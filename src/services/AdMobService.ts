@@ -11,13 +11,13 @@ interface AdMobConfig {
 const AD_CONFIGS: { ios: AdMobConfig; android: AdMobConfig } = {
   ios: {
     appId: 'ca-app-pub-8309637989312333~7793227431',
-    rewardedAdUnitId: 'ca-app-pub-8309637989312333/6264168129',
-    testMode: false,
+    rewardedAdUnitId: 'ca-app-pub-3940256099942544/1712485313',
+    testMode: true,
   },
   android: {
     appId: 'ca-app-pub-8309637989312333~7793227431',
-    rewardedAdUnitId: 'ca-app-pub-8309637989312333/5214810332',
-    testMode: false,
+    rewardedAdUnitId: 'ca-app-pub-3940256099942544/5224354917',
+    testMode: true,
   },
 };
 
