@@ -71,17 +71,20 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
   const handleAnalysisTypeSelected = async (type: 'quick' | 'manual') => {
     console.log('Analysis type selected:', type)
 
+    // Manual entry is UNLIMITED and FREE - no ad required
+    if (type === 'manual') {
+      setAnalysisType(type)
+      setCurrentStep('manual-entry')
+      return
+    }
+
+    // Only photo analysis (quick) requires ad and has daily limit
     try {
-      // Both quick and manual require checking ad limit (same daily limit of 3)
       const limitCheck = await AdRewardService.checkAdLimit('photo_analysis')
 
       if (limitCheck.isPremium) {
         setAnalysisType(type)
-        if (type === 'quick') {
-          setCurrentStep('quick-result')
-        } else {
-          setCurrentStep('manual-entry')
-        }
+        setCurrentStep('quick-result')
         return
       }
 
@@ -105,11 +108,7 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
       }
 
       setAnalysisType(type)
-      if (type === 'quick') {
-        setCurrentStep('quick-result')
-      } else {
-        setCurrentStep('manual-entry')
-      }
+      setCurrentStep('quick-result')
     } catch (error) {
       console.error('Error checking ad limit:', error)
       toast({
@@ -123,11 +122,7 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
   const handleAdCompleted = () => {
     if (pendingAnalysisType) {
       setAnalysisType(pendingAnalysisType)
-      if (pendingAnalysisType === 'quick') {
-        setCurrentStep('quick-result')
-      } else {
-        setCurrentStep('manual-entry')
-      }
+      setCurrentStep('quick-result')
       setPendingAnalysisType(null)
     }
   }
@@ -398,7 +393,7 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
         open={showAdDialog}
         onOpenChange={setShowAdDialog}
         featureType="photo_analysis"
-        featureName={pendingAnalysisType === 'quick' ? 'AI Analiz' : 'Manuel Giriş'}
+        featureName="Fotoğraf Analizi"
         onAdCompleted={handleAdCompleted}
         onCancel={handleAdCancelled}
       />

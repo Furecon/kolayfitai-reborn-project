@@ -110,7 +110,7 @@ export function TrialUsageCard({ onUpgradeClick }: TrialUsageCardProps) {
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <Camera className="h-4 w-4 text-blue-500" />
-              <span>Günlük Analiz</span>
+              <span>Fotoğraf Analizi</span>
             </div>
             <span className="font-medium">
               {remainingPhotos}/{usage.photoAnalysisLimit} kaldı
@@ -118,7 +118,10 @@ export function TrialUsageCard({ onUpgradeClick }: TrialUsageCardProps) {
           </div>
           <Progress value={photoPercentage} className="h-2" />
           <p className="text-xs text-gray-500">
-            Her analiz için reklam izleyin
+            Her fotoğraf analizi için reklam izleyin
+          </p>
+          <p className="text-xs text-green-600 font-medium">
+            Manuel giriş sınırsız ve ücretsiz!
           </p>
         </div>
 
