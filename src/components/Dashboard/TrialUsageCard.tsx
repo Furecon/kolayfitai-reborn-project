@@ -110,13 +110,16 @@ export function TrialUsageCard({ onUpgradeClick }: TrialUsageCardProps) {
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <Camera className="h-4 w-4 text-blue-500" />
-              <span>Fotoğraf Analizi</span>
+              <span>Günlük Analiz</span>
             </div>
             <span className="font-medium">
-              {remainingPhotos}/{usage.photoAnalysisLimit}
+              {remainingPhotos}/{usage.photoAnalysisLimit} kaldı
             </span>
           </div>
           <Progress value={photoPercentage} className="h-2" />
+          <p className="text-xs text-gray-500">
+            Her analiz için reklam izleyin
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -126,7 +129,7 @@ export function TrialUsageCard({ onUpgradeClick }: TrialUsageCardProps) {
               <span>AI Yemek Önerisi</span>
             </div>
             <span className="font-medium">
-              {remainingMeals}/{usage.mealSuggestionLimit}
+              {remainingMeals}/{usage.mealSuggestionLimit} kaldı
             </span>
           </div>
           <Progress value={mealPercentage} className="h-2" />

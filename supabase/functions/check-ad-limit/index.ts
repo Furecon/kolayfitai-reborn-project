@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 interface CheckLimitRequest {
-  featureType: 'photo_analysis' | 'detailed_analysis' | 'diet_plan';
+  featureType: 'photo_analysis' | 'diet_plan';
 }
 
 interface LimitCheckResult {
@@ -87,7 +87,7 @@ Deno.serve(async (req: Request) => {
     const today = new Date().toISOString().split('T')[0];
     
     if (featureType === 'photo_analysis') {
-      // Check daily photo analysis limit (max 3 ads per day)
+      // Check daily analysis limit (max 3 ads per day - includes both AI and manual)
       const { data: dailyUsage } = await supabase
         .from("daily_usage_limits")
         .select("photo_analysis_ads_watched")
@@ -107,7 +107,7 @@ Deno.serve(async (req: Request) => {
             limitReached: true,
             currentCount,
             maxLimit,
-            message: "Daily photo analysis limit reached. Try again tomorrow or upgrade to Premium."
+            message: "Günlük analiz limitiniz doldu. Yarın tekrar deneyin veya Premium'a geçin."
           } as LimitCheckResult),
           {
             headers: {
@@ -126,28 +126,7 @@ Deno.serve(async (req: Request) => {
           limitReached: false,
           currentCount,
           maxLimit,
-          message: `Watch an ad to analyze. ${maxLimit - currentCount} analysis remaining today.`
-        } as LimitCheckResult),
-        {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
-    if (featureType === 'detailed_analysis') {
-      // Detailed analysis always requires 1 ad (no daily limit)
-      return new Response(
-        JSON.stringify({
-          canUse: true,
-          requiresAd: true,
-          isPremium: false,
-          limitReached: false,
-          currentCount: 0,
-          maxLimit: -1, // unlimited, but each requires an ad
-          message: "Watch an ad to use detailed analysis."
+          message: `Analiz yapmak için reklam izleyin. Bugün ${maxLimit - currentCount} analiz hakkınız kaldı.`
         } as LimitCheckResult),
         {
           headers: {

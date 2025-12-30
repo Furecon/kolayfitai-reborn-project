@@ -6,7 +6,6 @@ import { useNavigation } from '@/hooks/useNavigation'
 import AnalysisTypeSelection from './AnalysisTypeSelection'
 import MealTypeSelection from './MealTypeSelection'
 import QuickAnalysisResult from './QuickAnalysisResult'
-import DetailedAnalysisForm from './DetailedAnalysisForm'
 import ManualFoodEntry from './ManualFoodEntry'
 import { EnhancedAIVerification } from './EnhancedAIVerification'
 import MealSelectionAfterAnalysis from './MealSelectionAfterAnalysis'
@@ -15,7 +14,7 @@ import { AdRewardDialog } from '@/components/Ads/AdRewardDialog'
 import { AdRewardService, FeatureType } from '@/services/AdRewardService'
 import { useToast } from '@/hooks/use-toast'
 
-type AnalysisStep = 'camera' | 'analysis-type' | 'quick-result' | 'detailed-form' | 'manual-entry' | 'meal-selection' | 'ai-verification'
+type AnalysisStep = 'camera' | 'analysis-type' | 'quick-result' | 'manual-entry' | 'meal-selection' | 'ai-verification'
 
 interface FoodAnalysisProps {
   onMealAdded: () => void
@@ -30,15 +29,14 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
   const [currentStep, setCurrentStep] = useState<AnalysisStep>(skipCameraStep && initialImage ? 'analysis-type' : 'camera')
   const [capturedImage, setCapturedImage] = useState<string | null>(initialImage)
   const [capturedImageHD, setCapturedImageHD] = useState<string | null>(initialImage)
-  const [analysisType, setAnalysisType] = useState<'quick' | 'detailed' | null>(null)
+  const [analysisType, setAnalysisType] = useState<'quick' | 'manual' | null>(null)
   const [selectedMealType, setSelectedMealType] = useState<string>('')
   const [analysisResult, setAnalysisResult] = useState<any>(null)
   const [detectedFoods, setDetectedFoods] = useState<any[]>([])
   const [finalMealType, setFinalMealType] = useState<string>('')
-  const [detailedFormData, setDetailedFormData] = useState<any>(null)
 
   const [showAdDialog, setShowAdDialog] = useState(false)
-  const [pendingAnalysisType, setPendingAnalysisType] = useState<'quick' | 'detailed' | null>(null)
+  const [pendingAnalysisType, setPendingAnalysisType] = useState<'quick' | 'manual' | null>(null)
   const { toast } = useToast()
 
   // Enhanced navigation with hardware back button support
@@ -70,31 +68,26 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
     setCurrentStep('analysis-type')
   }
 
-  const handleAnalysisTypeSelected = async (type: 'quick' | 'detailed' | 'manual') => {
+  const handleAnalysisTypeSelected = async (type: 'quick' | 'manual') => {
     console.log('Analysis type selected:', type)
 
-    if (type === 'manual') {
-      setCurrentStep('manual-entry')
-      return
-    }
-
     try {
-      const featureType: FeatureType = type === 'quick' ? 'photo_analysis' : 'detailed_analysis'
-      const limitCheck = await AdRewardService.checkAdLimit(featureType)
+      // Both quick and manual require checking ad limit (same daily limit of 3)
+      const limitCheck = await AdRewardService.checkAdLimit('photo_analysis')
 
       if (limitCheck.isPremium) {
         setAnalysisType(type)
         if (type === 'quick') {
           setCurrentStep('quick-result')
         } else {
-          setCurrentStep('detailed-form')
+          setCurrentStep('manual-entry')
         }
         return
       }
 
       if (limitCheck.limitReached) {
         toast({
-          title: 'Limit Doldu',
+          title: 'Günlük Limit Doldu',
           description: limitCheck.message,
           variant: 'destructive',
           duration: 5000,
@@ -115,7 +108,7 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
       if (type === 'quick') {
         setCurrentStep('quick-result')
       } else {
-        setCurrentStep('detailed-form')
+        setCurrentStep('manual-entry')
       }
     } catch (error) {
       console.error('Error checking ad limit:', error)
@@ -133,7 +126,7 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
       if (pendingAnalysisType === 'quick') {
         setCurrentStep('quick-result')
       } else {
-        setCurrentStep('detailed-form')
+        setCurrentStep('manual-entry')
       }
       setPendingAnalysisType(null)
     }
@@ -151,12 +144,6 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
     onMealAdded()
   }
 
-  const handleDetailedAnalysisComplete = (data: any) => {
-    console.log('Detailed analysis completed:', data)
-    setDetailedFormData(data)
-    // Start detailed analysis with the form data
-    setCurrentStep('quick-result') // Use same result component but with detailed data
-  }
 
   const handleManualEntryComplete = async (foods: any[]) => {
     console.log('Manual entry completed:', foods)
@@ -263,7 +250,6 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
         onBack()
         break
       case 'quick-result':
-      case 'detailed-form':
         setCurrentStep('analysis-type')
         break
       case 'manual-entry':
@@ -272,8 +258,6 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
       case 'meal-selection':
         if (analysisType === 'quick') {
           setCurrentStep('quick-result')
-        } else if (analysisType === 'detailed') {
-          setCurrentStep('detailed-form')
         } else {
           setCurrentStep('manual-entry')
         }
@@ -293,9 +277,7 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
       case 'analysis-type':
         return 'Analiz Türü'
       case 'quick-result':
-        return 'Ai Analiz Sonucu'
-      case 'detailed-form':
-        return 'Detaylı Analiz'
+        return 'AI Analiz Sonucu'
       case 'manual-entry':
         return 'Manuel Giriş'
       case 'meal-selection':
@@ -347,20 +329,12 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
 
         {currentStep === 'quick-result' && capturedImage && (
           <QuickAnalysisResult
-            capturedImage={analysisType === 'detailed' && capturedImageHD ? capturedImageHD : capturedImage}
+            capturedImage={capturedImage}
             mealType=""
             onSave={handleQuickAnalysisComplete}
             onRetry={() => setCurrentStep('analysis-type')}
-            analysisType={analysisType || 'quick'}
-            detailsData={detailedFormData}
+            analysisType="quick"
             onUpgradeClick={onUpgradeClick}
-          />
-        )}
-
-        {currentStep === 'detailed-form' && (
-          <DetailedAnalysisForm
-            onSubmit={handleDetailedAnalysisComplete}
-            onBack={handleBack}
           />
         )}
 
@@ -423,8 +397,8 @@ export default function FoodAnalysis({ onMealAdded, onBack, initialImage = null,
       <AdRewardDialog
         open={showAdDialog}
         onOpenChange={setShowAdDialog}
-        featureType={pendingAnalysisType === 'quick' ? 'photo_analysis' : 'detailed_analysis'}
-        featureName={pendingAnalysisType === 'quick' ? 'Hızlı Analiz' : 'Detaylı Analiz'}
+        featureType="photo_analysis"
+        featureName={pendingAnalysisType === 'quick' ? 'AI Analiz' : 'Manuel Giriş'}
         onAdCompleted={handleAdCompleted}
         onCancel={handleAdCancelled}
       />

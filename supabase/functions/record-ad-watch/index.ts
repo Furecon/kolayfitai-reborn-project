@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 interface RecordAdRequest {
-  featureType: 'photo_analysis' | 'detailed_analysis' | 'diet_plan';
+  featureType: 'photo_analysis' | 'diet_plan';
   adNetwork?: string;
   adPlacementId?: string;
   adDurationSeconds?: number;
@@ -131,7 +131,7 @@ Deno.serve(async (req: Request) => {
     const today = new Date().toISOString().split('T')[0];
 
     if (featureType === 'photo_analysis') {
-      // Increment daily photo analysis count
+      // Increment daily analysis count (includes both AI and manual)
       const { data: existing } = await supabase
         .from("daily_usage_limits")
         .select("*")
@@ -146,7 +146,7 @@ Deno.serve(async (req: Request) => {
         newCount = existing.photo_analysis_ads_watched + 1;
         await supabase
           .from("daily_usage_limits")
-          .update({ 
+          .update({
             photo_analysis_ads_watched: Math.min(newCount, maxLimit),
             updated_at: new Date().toISOString()
           })
@@ -167,54 +167,7 @@ Deno.serve(async (req: Request) => {
           rewardGranted: true,
           newCount: Math.min(newCount, maxLimit),
           maxLimit,
-          message: `Photo analysis unlocked! ${maxLimit - newCount} remaining today.`
-        } as RecordAdResponse),
-        {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
-    if (featureType === 'detailed_analysis') {
-      // Increment detailed analysis count (for tracking, no limit)
-      const { data: existing } = await supabase
-        .from("daily_usage_limits")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("date", today)
-        .maybeSingle();
-
-      let newCount = 1;
-
-      if (existing) {
-        newCount = existing.detailed_analysis_ads_watched + 1;
-        await supabase
-          .from("daily_usage_limits")
-          .update({ 
-            detailed_analysis_ads_watched: newCount,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", existing.id);
-      } else {
-        await supabase
-          .from("daily_usage_limits")
-          .insert({
-            user_id: user.id,
-            date: today,
-            detailed_analysis_ads_watched: newCount
-          });
-      }
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          rewardGranted: true,
-          newCount,
-          maxLimit: -1, // unlimited
-          message: "Detailed analysis unlocked!"
+          message: `Analiz aktif edildi! Bugün ${maxLimit - newCount} analiz hakkınız kaldı.`
         } as RecordAdResponse),
         {
           headers: {

@@ -13,7 +13,6 @@ interface AnalysisTypeSelectionProps {
 
 export default function AnalysisTypeSelection({ onSelectType, onBack, capturedImage, onRetakePhoto }: AnalysisTypeSelectionProps) {
   const normalAnalysisRef = useTutorialTarget('NormalAnalysisCard')
-  const detailedAnalysisRef = useTutorialTarget('DetailedAnalysisCard')
 
   return (
     <div className="min-h-screen bg-white p-4">
@@ -49,45 +48,20 @@ export default function AnalysisTypeSelection({ onSelectType, onBack, capturedIm
                 <div className="p-2 bg-green-100 rounded-lg">
                   <Zap className="h-6 w-6 text-green-600" />
                 </div>
-                Hızlı Analiz
+                AI Analiz
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 mb-4">
-                Ai fotoğraftaki besini hemen değerlendirir. Hızlı sonuç alırsınız.
+                AI fotoğraftaki besini hemen değerlendirir ve besin değerlerini hesaplar.
               </p>
               <ul className="text-sm text-gray-500 space-y-1">
                 <li>• Anında sonuç</li>
-                <li>• Genel besin değerleri</li>
-                <li>• Temel kalori hesabı</li>
+                <li>• Tam besin değerleri</li>
+                <li>• Hassas kalori hesabı</li>
               </ul>
               <Button className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white">
-                Hızlı Analiz Yap
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card ref={detailedAnalysisRef as any} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onSelectType('detailed')}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-black">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Search className="h-6 w-6 text-blue-600" />
-                </div>
-                Detaylı Analiz
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">
-                Daha doğru hesaplama için size birkaç soru sorarız. Daha hassas sonuç alırsınız.
-              </p>
-              <ul className="text-sm text-gray-500 space-y-1">
-                <li>• Pişirme yöntemi soruları</li>
-                <li>• Porsiyon detayları</li>
-                <li>• Gizli malzemeler</li>
-                <li>• Daha hassas kalori hesabı</li>
-              </ul>
-              <Button className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white">
-                Detaylı Analiz Yap
+                AI Analiz Yap
               </Button>
             </CardContent>
           </Card>
@@ -109,7 +83,7 @@ export default function AnalysisTypeSelection({ onSelectType, onBack, capturedIm
                 <li>• Yemek arama ve seçimi</li>
                 <li>• Porsiyon kontrolü</li>
                 <li>• Hassas besin değerleri</li>
-                <li>• Ai hatalarından bağımsız</li>
+                <li>• AI hatalarından bağımsız</li>
               </ul>
               <Button className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white">
                 Manuel Giriş Yap

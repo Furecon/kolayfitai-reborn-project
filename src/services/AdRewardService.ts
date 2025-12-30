@@ -7,7 +7,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export type FeatureType = 'photo_analysis' | 'detailed_analysis' | 'diet_plan';
+export type FeatureType = 'photo_analysis' | 'diet_plan';
 
 export interface LimitCheckResult {
   canUse: boolean;
@@ -97,8 +97,7 @@ export class AdRewardService {
    * Get user's current daily usage
    */
   static async getDailyUsage(): Promise<{
-    photoAnalysisCount: number;
-    detailedAnalysisCount: number;
+    analysisCount: number;
   }> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -111,7 +110,7 @@ export class AdRewardService {
 
       const { data, error } = await supabase
         .from('daily_usage_limits')
-        .select('photo_analysis_ads_watched, detailed_analysis_ads_watched')
+        .select('photo_analysis_ads_watched')
         .eq('user_id', user.id)
         .eq('date', today)
         .maybeSingle();
@@ -121,14 +120,12 @@ export class AdRewardService {
       }
 
       return {
-        photoAnalysisCount: data?.photo_analysis_ads_watched || 0,
-        detailedAnalysisCount: data?.detailed_analysis_ads_watched || 0
+        analysisCount: data?.photo_analysis_ads_watched || 0
       };
     } catch (error) {
       console.error('Error getting daily usage:', error);
       return {
-        photoAnalysisCount: 0,
-        detailedAnalysisCount: 0
+        analysisCount: 0
       };
     }
   }
