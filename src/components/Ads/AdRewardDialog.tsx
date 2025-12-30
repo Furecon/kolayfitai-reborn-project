@@ -32,6 +32,7 @@ export const AdRewardDialog = ({
 }: AdRewardDialogProps) => {
   const [isShowingAd, setIsShowingAd] = useState(false);
   const [isAdReady, setIsAdReady] = useState(false);
+  const [isTestMode, setIsTestMode] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,6 +44,8 @@ export const AdRewardDialog = ({
           console.log('[AdRewardDialog] AdMob not initialized, initializing now...');
           await AdMobService.initialize();
         }
+
+        setIsTestMode(AdMobService.isTestMode());
 
         if (AdMobService.isInitialized()) {
           setIsAdReady(AdMobService.isAdReady());
@@ -109,12 +112,27 @@ export const AdRewardDialog = ({
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
       });
 
+      const errorDetails = AdMobService.getLastError();
+      const isTestMode = AdMobService.isTestMode();
+
+      let errorMessage = 'Lütfen tekrar deneyin veya Premium üyeliğe geçin.';
+
+      if (errorDetails) {
+        errorMessage = errorDetails;
+      }
+
+      if (isTestMode) {
+        errorMessage += '\n\n(Test modu aktif - Gerçek reklamlar gösterilecek)';
+      }
+
       toast({
         title: 'Reklam Gösterilemedi',
-        description: 'Lütfen tekrar deneyin veya Premium üyeliğe geçin.',
+        description: errorMessage,
         variant: 'destructive',
-        duration: 4000,
+        duration: 5000,
       });
+
+      AdMobService.clearLastError();
     } finally {
       setIsShowingAd(false);
     }
@@ -147,6 +165,11 @@ export const AdRewardDialog = ({
                 KolayFit'in tüm özelliklerini ücretsiz sunabilmek için reklamlardan gelir elde
                 ediyoruz. Premium üyelikle tüm özelliklere reklamsız erişebilirsiniz.
               </p>
+              {isTestMode && (
+                <p className="text-xs text-amber-600 font-medium mt-2 p-2 bg-amber-50 rounded border border-amber-200">
+                  Test modu aktif: Google test reklamları gösterilecek
+                </p>
+              )}
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>

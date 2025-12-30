@@ -12,13 +12,18 @@ const AD_CONFIGS: { ios: AdMobConfig; android: AdMobConfig } = {
   ios: {
     appId: 'ca-app-pub-8309637989312333~7793227431',
     rewardedAdUnitId: 'ca-app-pub-8309637989312333/6264168129',
-    testMode: false,
+    testMode: true,
   },
   android: {
     appId: 'ca-app-pub-8309637989312333~7793227431',
     rewardedAdUnitId: 'ca-app-pub-8309637989312333/5214810332',
-    testMode: false,
+    testMode: true,
   },
+};
+
+const TEST_AD_UNIT_IDS = {
+  ios: 'ca-app-pub-3940256099942544/1712485313',
+  android: 'ca-app-pub-3940256099942544/5224354917',
 };
 
 class AdMobServiceClass {
@@ -26,6 +31,7 @@ class AdMobServiceClass {
   private isAdLoaded = false;
   private isAdLoading = false;
   private currentRewardListener: ((reward: boolean) => void) | null = null;
+  private lastError: string | null = null;
 
   async initialize(): Promise<void> {
     if (this.initialized) {
@@ -50,8 +56,8 @@ class AdMobServiceClass {
 
       await AdMob.initialize({
         requestTrackingAuthorization: true,
-        testingDevices: [],
-        initializeForTesting: false,
+        testingDevices: config.testMode ? ['DEVICE_ID_EMULATOR'] : [],
+        initializeForTesting: config.testMode,
       });
 
       this.initialized = true;
@@ -75,6 +81,7 @@ class AdMobServiceClass {
       console.error('[AdMob] Rewarded ad failed to load:', error);
       this.isAdLoaded = false;
       this.isAdLoading = false;
+      this.lastError = `Reklam yüklenemedi: ${error.message || 'Bilinmeyen hata'}`;
 
       if (this.currentRewardListener) {
         this.currentRewardListener(false);
@@ -89,6 +96,7 @@ class AdMobServiceClass {
     AdMob.addListener(RewardAdPluginEvents.FailedToShow, (error: AdMobError) => {
       console.error('[AdMob] Rewarded ad failed to show:', error);
       this.isAdLoaded = false;
+      this.lastError = `Reklam gösterilemedi: ${error.message || 'Bilinmeyen hata'}`;
 
       if (this.currentRewardListener) {
         this.currentRewardListener(false);
@@ -139,12 +147,19 @@ class AdMobServiceClass {
       const platform = Capacitor.getPlatform();
       const config = platform === 'ios' ? AD_CONFIGS.ios : AD_CONFIGS.android;
 
+      const adUnitId = config.testMode
+        ? TEST_AD_UNIT_IDS[platform as 'ios' | 'android']
+        : config.rewardedAdUnitId;
+
       const options: RewardAdOptions = {
-        adId: config.rewardedAdUnitId,
-        isTesting: false,
+        adId: adUnitId,
+        isTesting: config.testMode,
       };
 
-      console.log('[AdMob] Preloading rewarded ad...');
+      console.log('[AdMob] Preloading rewarded ad...', {
+        testMode: config.testMode,
+        adUnitId
+      });
       await AdMob.prepareRewardVideoAd(options);
     } catch (error) {
       console.error('[AdMob] Failed to preload rewarded ad:', error);
@@ -242,6 +257,20 @@ class AdMobServiceClass {
     console.log('[AdMob] Updating app IDs');
     AD_CONFIGS.ios.appId = ios;
     AD_CONFIGS.android.appId = android;
+  }
+
+  getLastError(): string | null {
+    return this.lastError;
+  }
+
+  clearLastError(): void {
+    this.lastError = null;
+  }
+
+  isTestMode(): boolean {
+    const platform = Capacitor.getPlatform();
+    const config = platform === 'ios' ? AD_CONFIGS.ios : AD_CONFIGS.android;
+    return config.testMode;
   }
 }
 
