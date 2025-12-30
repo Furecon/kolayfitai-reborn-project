@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Camera, FileText, UtensilsCrossed, Crown, Sparkles } from 'lucide-react';
+import { Camera, UtensilsCrossed, Crown, Sparkles } from 'lucide-react';
 import { AdRewardService } from '@/services/AdRewardService';
-import { Button } from '@/components/ui/button';
+import { PaywallButton } from '@/components/Subscription/PaywallButton';
 
 interface UsageStats {
   photoAnalysisCount: number;
@@ -124,19 +124,6 @@ export const AdUsageCard = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Detaylı Analiz</span>
-            </div>
-            <Badge variant="secondary">Sınırsız</Badge>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Her analiz için 1 reklam izleyin (Bugün {stats.detailedAnalysisCount} kez kullanıldı)
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
               <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Diyet Planı</span>
             </div>
@@ -152,11 +139,18 @@ export const AdUsageCard = () => {
           </p>
         </div>
 
-        <div className="pt-2 border-t">
-          <Button variant="outline" size="sm" className="w-full" onClick={loadUsageStats}>
-            Yenile
-          </Button>
-        </div>
+        {(photoAnalysisRemaining <= 0 || dietPlanRemaining <= 0) && (
+          <div className="pt-2 border-t">
+            <PaywallButton
+              variant="default"
+              size="sm"
+              className="w-full"
+              onSuccess={loadUsageStats}
+            >
+              Premium'a Geç
+            </PaywallButton>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
