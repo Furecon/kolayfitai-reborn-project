@@ -8,9 +8,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Play, Award, Sparkles, X } from 'lucide-react';
+import { Loader2, Play, Award, Sparkles, X, Crown } from 'lucide-react';
 import { AdRewardService, FeatureType } from '@/services/AdRewardService';
 import { AdMobService } from '@/services/AdMobService';
+import { paywallService } from '@/services/PaywallService';
 import { useToast } from '@/hooks/use-toast';
 
 interface AdRewardDialogProps {
@@ -33,11 +34,14 @@ export const AdRewardDialog = ({
   const [isShowingAd, setIsShowingAd] = useState(false);
   const [isAdReady, setIsAdReady] = useState(false);
   const [isTestMode, setIsTestMode] = useState(false);
+  const [adFailed, setAdFailed] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     const initializeAndPreload = async () => {
       if (!open) return;
+
+      setAdFailed(false);
 
       try {
         if (!AdMobService.isInitialized() && AdMobService.isNativePlatform()) {
@@ -60,6 +64,7 @@ export const AdRewardDialog = ({
         }
       } catch (error) {
         console.error('[AdRewardDialog] Failed to initialize or preload ad:', error);
+        setAdFailed(true);
       }
     };
 
@@ -125,6 +130,8 @@ export const AdRewardDialog = ({
         errorMessage += '\n\n(Test modu aktif - Gerçek reklamlar gösterilecek)';
       }
 
+      setAdFailed(true);
+
       toast({
         title: 'Reklam Gösterilemedi',
         description: errorMessage,
@@ -135,6 +142,35 @@ export const AdRewardDialog = ({
       AdMobService.clearLastError();
     } finally {
       setIsShowingAd(false);
+    }
+  };
+
+  const handleUpgradeToPremium = async () => {
+    try {
+      onOpenChange(false);
+      const result = await paywallService.presentPaywall();
+
+      if (result.result === 'purchased' || result.result === 'restored') {
+        toast({
+          title: 'Premium Aktif!',
+          description: 'Tüm özelliklere sınırsız erişim sağladınız.',
+          duration: 4000,
+        });
+        onAdCompleted();
+      } else if (result.result === 'error') {
+        toast({
+          title: 'Hata',
+          description: result.error || 'Premium sayfası açılamadı.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to show paywall:', error);
+      toast({
+        title: 'Hata',
+        description: 'Premium sayfası açılamadı. Lütfen tekrar deneyin.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -174,33 +210,60 @@ export const AdRewardDialog = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-          <Button
-            variant="outline"
-            onClick={handleCancel}
-            disabled={isShowingAd}
-            className="w-full sm:w-auto"
-          >
-            <X className="h-4 w-4 mr-2" />
-            İptal
-          </Button>
-          <Button
-            onClick={handleWatchAd}
-            disabled={isShowingAd}
-            className="w-full sm:w-auto bg-primary hover:bg-primary/90"
-          >
-            {isShowingAd ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Reklam Gösteriliyor...
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4 mr-2" />
-                Reklamı İzle
-              </>
+        <AlertDialogFooter className="flex-col gap-2">
+          {adFailed && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-2">
+              <p className="text-sm text-amber-800 font-medium">
+                Reklam şu anda kullanılamıyor. Premium üyelikle tüm özelliklere sınırsız erişin!
+              </p>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-2 w-full">
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isShowingAd}
+              className="w-full sm:w-auto order-3 sm:order-1"
+            >
+              <X className="h-4 w-4 mr-2" />
+              İptal
+            </Button>
+
+            {!adFailed && (
+              <Button
+                onClick={handleWatchAd}
+                disabled={isShowingAd}
+                className="w-full sm:flex-1 bg-primary hover:bg-primary/90 order-1 sm:order-2"
+              >
+                {isShowingAd ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Reklam Gösteriliyor...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 mr-2" />
+                    Reklamı İzle
+                  </>
+                )}
+              </Button>
             )}
-          </Button>
+
+            <Button
+              onClick={handleUpgradeToPremium}
+              disabled={isShowingAd}
+              variant={adFailed ? 'default' : 'secondary'}
+              className={`w-full sm:flex-1 order-2 sm:order-3 ${
+                adFailed
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white'
+                  : ''
+              }`}
+            >
+              <Crown className="h-4 w-4 mr-2" />
+              Premium'a Geç
+            </Button>
+          </div>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

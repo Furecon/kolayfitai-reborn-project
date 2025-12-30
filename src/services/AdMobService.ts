@@ -12,12 +12,12 @@ const AD_CONFIGS: { ios: AdMobConfig; android: AdMobConfig } = {
   ios: {
     appId: 'ca-app-pub-8309637989312333~7793227431',
     rewardedAdUnitId: 'ca-app-pub-8309637989312333/6264168129',
-    testMode: true,
+    testMode: false,
   },
   android: {
     appId: 'ca-app-pub-8309637989312333~7793227431',
     rewardedAdUnitId: 'ca-app-pub-8309637989312333/5214810332',
-    testMode: true,
+    testMode: false,
   },
 };
 
@@ -32,6 +32,8 @@ class AdMobServiceClass {
   private isAdLoading = false;
   private currentRewardListener: ((reward: boolean) => void) | null = null;
   private lastError: string | null = null;
+  private adLoadAttempts = 0;
+  private maxAdLoadAttempts = 3;
 
   async initialize(): Promise<void> {
     if (this.initialized) {
@@ -75,17 +77,31 @@ class AdMobServiceClass {
       console.log('[AdMob] Rewarded ad loaded:', info);
       this.isAdLoaded = true;
       this.isAdLoading = false;
+      this.adLoadAttempts = 0;
+      this.lastError = null;
     });
 
     AdMob.addListener(RewardAdPluginEvents.FailedToLoad, (error: AdMobError) => {
       console.error('[AdMob] Rewarded ad failed to load:', error);
       this.isAdLoaded = false;
       this.isAdLoading = false;
-      this.lastError = `Reklam yüklenemedi: ${error.message || 'Bilinmeyen hata'}`;
+      this.adLoadAttempts++;
+
+      const errorCode = (error as any).code || 0;
+      if (errorCode === 3) {
+        this.lastError = 'Şu anda gösterilecek reklam yok. Lütfen birkaç dakika sonra tekrar deneyin veya Premium üyeliğe geçin.';
+      } else {
+        this.lastError = `Reklam yüklenemedi: ${error.message || 'Bilinmeyen hata'}`;
+      }
 
       if (this.currentRewardListener) {
         this.currentRewardListener(false);
         this.currentRewardListener = null;
+      }
+
+      if (this.adLoadAttempts < this.maxAdLoadAttempts) {
+        console.log(`[AdMob] Retrying ad load (${this.adLoadAttempts}/${this.maxAdLoadAttempts})...`);
+        setTimeout(() => this.preloadRewardedAd(), 2000);
       }
     });
 
@@ -193,7 +209,7 @@ class AdMobServiceClass {
             let attempts = 0;
             const checkInterval = setInterval(() => {
               attempts++;
-              console.log(`[AdMob] Waiting for ad (attempt ${attempts}/30)`);
+              console.log(`[AdMob] Waiting for ad (attempt ${attempts}/60)`);
 
               if (this.isAdLoaded || !this.isAdLoading) {
                 console.log('[AdMob] Ad ready or loading stopped');
@@ -206,7 +222,7 @@ class AdMobServiceClass {
               clearInterval(checkInterval);
               console.log('[AdMob] Wait timeout reached');
               waitResolve(null);
-            }, 15000);
+            }, 30000);
           });
 
           if (!this.isAdLoaded) {
