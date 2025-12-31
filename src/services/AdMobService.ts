@@ -12,12 +12,12 @@ const AD_CONFIGS: { ios: AdMobConfig; android: AdMobConfig } = {
   ios: {
     appId: 'ca-app-pub-8309637989312333~7793227431',
     rewardedAdUnitId: 'ca-app-pub-8309637989312333/6264168129',
-    testMode: true,
+    testMode: false,
   },
   android: {
     appId: 'ca-app-pub-8309637989312333~7793227431',
     rewardedAdUnitId: 'ca-app-pub-8309637989312333/5214810332',
-    testMode: true,
+    testMode: false,
   },
 };
 
