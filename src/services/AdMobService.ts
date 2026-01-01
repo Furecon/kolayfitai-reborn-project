@@ -188,6 +188,7 @@ class AdMobServiceClass {
     return new Promise(async (resolve) => {
       if (!this.initialized) {
         console.error('[AdMob] Not initialized');
+        this.lastError = 'Reklam sistemi başlatılamadı. Lütfen uygulamayı yeniden başlatın.';
         resolve(false);
         return;
       }
@@ -228,6 +229,7 @@ class AdMobServiceClass {
           if (!this.isAdLoaded) {
             console.error('[AdMob] Ad failed to load within timeout');
             console.error('[AdMob] Final state - isAdLoading:', this.isAdLoading, 'isAdLoaded:', this.isAdLoaded);
+            this.lastError = 'Reklam yüklenemedi. Lütfen internet bağlantınızı kontrol edin veya birkaç dakika sonra tekrar deneyin.';
             resolve(false);
             return;
           }
@@ -237,9 +239,37 @@ class AdMobServiceClass {
 
         console.log('[AdMob] Showing rewarded ad...');
         await AdMob.showRewardVideoAd();
-      } catch (error) {
+      } catch (error: any) {
         console.error('[AdMob] Failed to show rewarded ad:', error);
+
+        let errorMessage = 'Reklam gösterilemedi. ';
+
+        if (error?.message) {
+          const errorMsg = error.message.toLowerCase();
+
+          if (errorMsg.includes('javascript') || errorMsg.includes('engine')) {
+            errorMessage = 'Reklam gösterimi sırasında teknik bir hata oluştu. Lütfen uygulamayı kapatıp yeniden açın.';
+          } else if (errorMsg.includes('network') || errorMsg.includes('internet')) {
+            errorMessage = 'İnternet bağlantınızı kontrol edin ve tekrar deneyin.';
+          } else if (errorMsg.includes('inventory') || errorMsg.includes('no fill')) {
+            errorMessage = 'Şu anda gösterilecek reklam yok. Lütfen birkaç dakika sonra tekrar deneyin.';
+          } else {
+            errorMessage += 'Lütfen tekrar deneyin veya Premium üyeliğe geçin.';
+          }
+        } else {
+          errorMessage += 'Lütfen tekrar deneyin veya Premium üyeliğe geçin.';
+        }
+
+        this.lastError = errorMessage;
         this.currentRewardListener = null;
+        this.isAdLoaded = false;
+
+        setTimeout(() => {
+          this.preloadRewardedAd().catch(err => {
+            console.error('[AdMob] Failed to preload next ad:', err);
+          });
+        }, 1000);
+
         resolve(false);
       }
     });
